@@ -6,15 +6,15 @@
 
 1. [GITHUB PAGE] Fork the project repo:
 
-    * click "fork" from https://github.com/digimokan/nix_nas_0
+    * click "fork" from https://github.com/digimokan/nix_hosts
 
 2. [LOCAL] Create local repo:
 
-        $ git clone --recurse-submodules https://github.com/[your-github-username]/nix_nas_0
+        $ git clone --recurse-submodules https://github.com/[your-github-username]/nix_hosts
 
 3. [LOCAL] Link upstream repo:
 
-        $ git remote add upstream https://github.com/digimokan/nix_nas_0
+        $ git remote add upstream https://github.com/digimokan/nix_hosts
 
 ### Development Workflow
 
