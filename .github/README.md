@@ -36,9 +36,9 @@ NixOS configuration to set up various machines.
 2. Write the installer image to a
    [bootable USB stick](https://nixos.org/manual/nixos/stable/#sec-booting-from-usb-linux).
 
-3. Insert the USB stick into the NAS machine.
+3. Insert the USB stick into the target machine.
 
-4. Power up the NAS and
+4. Power up the target machine and
    [boot from the installer image](https://nixos.org/manual/nixos/stable/#sec-installation-booting).
 
    * Note: Per NixOS manual, try UEFI boot option first.
@@ -46,11 +46,11 @@ NixOS configuration to set up various machines.
 
 ### Bootstrap New Machine Or Disks
 
-Required when a new machine is added to [`flake.nix`](./flake.nix), or a new or
+Required when a new machine is added to [`flake.nix`](../flake.nix), or a new or
 replacement disk is put into a machine.
 
 Update the host's attribute set by obtaining the following
-[`flake.nix`](./flake.nix) parameters at the minimimal installer prompt:
+[`flake.nix`](../flake.nix) parameters at the minimimal installer prompt:
 
 1. `hostnameSel`: a hostname that must be unique, among all LANs.
 
