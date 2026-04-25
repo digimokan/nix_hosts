@@ -7,20 +7,19 @@
 
   outputs = { self, nixpkgs, disko, ... }:
     let
-    hosts = {
+    allHostsSel = {
       nas-0 = {
-        hostname = "nas-0";
-        zfsHostId = "21b841de";
-        systemArchitecture = "x86_64-linux";
-        isUefi = true;
-        # Single 500GB NVME SSD:
-        rootPoolDisks = [ "/dev/disk/by-id/nvme-KINGSTON_SNV3S500G_50026B76876DA41F" ];
+        hostnameSel = "nas-0";
+        hostIdSel = "21b841de";
+        systemArchSel = "x86_64-linux";
+        isUefiSel = true;
+        rootPoolDisksSel = [ "/dev/disk/by-id/nvme-KINGSTON_SNV3S500G_50026B76876DA41F" ];
       };
     };
   in {
     nixosConfigurations.nas-0 = nixpkgs.lib.nixosSystem {
-      system = hosts.nas-0.systemArchitecture;
-      specialArgs = { inherit hosts; myHost = hosts.nas-0; };
+      system = allHostsSel.nas-0.systemArchSel;
+      specialArgs = { inherit allHostsSel; hostSel = allHostsSel.nas-0; };
       modules = [
         disko.nixosModules.disko
           ./disko/zfs-single-disk.nix

@@ -1,14 +1,14 @@
-{ myHost, ... }: {
+{ hostSel, ... }: {
   disko.devices = {
     disk = {
       main = {
         type = "disk";
-        device = builtins.elemAt myHost.rootPoolDisks 0;
+        device = builtins.elemAt hostSel.rootPoolDisksSel 0;
         content = {
           type = "gpt";
           partitions = {
             bios_boot = { size = "1M"; type = "EF02"; };
-            ESP = if myHost.isUefi then {
+            ESP = if hostSel.isUefiSel then {
               size = "512M"; type = "EF00";
               content = { type = "filesystem"; format = "vfat"; mountpoint = "/boot"; };
             } else {};
@@ -18,12 +18,12 @@
       };
       secondary = {
         type = "disk";
-        device = builtins.elemAt myHost.rootPoolDisks 1;
+        device = builtins.elemAt hostSel.rootPoolDisksSel 1;
         content = {
           type = "gpt";
           partitions = {
             bios_boot = { size = "1M"; type = "EF02"; };
-            ESP = if myHost.isUefi then {
+            ESP = if hostSel.isUefiSel then {
               size = "512M"; type = "EF00";
               content = { type = "filesystem"; format = "vfat"; mountpoint = "/boot-fallback"; };
             } else {};

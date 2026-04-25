@@ -52,23 +52,23 @@ replacement disk is put into a machine.
 Update the host's attribute set by obtaining the following
 [`flake.nix`](./flake.nix) parameters at the minimimal installer prompt:
 
-1. `hostname`: a hostname that must be unique, among all LANs.
+1. `hostnameSel`: a hostname that must be unique, among all LANs.
 
-2. `zfsHostId`: used by ZFS to uniquely identify ZFS pools.
+2. `hostIdSel`: used by ZFS to uniquely identify ZFS pools.
 
    ```shell
    $ echo "<hostname>" | md5sum | cut -c1-8
    ```
 
-3. `systemArchitecture`: system architecture.
+3. `systemArchSel`: system architecture.
 
-4. `isUefi`: whether the host's BIOS is a legacy-BIOS or UEFI-BIOS.
+4. `isUefiSel`: whether the host's BIOS is a legacy-BIOS or UEFI-BIOS.
 
    ```shell
    $ [ -d /sys/firmware/efi ] && echo "BIOS is UEFI." || echo "BIOS is Legacy."
    ```
 
-5. `rootPoolDisks`: unique S/N IDs for serial-numbered disks in ZFS root pool.
+5. `rootPoolDisksSel`: unique S/N IDs for serial-numbered disks in ZFS root pool.
 
    ```shell
    $ ls -l /dev/disk/by-id/

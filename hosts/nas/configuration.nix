@@ -1,7 +1,7 @@
-{ pkgs, myHost, ... }: {
+{ pkgs, hostSel, ... }: {
   boot.supportedFilesystems = [ "zfs" ];
-  networking.hostName = myHost.hostname;
-  networking.hostId = myHost.zfsHostId;
+  networking.hostName = hostSel.hostnameSel;
+  networking.hostId = hostSel.hostIdSel;
 
   fileSystems."/data" = {
     device = "zdata";
@@ -12,8 +12,8 @@
   boot.loader.grub = {
     enable = true;
     zfsSupport = true;
-    efiSupport = myHost.isUefi;
-    devices = myHost.rootPoolDisks;
+    efiSupport = hostSel.isUefiSel;
+    devices = hostSel.rootPoolDisksSel;
     copyKernels = true;
   };
 
