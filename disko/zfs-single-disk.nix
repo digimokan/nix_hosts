@@ -1,19 +1,30 @@
 { hostSel, ... }: {
   disko.devices = {
-    disk = {
-      main = {
-        type = "disk";
-        device = builtins.elemAt hostSel.rootPoolDisksSel 0;
-        content = {
-          type = "gpt";
-          partitions = {
-            bios_boot = { size = "1M"; type = "EF02"; };
-            ESP = if hostSel.isUefiSel then {
-              size = "512M";
-              type = "EF00";
-              content = { type = "filesystem"; format = "vfat"; mountpoint = "/boot"; };
-            } else {};
-            zfs = { size = "100%"; content = { type = "zfs"; pool = "zroot"; }; };
+    disk.main = {
+      type = "disk";
+      device = builtins.elemAt hostSel.rootPoolDisksSel 0;
+      content = {
+        type = "gpt";
+        partitions = {
+          bios_boot = {
+            size = "1M";
+            type = "EF02";
+          };
+          ESP = if hostSel.isUefiSel then {
+            size = "512M";
+            type = "EF00";
+            content = {
+              type = "filesystem";
+              format = "vfat";
+              mountpoint = "/boot";
+            };
+          } else {};
+          zfs = {
+            size = "100%";
+            content = {
+              type = "zfs";
+              pool = "zroot";
+            };
           };
         };
       };
@@ -21,11 +32,18 @@
     zpool.zroot = {
       type = "zpool";
       mode = "";
-      rootFsOptions = { compression = "lz4"; acltype = "posixacl"; xattr = "sa"; atime = "off"; };
       mountpoint = "/";
+      rootFsOptions = {
+        compression = "lz4";
+        acltype = "posixacl";
+        xattr = "sa";
+        atime = "off";
+      };
       datasets = {
-        "root" = { type = "zfs_fs"; mountpoint = "/"; };
-        "var" = { type = "zfs_fs"; mountpoint = "/var"; };
+        "var" = {
+          type = "zfs_fs";
+          mountpoint = "/var";
+        };
       };
     };
   };
