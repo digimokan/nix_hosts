@@ -22,8 +22,8 @@
       specialArgs = { inherit allHostsSel; hostSel = allHostsSel.nas-0; };
       modules = [
         disko.nixosModules.disko
-          ./disko/zfs-single-disk.nix
-          ./hosts/nas/configuration.nix
+        disko/zfs-single-disk.nix
+        hosts/nas/configuration.nix
       ];
     };
   };
