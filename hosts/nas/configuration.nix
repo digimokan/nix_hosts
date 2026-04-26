@@ -17,7 +17,11 @@
   fileSystems."/data" = {
     device = "zdata";
     fsType = "zfs";
-    options = [ "nofail" "canmount=on" ];
+    options = [
+      "nofail"
+      "canmount=on"
+      "x-systemd.device-timeout=1s"
+    ];
   };
 
   users.users.root.initialPassword = "nixos";
