@@ -20,15 +20,13 @@
       };
     };
   in {
-    diskoConfigurations.nas-0 = import ./disko/zfs-single-disk.nix [ "/dev/disk/by-id/nvme-KINGSTON_SNV3S500G_50026B76876DA41F" ];
-
     nixosConfigurations = builtins.mapAttrs (name: hostSel:
       nixpkgs.lib.nixosSystem {
         system = hostSel.systemArchSel;
         specialArgs = { inherit hostSel; };
         modules = [
           disko.nixosModules.disko
-          { disko = import hostSel.diskoFileSel hostSel.rootPoolDisksSel; }
+          hostSel.diskoFileSel
           ./hosts/nas/configuration.nix
         ];
       }
