@@ -9,7 +9,7 @@
     let
     allHostsSel = {
       nas-0 = {
-        hostnameSel = "nas-0";
+        hostNameSel = "nas-0";
         hostIdSel = "21b841de";
         systemArchSel = "x86_64-linux";
         isUefiSel = true;

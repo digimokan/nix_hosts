@@ -52,7 +52,7 @@ replacement disk is put into a machine.
 Update the host's attribute set by obtaining the following
 [`flake.nix`](../flake.nix) parameters at the minimimal installer prompt:
 
-1. `hostnameSel`: a hostname that must be unique, among all LANs.
+1. `hostNameSel`: a hostname that must be unique, among all LANs.
 
 2. `hostIdSel`: used by ZFS to uniquely identify ZFS pools.
 
@@ -76,27 +76,17 @@ Update the host's attribute set by obtaining the following
 
 ### Install NixOS To The Machine
 
-1. Set required host environment vars:
+1. Format the disks (as required), and install and configure NixOS:
 
    ```shell
-   $ REPO_SEL="github:digimokan/nix_hosts"
+   $ sudo nix --extra-experimental-features "nix-command flakes" \
+       run --no-write-lock-file "github:nix-community/disko#disko-install" -- \
+       --flake "github:digimokan/nix_hosts#<HOST_NAME_SEL_HERE>" \
+       $([ -d /sys/firmware/efi ] && echo "--write-efi-boot-entries")
    ```
 
-   ```shell
-   $ HOSTNAME_SEL="<hostname from flake.nix>"
-   ```
-
-   ```shell
-   $ [ -d /sys/firmware/efi ] && UEFI_SEL="--write-efibootmgr" || UEFI_SEL=""
-   ```
-
-2. Format the disks (as required), and install and configure NixOS:
-
-   ```shell
-   $ sudo nix run github:nix-community/disko#disko-install -- \
-       --flake "${REPO_SEL}#${HOSTNAME_SEL}" \
-       "${UEFI_SEL}"
-   ```
+   * __NOTE: replace `HOST_NAME_SEL_HERE` with target machine `hostNameSel` from
+     [`flake.nix`](../flake.nix)__
 
 ## Source Code Layout
 

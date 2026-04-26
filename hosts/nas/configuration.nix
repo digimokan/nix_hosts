@@ -1,6 +1,6 @@
 { pkgs, hostSel, ... }: {
   boot.supportedFilesystems = [ "zfs" ];
-  networking.hostName = hostSel.hostnameSel;
+  networking.hostName = hostSel.hostNameSel;
   networking.hostId = hostSel.hostIdSel;
 
   fileSystems."/data" = {
