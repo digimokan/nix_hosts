@@ -30,7 +30,7 @@
         specialArgs = { inherit hostSel; };
         modules = [
           disko.nixosModules.disko
-          { disko.devices = (import hostSel.diskoFileSel hostSel.rootPoolDisksSel).devices; }
+          (import hostSel.diskoFileSel hostSel.rootPoolDisksSel)
           ./hosts/nas/configuration.nix
         ];
       }
