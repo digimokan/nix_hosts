@@ -1,4 +1,7 @@
-{ pkgs, hostSel, lib, ... }: {
+{ pkgs, hostSel, lib, ... }:
+let
+  zfsSpinupTimeout = 10;
+in {
   boot.supportedFilesystems = [ "zfs" ];
   networking.hostName = hostSel.hostNameSel;
   networking.hostId = hostSel.hostIdSel;
@@ -20,8 +23,15 @@
     options = [
       "nofail"
       "canmount=on"
-      "x-systemd.device-timeout=1s"
+      "x-systemd.device-timeout=${toString zfsSpinupTimeout}s"
     ];
+  };
+
+  systemd.services."zfs-import@zdata" = {
+    serviceConfig = {
+      TimeoutSec = zfsSpinupTimeout;
+      JobTimeoutSec = zfsSpinupTimeout;
+    };
   };
 
   users.users.root.initialPassword = "nixos";
