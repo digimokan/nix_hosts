@@ -91,7 +91,7 @@ Multiple symlinks for the same disk will exist. Use these symlinks:
 
    * __NVME__: use ID prefixed with `nvme-eui.`.
 
-   * __USB Drives (not in Enclosures__)__: use ID prefixed with `usb-`.
+   * __USB Drives (not in Enclosures)__: use ID prefixed with `usb-`.
 
 ### Install NixOS On The Machine
 
