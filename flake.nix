@@ -19,13 +19,13 @@
   in {
     nixosConfigurations.nas-0 = nixpkgs.lib.nixosSystem {
       system = allHostsSel.nas-0.systemArchSel;
+      specialArgs = {
+        hostSel = allHostsSel.nas-0;
+      };
       modules = [
-        disko.nixosModules.disko {
-          disko.specialArgs = { hostSel = allHostsSel.nas-0; };
-          _module.args.hostSel = allHostsSel.nas-0;
-        }
-        disko/zfs-single-disk.nix
-        hosts/nas/configuration.nix
+        disko.nixosModules.disko
+          ./disko/zfs-single-disk.nix
+          ./hosts/nas/configuration.nix
       ];
     };
   };
