@@ -1,9 +1,9 @@
-{ hostSel, lib, ... }: {
+disksSel: {
   disko.devices = {
     disk = {
       main = {
         type = "disk";
-        device = lib.head hostSel.rootPoolDisksSel;
+        device = builtins.elemAt disksSel 0;
         content = {
           type = "gpt";
           partitions = {

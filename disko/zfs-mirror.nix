@@ -1,9 +1,9 @@
-{ hostSel, ... }: {
+disksSel: {
   disko.devices = {
     disk = {
       main = {
         type = "disk";
-        device = builtins.elemAt hostSel.rootPoolDisksSel 0;
+        device = builtins.elemAt disksSel 0;
         content = {
           type = "gpt";
           partitions = {
@@ -32,7 +32,7 @@
       };
       secondary = {
         type = "disk";
-        device = builtins.elemAt hostSel.rootPoolDisksSel 1;
+        device = builtins.elemAt disksSel 1;
         content = {
           type = "gpt";
           partitions = {

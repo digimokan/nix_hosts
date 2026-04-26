@@ -29,3 +29,4 @@
   users.users.root.initialPassword = "nixos";
   system.stateVersion = "24.11";
 }
+

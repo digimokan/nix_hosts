@@ -6,28 +6,35 @@
   };
 
   outputs = { self, nixpkgs, disko, ... }:
-    let
+  let
     allHostsSel = {
       nas-0 = {
         hostNameSel = "nas-0";
         hostIdSel = "21b841de";
         systemArchSel = "x86_64-linux";
         isUefiSel = true;
-        rootPoolDisksSel = [ "/dev/disk/by-id/nvme-KINGSTON_SNV3S500G_50026B76876DA41F" ];
+        diskoFileSel = ./disko/zfs-single-disk.nix;
+        rootPoolDisksSel = [
+          "/dev/disk/by-id/nvme-KINGSTON_SNV3S500G_50026B76876DA41F"
+        ];
       };
     };
   in {
-    nixosConfigurations.nas-0 = nixpkgs.lib.nixosSystem {
-      system = allHostsSel.nas-0.systemArchSel;
-      specialArgs = {
-        hostSel = allHostsSel.nas-0;
-      };
-      modules = [
-        disko.nixosModules.disko
-          ./disko/zfs-single-disk.nix
+    diskoConfigurations = builtins.mapAttrs (name: hostSel:
+      import hostSel.diskoFileSel hostSel.rootPoolDisksSel
+    ) allHostsSel;
+
+    nixosConfigurations = builtins.mapAttrs (name: hostSel:
+      nixpkgs.lib.nixosSystem {
+        system = hostSel.systemArchSel;
+        specialArgs = { inherit hostSel; };
+        modules = [
+          disko.nixosModules.disko
+          (import hostSel.diskoFileSel hostSel.rootPoolDisksSel)
           ./hosts/nas/configuration.nix
-      ];
-    };
+        ];
+      }
+    ) allHostsSel;
   };
 }
 
