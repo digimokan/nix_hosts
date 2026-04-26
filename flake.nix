@@ -28,7 +28,7 @@
         specialArgs = { inherit hostSel; };
         modules = [
           disko.nixosModules.disko
-          (import hostSel.diskoFileSel hostSel.rootPoolDisksSel)
+          { disko = import hostSel.diskoFileSel hostSel.rootPoolDisksSel; }
           ./hosts/nas/configuration.nix
         ];
       }

@@ -1,5 +1,5 @@
 disksSel: {
-  disko.devices = {
+  devices = {
     disk = {
       main = {
         type = "disk";
