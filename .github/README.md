@@ -12,6 +12,8 @@ NixOS configuration to set up various machines.
 * [Quick Start](#quick-start)
     * [Boot From Installer Image](#boot-from-installer-image)
     * [Bootstrap New Machine Or Disks](#bootstrap-new-machine-or-disks)
+        * [Set Host Attributes](#set-host-attributes)
+        * [Set Host Disks](#set-host-disks)
     * [Install NixOS To The Machine](#install-nixos-to-the-machine)
 * [Source Code Layout](#source-code-layout)
 * [Contributing](#contributing)
@@ -49,8 +51,11 @@ NixOS configuration to set up various machines.
 Required when a new machine is added to [`flake.nix`](../flake.nix), or a new or
 replacement disk is put into a machine.
 
+#### Set Host Attributes
+
 Update the host's attribute set by obtaining the following
-[`flake.nix`](../flake.nix) parameters at the minimimal installer prompt:
+[`flake.nix`](../flake.nix) parameters from the target machine's minimimal
+installer prompt:
 
 1. `hostNameSel`: a hostname that must be unique, among all LANs.
 
@@ -68,42 +73,51 @@ Update the host's attribute set by obtaining the following
    $ [ -d /sys/firmware/efi ] && echo "BIOS is UEFI." || echo "BIOS is Legacy."
    ```
 
-5. `rootPoolDisksSel`: unique S/N IDs for serial-numbered disks in ZFS root pool.
+#### Set Host Disks
+
+Update the host file in [`disk_ids`](../disk_ids/). The file should contain the
+disk IDs of the disk(s) to be used for the machine's root pool.
+
+On the target machine, at the minimimal installer prompt, obtain the disk IDs
+by running this query:
 
    ```shell
    $ ls -l /dev/disk/by-id/
    ```
 
-### Install NixOS To The Machine
+### Install NixOS On The Machine
 
-1. Format the disks (as required), and install and configure NixOS:
+On the target machine, at the minimal installer prompt, format the disks
+(as required), and install and configure NixOS:
 
    ```shell
-   $ sudo nix --extra-experimental-features "nix-command flakes" \
-       run --no-write-lock-file "github:nix-community/disko#disko-install" -- \
-       --flake "github:digimokan/nix_hosts#<HOST_NAME_SEL_HERE>" \
-       $([ -d /sys/firmware/efi ] && echo "--write-efi-boot-entries")
+   $ sudo ./install.sh <hostname>
    ```
-
-   * __NOTE: replace `HOST_NAME_SEL_HERE` with target machine `hostNameSel` from
-     [`flake.nix`](../flake.nix)__
 
 ## Source Code Layout
 
 ```
 ├─┬ nix_hosts/
 │ │
-│ ├── flake.nix             # registry of hosts, repo sources, shared options
+│ ├── disk_ids/             # one file per host, each with the host's disk IDs
 │ │
 │ ├─┬ disko/                # disk partitioning for new disks, replacement disks
 │ │ │
 │ │ ├── zfs-mirror.nix      # ZFS root pool on two mirrored disks
 │ │ └── zfs-single-disk.yml # ZFS root pool on single disk
 │ │
-│ └─┬ hosts/                # config for different types of hosts
-│   │
-│   └── nas/                # config for a NAS host
-│
+│ ├─┬ hosts/                # config for different types of hosts
+│ │ │
+│ │ └── nas/                # config for a NAS host
+│ │
+│ ├── flake.lock            # locks the upstream repo states of flake.nix inputs
+│ │
+│ ├── flake.nix             # registry of hosts, repo sources, shared options
+│ │
+│ ├── install.sh            # formats disk(s) and installs NixOS on host
+│ │
+│ ├── nuke-disk.sh          # utility script to wipe a disk
+│ │
 ```
 
 ## Contributing
