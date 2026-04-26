@@ -5,32 +5,78 @@
     disko.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, disko, ... }:
-  let
-    allHostsSel = {
-      nas-0 = {
-        hostNameSel = "nas-0";
-        hostIdSel = "21b841de";
-        systemArchSel = "x86_64-linux";
-        isUefiSel = true;
-        diskoFileSel = ./disko/zfs-single-disk.nix;
-        rootPoolDisksSel = [
-          "/dev/disk/by-id/nvme-KINGSTON_SNV3S500G_50026B76876DA41F"
-        ];
-      };
+  outputs = { self, nixpkgs, disko, ... }: {
+    nixosConfigurations.nas-0 = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        disko.nixosModules.disko
+        ({
+          disko.devices = {
+            disk = {
+              main = {
+                type = "disk";
+                device = "/dev/disk/by-id/nvme-KINGSTON_SNV3S500G_50026B76876DA41F";
+                content = {
+                  type = "gpt";
+                  partitions = {
+                    bios_boot = {
+                      size = "1M";
+                      type = "EF02";
+                    };
+                    ESP = {
+                      size = "512M";
+                      type = "EF00";
+                      content = {
+                        type = "filesystem";
+                        format = "vfat";
+                        mountpoint = "/boot";
+                      };
+                    };
+                    zfs = {
+                      size = "100%";
+                      content = {
+                        type = "zfs";
+                        pool = "zroot";
+                      };
+                    };
+                  };
+                };
+              };
+            };
+            zpool.zroot = {
+              type = "zpool";
+              mountpoint = "/";
+              rootFsOptions = {
+                compression = "lz4";
+                acltype = "posixacl";
+                xattr = "sa";
+                atime = "off";
+              };
+              datasets = {
+                "var" = {
+                  type = "zfs_fs";
+                  mountpoint = "/var";
+                };
+              };
+            };
+          };
+
+          boot.supportedFilesystems = [ "zfs" ];
+          networking.hostName = "nas-0";
+          networking.hostId = "21b841de";
+          nix.settings.experimental-features = [ "nix-command" "flakes" ];
+          boot.loader.systemd-boot.enable = true;
+          boot.loader.efi.canTouchEfiVariables = true;
+          fileSystems."/data" = {
+            device = "zdata";
+            fsType = "zfs";
+            options = [ "nofail" "canmount=on" ];
+          };
+          users.users.root.initialPassword = "nixos";
+          system.stateVersion = "24.11";
+        })
+      ];
     };
-  in {
-    nixosConfigurations = builtins.mapAttrs (name: hostSel:
-      nixpkgs.lib.nixosSystem {
-        system = hostSel.systemArchSel;
-        specialArgs = { inherit hostSel; };
-        modules = [
-          disko.nixosModules.disko
-          hostSel.diskoFileSel
-          ./hosts/nas/configuration.nix
-        ];
-      }
-    ) allHostsSel;
   };
 }
 
