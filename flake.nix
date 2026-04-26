@@ -21,7 +21,7 @@
     };
   in {
     diskoConfigurations = builtins.mapAttrs (name: hostSel:
-      (import hostSel.diskoFileSel hostSel.rootPoolDisksSel)
+      import hostSel.diskoFileSel hostSel.rootPoolDisksSel
     ) allHostsSel;
 
     nixosConfigurations = builtins.mapAttrs (name: hostSel:
@@ -30,7 +30,7 @@
         specialArgs = { inherit hostSel; };
         modules = [
           disko.nixosModules.disko
-          (import hostSel.diskoFileSel hostSel.rootPoolDisksSel)
+          { disko.devices = (import hostSel.diskoFileSel hostSel.rootPoolDisksSel).devices; }
           ./hosts/nas/configuration.nix
         ];
       }
