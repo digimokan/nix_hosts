@@ -20,10 +20,6 @@
       };
     };
   in {
-    diskoConfigurations = builtins.mapAttrs (name: hostSel:
-      import hostSel.diskoFileSel hostSel.rootPoolDisksSel
-    ) allHostsSel;
-
     nixosConfigurations = builtins.mapAttrs (name: hostSel:
       nixpkgs.lib.nixosSystem {
         system = hostSel.systemArchSel;

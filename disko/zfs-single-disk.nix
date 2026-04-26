@@ -3,8 +3,7 @@ disksSel: {
     disk = {
       main = {
         type = "disk";
-        # device = builtins.elemAt disksSel 0;
-        device = "/dev/disk/by-id/nvme-KINGSTON_SNV3S500G_50026B76876DA41F";
+        device = builtins.elemAt disksSel 0;
         content = {
           type = "gpt";
           partitions = {
