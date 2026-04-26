@@ -52,10 +52,12 @@ if [ -d "/sys/firmware/efi" ]; then
     DISKO_ARGS+=(--write-efi-boot-entries)
 fi
 
+echo "Locking flake dependencies..."
+nix --extra-experimental-features "nix-command flakes" flake lock 2>/dev/null || true
+
 echo "Deploying configuration for host: ${HOST}"
 
 nix --extra-experimental-features "nix-command flakes" \
-  --no-write-lock-file \
   run "github:nix-community/disko#disko-install" -- \
   --flake ".#${HOST}" \
   "${DISKO_ARGS[@]}"
