@@ -1,1 +1,1 @@
-/dev/disk/by-id/nvme-KINGSTON_SNV3S500G_50026B76876DA41F
+/dev/disk/by-id/nvme-eui.00000000000000000026b76876da41f5

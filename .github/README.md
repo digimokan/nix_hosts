@@ -85,6 +85,14 @@ by running this query:
    $ ls -l /dev/disk/by-id/
    ```
 
+Multiple symlinks for the same disk will exist. Use these symlinks:
+
+   * __SATA SSD and USB Enclosures__: use ID prefixed with `ata-`.
+
+   * __NVME__: use ID prefixed with `nvme-eui.`.
+
+   * __USB Drives (not in Enclosures__)__: use ID prefixed with `usb-`.
+
 ### Install NixOS On The Machine
 
 On the target machine, at the minimal installer prompt, format the disks
