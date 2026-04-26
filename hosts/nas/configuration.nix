@@ -11,7 +11,7 @@
   boot.loader.grub = lib.mkIf (!hostSel.isUefiSel) {
     enable = true;
     zfsSupport = true;
-    devices = hostSel.rootPoolDisksSel;
+    devices = [ "nodev" ];
   };
 
   fileSystems."/data" = {

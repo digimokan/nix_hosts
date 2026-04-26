@@ -1,3 +1,4 @@
+
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -14,9 +15,6 @@
         systemArchSel = "x86_64-linux";
         isUefiSel = true;
         diskoFileSel = ./disko/zfs-single-disk.nix;
-        rootPoolDisksSel = [
-          "/dev/disk/by-id/nvme-KINGSTON_SNV3S500G_50026B76876DA41F"
-        ];
       };
     };
   in {
