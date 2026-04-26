@@ -3,21 +3,21 @@
 set -euo pipefail
 
 if [ "${EUID}" -ne 0 ]; then
-    echo "Error: Please run this script with sudo."
-    exit 1
+  echo "Error: Please run this script with sudo."
+  exit 1
 fi
 
 TARGET="${1:-}"
 
 if [ -z "${TARGET}" ]; then
-    echo "Error: No disk provided."
-    echo "Usage: ${0} /dev/nvme0n1"
-    exit 1
+  echo "Error: No disk provided."
+  echo "Usage: ${0} /dev/nvme0n1"
+  exit 1
 fi
 
 if [ ! -b "${TARGET}" ]; then
-    echo "Error: '${TARGET}' is not a valid block device."
-    exit 1
+  echo "Error: '${TARGET}' is not a valid block device."
+  exit 1
 fi
 
 echo "☢️ Nuking ${TARGET}..."
