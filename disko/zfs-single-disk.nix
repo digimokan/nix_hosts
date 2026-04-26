@@ -10,7 +10,7 @@
             size = "1M";
             type = "EF02";
           };
-          ESP = if hostSel.isUefiSel then {
+          ESP = {
             size = "512M";
             type = "EF00";
             content = {
@@ -18,7 +18,7 @@
               format = "vfat";
               mountpoint = "/boot";
             };
-          } else {};
+          };
           zfs = {
             size = "100%";
             content = {
@@ -31,7 +31,6 @@
     };
     zpool.zroot = {
       type = "zpool";
-      mode = "";
       mountpoint = "/";
       rootFsOptions = {
         compression = "lz4";
@@ -48,4 +47,3 @@
     };
   };
 }
-
