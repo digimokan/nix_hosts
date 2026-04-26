@@ -48,12 +48,15 @@ else
     exit 1
 fi
 
+if [ -d "/sys/firmware/efi" ]; then
+    DISKO_ARGS+=(--write-efi-boot-entries)
+fi
+
 echo "Deploying configuration for host: ${HOST}"
 
 nix --extra-experimental-features "nix-command flakes" \
+  --no-write-lock-file \
   run "github:nix-community/disko#disko-install" -- \
   --flake ".#${HOST}" \
-  --no-write-lock-file \
-  "${DISKO_ARGS[@]}" \
-  "$([ -d /sys/firmware/efi ] && echo '--write-efi-boot-entries')"
+  "${DISKO_ARGS[@]}"
 
