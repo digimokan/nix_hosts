@@ -19,8 +19,8 @@
   in {
     nixosConfigurations.nas-0 = nixpkgs.lib.nixosSystem {
       system = allHostsSel.nas-0.systemArchSel;
-      specialArgs = { inherit allHostsSel; hostSel = allHostsSel.nas-0; };
       modules = [
+        { _module.args.hostSel = allHostSel.nas-0; }
         disko.nixosModules.disko
         disko/zfs-single-disk.nix
         hosts/nas/configuration.nix
