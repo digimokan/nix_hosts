@@ -20,7 +20,7 @@
     nixosConfigurations.nas-0 = nixpkgs.lib.nixosSystem {
       system = allHostsSel.nas-0.systemArchSel;
       modules = [
-        { _module.args.hostSel = allHostSel.nas-0; }
+        { _module.args.hostSel = allHostsSel.nas-0; }
         disko.nixosModules.disko
         disko/zfs-single-disk.nix
         hosts/nas/configuration.nix
