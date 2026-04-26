@@ -3,7 +3,7 @@
     disk = {
       main = {
         type = "disk";
-        device = builtins.elemAt hostSel.rootPoolDisksSel 0;
+        device = lib.head hostSel.rootPoolDisksSel;
         content = {
           type = "gpt";
           partitions = {
