@@ -1,4 +1,4 @@
-{ hostSel, ... }: {
+{ hostSel, lib, ... }: {
   disko.devices = {
     disk = {
       main = {
