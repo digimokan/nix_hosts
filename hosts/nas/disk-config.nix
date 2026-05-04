@@ -3,6 +3,7 @@
     disk = {
       main = {
         type = "disk";
+        device = "/dev/disk/by-id/nvme-eui.00000000000000000026b76876da41f5";
         content = {
           type = "gpt";
           partitions = {
@@ -33,6 +34,7 @@
     };
     zpool.zroot = {
       type = "zpool";
+      mode = "";
       mountpoint = "/";
       rootFsOptions = {
         compression = "lz4";

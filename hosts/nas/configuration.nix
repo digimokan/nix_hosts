@@ -1,40 +1,20 @@
-{ pkgs, hostSel, lib, ... }:
-let
-  zfsSpinupTimeout = 10;
-in {
-  boot.supportedFilesystems = [ "zfs" ];
-  networking.hostName = hostSel.hostNameSel;
-  networking.hostId = hostSel.hostIdSel;
+{ config, flake, ... }: {
+  imports = [
+    ./disk-config.nix
+    flake.nixosModules.default
+  ];
 
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  # Bootloader settings.
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
 
-  boot.loader.systemd-boot.enable = hostSel.isUefiSel;
-  boot.loader.efi.canTouchEfiVariables = hostSel.isUefiSel;
-
-  boot.loader.grub = lib.mkIf (!hostSel.isUefiSel) {
+  # Enable SSH server.
+  services.openssh = {
     enable = true;
-    zfsSupport = true;
-    devices = [ "nodev" ];
+    settings.PermitRootLogin = "yes"; # TODO: just for initial FreeBSD setup
   };
 
-  fileSystems."/data" = {
-    device = "zdata";
-    fsType = "zfs";
-    options = [
-      "nofail"
-      "canmount=on"
-      "x-systemd.device-timeout=${toString zfsSpinupTimeout}s"
-    ];
-  };
-
-  systemd.services."zfs-import@zdata" = {
-    serviceConfig = {
-      TimeoutSec = zfsSpinupTimeout;
-      JobTimeoutSec = zfsSpinupTimeout;
-    };
-  };
-
-  users.users.root.initialPassword = "nixos";
-  system.stateVersion = "24.11";
+  # pin the version of "configuration defaults" we are using
+  system.stateVersion = "24.05";
 }
 
