@@ -10,7 +10,7 @@
     in {
       # The master identity decrypted to /tmp for rekeying when,
       # agenix rekey` is run.
-      masterIdentities = [ /tmp/id_age /tmp/id_age_ ];
+      masterIdentities = [ /tmp/id_age ];
 
       # Determines the public key for this specific machine.
       hostPubkey = let
