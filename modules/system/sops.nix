@@ -18,7 +18,9 @@ in {
     sops.defaultSopsFile = ../../secrets/secrets.yaml;
     sops.defaultSopsFormat = "yaml";
 
-    # path on the target machine where the private key will live
+    # Tell the NixOS host exactly where to look for its private key.
+    # Host will use the private key to decrypt the secrets.yaml file during the
+    # boot sequence.
     sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
   };
 
