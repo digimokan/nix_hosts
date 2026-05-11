@@ -1,14 +1,13 @@
-{
+{ hostName, ... }: {
   imports = [
     ./disko-config.nix
   ];
 
-  networking.hostName = "nas";
-
-  custom.system.networking.enable = true;
-
-  custom.users.root.enable = true;
-
   system.stateVersion = "24.05";
+
+  custom.system.boot.enable = true;
+  custom.system.networking.enable = true;
+  custom.system.networking.hostName = hostName;
+  custom.users.root.enable = true;
 }
 
