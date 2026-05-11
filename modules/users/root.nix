@@ -15,9 +15,13 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    sops.secrets.root_password = {
+      neededForUsers = true;
+    };
+
     users.users.root = {
       isNormalUser = false;
-      # TODO: put password path here
+      hashedPasswordFile = config.sops.secrets.root_password.path;
     };
   };
 

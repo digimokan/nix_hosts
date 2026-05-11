@@ -12,15 +12,21 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, disko, ... } @inputs: {
+  outputs = { self, nixpkgs, nixpkgs-unstable, disko, sops-nix, ... } @inputs: {
     nixosConfigurations = {
       nas = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         specialArgs = { inherit inputs; };
         modules = [
           disko.nixosModules.disko
+          sops-nix.nixosModules.sops
           ./hosts/nas/default.nix
           ./modules/default.nix
         ];

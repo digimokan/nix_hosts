@@ -5,6 +5,8 @@
 
   system.stateVersion = "24.05";
 
+  custom.system.sops.enable = true;
+
   custom.system.systemdBootEfi.enable = true;
 
   custom.system.networking.enable = true;
