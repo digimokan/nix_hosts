@@ -1,0 +1,5 @@
+result
+*.qcow2
+*.iso
+*_privkey
+
