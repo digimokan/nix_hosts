@@ -2,15 +2,15 @@
 
 let
 
-  cfg = config.custom.system.boot;
+  cfg = config.custom.system.systemdBootEfi;
 
 in {
 
-  options.custom.system.boot = {
+  options.custom.system.systemdBootEfi = {
     enable = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "Enable standard EFI systemd-boot";
+      description = "Enable systemd-boot with EFI variable modification";
     };
   };
 

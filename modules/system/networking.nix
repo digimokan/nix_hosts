@@ -10,12 +10,12 @@ in {
     enable = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "Enable custom networking configuration";
+      description = "Enable networking and hostname management";
     };
+
     hostName = lib.mkOption {
       type = lib.types.str;
-      default = "nixos";
-      description = "The assigned hostname for the machine";
+      description = "REQUIRED: The assigned hostname for the machine";
     };
   };
 
