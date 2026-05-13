@@ -2,14 +2,20 @@
 
 set -euo pipefail
 
+# --- Configuration ---
+DEFAULT_REPO_URL="https://github.com/digimokan/nixos_hosts.git"
+
 # --- Globals ---
 TARGET_HOST=""
 REMOTE_IP=""
+REPO_URL="${DEFAULT_REPO_URL}"
 DEPLOY_MODE="local"
 WIPE_DISKS="no"
 REBOOT_REMOTE="yes"
 
-# --- Utility Functions ---
+# ==========================================
+# Utility Functions
+# ==========================================
 
 die() {
   printf "Error: %s\n" "${1}" >&2
@@ -18,30 +24,26 @@ die() {
 
 print_usage() {
   cat <<EOF
-  USAGE: $(basename "${0}") [OPTIONS]
+USAGE: $(basename "${0}") [OPTIONS]
 
-  PURPOSE:
-  * Format disks, deploy NixOS, and securely inject pure-Age SOPS cryptography.
+PURPOSE:
+  * Format disks via Disko, deploy NixOS, and securely inject pure-Age SOPS keys.
   * For remote deployments, the orchestrating machine decrypts the host keypair
-  locally and securely transfers it to the target over SSH.
+    locally and securely transfers it to the target over SSH.
 
-  OPTIONS:
+OPTIONS:
   -t, --target HOST      (Required) The NixOS configuration name (e.g., nas)
   -r, --remote IP        (Optional) Deploy remotely to the target IP address
+  -u, --url URL          (Optional) Git repository URL to clone on remote target
+                         Default: ${DEFAULT_REPO_URL}
   -w, --wipe-disks       (Optional) Aggressively nuke old partitions and labels
-  SAFETY: Only executes if running on the NixOS Live ISO.
+                         SAFETY: Only executes if running on the NixOS Live ISO.
   -n, --no-reboot-remote (Optional) Do NOT reboot the remote machine after deployment
   -h, --help             Show this help menu and exit
 
-  CRYPTOGRAPHY:
-  The script automatically searches for the target's Age keypair inside:
-  secrets/admin_secrets.yaml (Look for key: age_keypair_host_<HOST>)
-  It utilizes the SOPS_AGE_KEY environment variable (or ~/.config/sops/age/keys.txt)
-  for decryption on the orchestrating machine.
-
-    EXAMPLES:
-    Local Deploy (from minimal ISO):  sudo ./$(basename "${0}") -t nas -w
-    Remote Deploy (SSH to minimal ISO): ./$(basename "${0}") -t nas -r 192.168.1.50 -w
+EXAMPLES:
+  Local Deploy  (run on minimal ISO): sudo ./$(basename "${0}") -t nas -w
+  Remote Deploy (SSH to minimal ISO):      ./$(basename "${0}") -t nas -w -r 192.168.1.50
 EOF
 }
 
@@ -61,7 +63,7 @@ parse_args() {
         REBOOT_REMOTE="no"
         shift
         ;;
-      -t|--target|-r|--remote)
+      -t|--target|-r|--remote|-u|--url)
         shift
         if [ "${#}" -eq 0 ] || [ "${1:0:1}" = "-" ]; then
           die "Argument for ${flag} is missing."
@@ -71,6 +73,7 @@ parse_args() {
         case "${flag}" in
           -t|--target) TARGET_HOST="${val}" ;;
           -r|--remote) REMOTE_IP="${val}"; DEPLOY_MODE="remote" ;;
+          -u|--url)    REPO_URL="${val}" ;;
         esac
         shift
         ;;
@@ -88,8 +91,6 @@ parse_args() {
   fi
 }
 
-# --- Cryptography Extraction ---
-
 extract_host_key() {
   echo "🔐 Attempting to extract pure-Age keypair for host '${TARGET_HOST}'..."
 
@@ -98,15 +99,14 @@ extract_host_key() {
     die "Admin secrets vault not found at: ${secrets_file}"
   fi
 
-  # Use SOPS to decrypt the vault, and yq (nix-shell) to parse the specific key
+  # Extract using SOPS and yq
   local key_value
   key_value=$(nix-shell -p yq --run "sops -d ${secrets_file} | yq -r '.age_keypair_host_${TARGET_HOST} // empty'")
 
   if [ -z "${key_value}" ]; then
-    die "Could not find 'age_keypair_host_${TARGET_HOST}' inside ${secrets_file}. Did you add it?"
+    die "Could not find 'age_keypair_host_${TARGET_HOST}' inside ${secrets_file}."
   fi
 
-  # Write the extracted key to a highly secure temporary file
   local temp_key_file
   temp_key_file=$(mktemp)
   chmod 600 "${temp_key_file}"
@@ -116,11 +116,15 @@ extract_host_key() {
   echo "${temp_key_file}"
 }
 
-# --- Disk Wiping ---
+inject_key_to_mnt() {
+  local key_path="${1}"
+  echo "💉 Injecting SOPS host keypair into the newly formatted volume (/mnt)..."
+  mkdir -p /mnt/var/lib/sops-nix
+  cp "${key_path}" /mnt/var/lib/sops-nix/host_keypair.age
+  chmod 400 /mnt/var/lib/sops-nix/host_keypair.age
+}
 
 wipe_target_disks() {
-  local target_disks=("${@}")
-
   echo "🛡️ Validating safety constraints for disk wipe..."
 
   if [ "$(uname -s)" != "Linux" ]; then
@@ -131,8 +135,16 @@ wipe_target_disks() {
     die "Safety abort: Root filesystem is not 'overlay'. You do not appear to be running the NixOS Live ISO."
   fi
 
+  # Find all block devices that are disks (ignoring loopbacks and ramdisks)
+  local target_disks=()
+  mapfile -t target_disks < <(lsblk -dpno NAME | grep -E '/dev/(sd|nvme|vd)')
+
+  if [ "${#target_disks[@]}" -eq 0 ]; then
+    die "No suitable block devices found to wipe."
+  fi
+
   echo ""
-  echo "⚠️  WARNING: You are about to DESTROY ALL DATA on the following disks:"
+  echo "⚠️  WARNING: You are about to DESTROY ALL DATA on ALL detected disks:"
   for disk in "${target_disks[@]}"; do
     echo "   -> ${disk}"
   done
@@ -152,188 +164,118 @@ wipe_target_disks() {
   umount -R /mnt 2>/dev/null || true
   zfs unmount -a 2>/dev/null || true
   zpool export -f -a 2>/dev/null || true
-  dmsetup remove_all -f 2>/dev/null || true
-  vgchange -an 2>/dev/null || true
-  mdadm --stop --scan 2>/dev/null || true
 
   for disk in "${target_disks[@]}"; do
     echo "☢️ Nuking ${disk}..."
-
-    echo "   - Running blkdiscard..."
-    blkdiscard -f "${disk}" 2>/dev/null || echo "     Warning: blkdiscard failed or is unsupported. Proceeding to software wipe..."
-
-    echo "   - Wiping filesystem signatures..."
-    wipefs -a -f "${disk}p"* 2>/dev/null || true
-    wipefs -a -f "${disk}-part"* 2>/dev/null || true
+    blkdiscard -f "${disk}" 2>/dev/null || true
     wipefs -a -f "${disk}" 2>/dev/null || true
-
-    echo "   - Zapping partition table..."
     sgdisk --zap-all "${disk}" >/dev/null 2>&1 || true
-
-    echo "   - Zeroing headers (fallback)..."
-    dd if=/dev/zero of="${disk}" bs=1M count=100 status=none || true
-
-    echo "   - Probing kernel cache..."
-    partprobe "${disk}" 2>/dev/null || echo "     Warning: partprobe failed. The kernel is locked. A reboot is recommended."
+    partprobe "${disk}" 2>/dev/null || true
     sleep 2
   done
-  echo "✅ Wipe sequence complete. Disks are virgin hardware."
+  echo "✅ Wipe sequence complete."
 }
 
-# --- Deployment Logic ---
+execute_disko_format() {
+  local target="${1}"
+  echo "⚙️ Formatting disks and mounting to /mnt via Disko..."
+
+  # Run pure disko (formats and mounts, does NOT install NixOS)
+  nix --extra-experimental-features "nix-command flakes" \
+    run "github:nix-community/disko -- --mode disko .#${target}"
+}
+
+execute_nixos_install() {
+  local target="${1}"
+  echo "🚀 Installing NixOS to /mnt..."
+  # Note: do not have installer prompt to set initial root password
+  nixos-install --flake ".#${target}" --no-root-passwd
+}
+
+# This function contains the actual build steps, meant to run on the target host
+run_build_sequence() {
+  local target="${1}"
+  local do_wipe="${2}"
+  local key_file="${3}"
+
+  if [ "${EUID}" -ne 0 ]; then
+    die "Build sequence requires root privileges."
+  fi
+
+  if [ "${do_wipe}" = "yes" ]; then
+    wipe_target_disks
+  fi
+
+  execute_disko_format "${target}"
+  inject_key_to_mnt "${key_file}"
+  execute_nixos_install "${target}"
+}
 
 deploy_local() {
-  if [ "${EUID}" -ne 0 ]; then
-    die "Local deployment requires root privileges. Please run with sudo."
-  fi
+  echo "🚀 Initiating local deployment for ${TARGET_HOST}..."
 
-  # 1. Read Disk Configuration
-  local disk_file="disk_ids/${TARGET_HOST}.txt"
-  if [ ! -f "${disk_file}" ]; then
-    die "Disk list file '${disk_file}' not found."
-  fi
-
-  local disks=()
-  mapfile -t disks < <(grep -v '^[[:space:]]*$' "${disk_file}" || true)
-
-  if [ "${#disks[@]}" -eq 0 ]; then
-    die "File ${disk_file} is empty or contains no valid disk IDs."
-  fi
-
-  for disk in "${disks[@]}"; do
-    if [ ! -b "${disk}" ]; then
-      die "Hardware target '${disk}' is not a valid block device on this machine."
-    fi
-  done
-
-  # 2. Wipe Disks (If Requested)
-  if [ "${WIPE_DISKS}" = "yes" ]; then
-    wipe_target_disks "${disks[@]}"
-  fi
-
-  # 3. Prepare Disko Arguments
-  local disko_args=()
-  if [ "${#disks[@]}" -eq 1 ]; then
-    echo "Detected 1 disk. Configuring for single drive..."
-    disko_args+=(--disk main "${disks[0]}")
-  elif [ "${#disks[@]}" -eq 2 ]; then
-    echo "Detected 2 disks. Configuring for mirror..."
-    disko_args+=(--disk main "${disks[0]}" --disk secondary "${disks[1]}")
-  else
-    die "Script expects 1 or 2 disks. Found ${#disks[@]} in ${disk_file}."
-  fi
-
-  if [ -d "/sys/firmware/efi" ]; then
-    disko_args+=(--write-efi-boot-entries)
-  fi
-
-  # 4. Extract Keypair (Locally)
   local temp_key_file
   temp_key_file=$(extract_host_key)
 
-  # 5. Format Disks (Mounts them to /mnt)
-  echo "⚙️ Formatting disks via Disko..."
-  nix --extra-experimental-features "nix-command flakes" \
-    run "github:nix-community/disko#disko-install" -- \
-      --flake ".#${TARGET_HOST}" \
-      --mode disko \
-      "${disko_args[@]}"
+  run_build_sequence "${TARGET_HOST}" "${WIPE_DISKS}" "${temp_key_file}"
 
-    # 6. Inject the Keypair
-    echo "💉 Injecting SOPS host keypair into the newly formatted volume..."
-    mkdir -p /mnt/var/lib/sops-nix
-    cp "${temp_key_file}" /mnt/var/lib/sops-nix/host_keypair.age
-    chmod 400 /mnt/var/lib/sops-nix/host_keypair.age
-    rm -f "${temp_key_file}"
-
-    # 7. Install NixOS
-    echo "🚀 Installing NixOS to /mnt..."
-    nixos-install --flake ".#${TARGET_HOST}" --no-root-passwd
-
-    echo "✅ Local deployment finished."
-  }
+  rm -f "${temp_key_file}"
+  echo "✅ Local deployment finished."
+}
 
 deploy_remote() {
   echo "🚀 Initiating remote orchestration for ${TARGET_HOST} at ${REMOTE_IP}..."
 
-  # 1. Extract Keypair (On the Orchestrating Machine)
   local temp_key_file
   temp_key_file=$(extract_host_key)
 
-  # 2. Sync Repository to Target
-  echo "📦 Syncing repository to remote /tmp/nix_hosts..."
-  ssh "root@${REMOTE_IP}" "mkdir -p /tmp/nix_hosts"
-  rsync -avz --delete ./ "root@${REMOTE_IP}:/tmp/nix_hosts/"
+  echo "📦 Cloning repository on remote target..."
+  # shellcheck disable=SC2029
+  ssh "root@${REMOTE_IP}" "rm -rf /tmp/nix_hosts && git clone --single-branch --depth=1 '${REPO_URL}' /tmp/nix_hosts"
 
-  # 3. Construct Remote Command Arguments
-  local remote_args="--target '${TARGET_HOST}'"
-  if [ "${WIPE_DISKS}" = "yes" ]; then
-    remote_args="${remote_args} --wipe-disks"
-  fi
+  echo "💉 Transferring SOPS keypair to remote temporary storage..."
+  ssh "root@${REMOTE_IP}" "mkdir -p /tmp/secrets"
+  scp "${temp_key_file}" "root@${REMOTE_IP}:/tmp/secrets/host_keypair.age"
 
-  # 4. Execute Formatting & Installation via SSH
-  echo "⚙️ Executing build script on remote target..."
-  ssh "root@${REMOTE_IP}" "
-  set -euo pipefail
-  cd /tmp/nix_hosts
+  # Clean up local key
+  rm -f "${temp_key_file}"
 
-  # We skip extraction on the remote side, so we mimic the local deployment steps
+  echo "⚙️ Executing build sequence over SSH..."
 
-  # 1. Read Disks
-  mapfile -t disks < <(grep -v '^[[:space:]]*$' 'disk_ids/${TARGET_HOST}.txt' || true)
+  ssh "root@${REMOTE_IP}" 'bash -s' << 'EOF'
+    set -euo pipefail
+    cd /tmp/nix_hosts
 
-  # 2. Wipe
-  if [ '${WIPE_DISKS}' = 'yes' ]; then
-    ./deploy.sh ${remote_args} # Let the script call itself to handle the wipe logic
-  fi
+    # Source the script to load the functions into this remote shell
+    source ./deploy.sh
 
-  # 3. Disko Args
-  disko_args=()
-  if [ \${#disks[@]} -eq 1 ]; then
-    disko_args+=(--disk main \"\${disks[0]}\")
-  elif [ \${#disks[@]} -eq 2 ]; then
-    disko_args+=(--disk main \"\${disks[0]}\" --disk secondary \"\${disks[1]}\")
-  fi
-  if [ -d '/sys/firmware/efi' ]; then
-    disko_args+=(--write-efi-boot-entries)
-  fi
+    # Run the sequence using arguments passed from the local script
+    run_build_sequence "${TARGET_HOST}" "${WIPE_DISKS}" "/tmp/secrets/host_keypair.age"
 
-  # 4. Format
-  echo '⚙️ Formatting remote disks via Disko...'
-  nix --extra-experimental-features 'nix-command flakes' \
-    run 'github:nix-community/disko#disko-install' -- \
-    --flake '.#${TARGET_HOST}' \
-    --mode disko \
-    \"\${disko_args[@]}\"
-  "
+    # Clean up remote temp key
+    rm -rf /tmp/secrets
+EOF
 
-  # 5. Inject the Keypair over SSH
-  echo "💉 Securely injecting SOPS host keypair to remote /mnt..."
-  ssh "root@${REMOTE_IP}" "mkdir -p /mnt/var/lib/sops-nix"
-  scp "${temp_key_file}" "root@${REMOTE_IP}:/mnt/var/lib/sops-nix/host_keypair.age"
-  ssh "root@${REMOTE_IP}" "chmod 400 /mnt/var/lib/sops-nix/host_keypair.age"
-  rm -f "${temp_key_file}" # Clean up local copy
-
-  # 6. Finalize Installation over SSH
-  echo "🚀 Finalizing NixOS installation on remote..."
-  ssh "root@${REMOTE_IP}" "
-  nixos-install --flake '/tmp/nix_hosts#${TARGET_HOST}' --no-root-passwd
-  "
-
-  # 7. Reboot
   if [ "${REBOOT_REMOTE}" = "yes" ]; then
     echo "🔄 Rebooting remote target..."
     ssh "root@${REMOTE_IP}" "reboot" || true
     echo "✅ Remote deployment finished. Target is rebooting."
   else
-    echo "✅ Remote deployment finished. Reboot skipped."
+    echo "✅ Remote deployment finished. Reboot into the newly-installed host."
   fi
 }
 
-# --- Main Entry Point ---
+# ==========================================
+# Main Entry Point
+# ==========================================
 
 main() {
   parse_args "${@}"
+
+  # If script is sourced (e.g. over SSH), don't run main logic automatically
+  if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+    return 0
+  fi
 
   if [ "${DEPLOY_MODE}" = "remote" ]; then
     deploy_remote
@@ -343,3 +285,4 @@ main() {
 }
 
 main "${@}"
+
