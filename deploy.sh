@@ -242,20 +242,24 @@ deploy_remote() {
   local temp_key_file
   temp_key_file=$(extract_host_key)
 
+  # SSH Multiplexing options: Authenticate once and reuse the connection
+  local ssh_opts=(-o ControlMaster=auto -o ControlPath=/tmp/deploy_ssh_%h_%p_%r -o ControlPersist=10m)
+
   echo "📦 Cloning repository on remote target..."
   # shellcheck disable=SC2029
-  ssh "nixos@${REMOTE_IP}" "rm -rf /tmp/nix_hosts && git clone --single-branch --depth=1 '${REPO_URL}' /tmp/nix_hosts"
+  ssh "${ssh_opts[@]}" "nixos@${REMOTE_IP}" "rm -rf /tmp/nix_hosts && git clone --single-branch --depth=1 '${REPO_URL}' /tmp/nix_hosts"
 
   echo "💉 Transferring SOPS keypair to remote temporary storage..."
-  ssh "nixos@${REMOTE_IP}" "mkdir -p /tmp/secrets"
-  scp "${temp_key_file}" "nixos@${REMOTE_IP}:/tmp/secrets/host_keypair.age"
+  ssh "${ssh_opts[@]}" "nixos@${REMOTE_IP}" "mkdir -p /tmp/secrets"
+  scp "${ssh_opts[@]}" "${temp_key_file}" "nixos@${REMOTE_IP}:/tmp/secrets/host_keypair.age"
 
   # Clean up local key
   rm -f "${temp_key_file}"
 
   echo "⚙️ Executing build sequence over SSH..."
 
-  ssh "nixos@${REMOTE_IP}" 'sudo bash -s' -- "${TARGET_HOST}" "${WIPE_DISKS}" << 'EOF'
+  # Elevate to root via sudo for the build sequence
+  ssh "${ssh_opts[@]}" "nixos@${REMOTE_IP}" 'sudo bash -s' -- "${TARGET_HOST}" "${WIPE_DISKS}" << 'EOF'
     set -euo pipefail
     cd /tmp/nix_hosts
 
@@ -274,7 +278,7 @@ EOF
 
   if [ "${REBOOT_REMOTE}" = "yes" ]; then
     echo "🔄 Rebooting remote target..."
-    ssh "nixos@${REMOTE_IP}" "sudo reboot" || true
+    ssh "${ssh_opts[@]}" "nixos@${REMOTE_IP}" "sudo reboot" || true
     echo "✅ Remote deployment finished. Target is rebooting."
   else
     echo "✅ Remote deployment finished. Reboot into the newly-installed host."
