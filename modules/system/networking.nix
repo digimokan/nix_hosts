@@ -7,20 +7,22 @@ let
 in {
 
   options.custom.system.networking = {
-    enable = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = "Enable networking and hostname management";
-    };
-
     hostName = lib.mkOption {
       type = lib.types.str;
-      description = "REQUIRED: The assigned hostname for the machine";
+      description = "The hostname of the machine.";
+    };
+
+    hostId = lib.mkOption {
+      type = lib.types.str;
+      # To generate a deterministic hostId based on the hostname, run:
+      #   echo "<hostname>" | md5sum | cut -c1-8
+      description = "The 8-character ZFS hostId.";
     };
   };
 
-  config = lib.mkIf cfg.enable {
+  config = {
     networking.hostName = cfg.hostName;
+    networking.hostId = cfg.hostId;
   };
 
 }
