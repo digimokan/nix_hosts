@@ -18,11 +18,18 @@ in {
       #   echo "<hostname>" | md5sum | cut -c1-8
       description = "The 8-character ZFS hostId.";
     };
+
+    useNetworkManager = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Whether to use NetworkManager (typically true for desktops, false for servers).";
+    };
   };
 
   config = {
     networking.hostName = cfg.hostName;
     networking.hostId = cfg.hostId;
+    networking.networkmanager.enable = cfg.useNetworkManager;
   };
 
 }
