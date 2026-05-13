@@ -15,7 +15,8 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-    sops.defaultSopsFile = ../../secrets/secrets.yaml;
+    # By default, use the secrets accessible to all hosts.
+    sops.defaultSopsFile = ../../secrets/shared_all_hosts_secrets.yaml.yaml;
     sops.defaultSopsFormat = "yaml";
 
     # Tell the NixOS host exactly where to look for its private key.

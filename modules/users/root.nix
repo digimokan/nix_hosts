@@ -15,13 +15,14 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-    sops.secrets.root_password = {
+    sops.secrets.server_host_root_password = {
+      sopsFile = ../../secrets/server_host_secrets.yaml;
       neededForUsers = true;
     };
 
     users.users.root = {
       isNormalUser = false;
-      hashedPasswordFile = config.sops.secrets.root_password.path;
+      hashedPasswordFile = config.sops.secrets.server_host_root_password.path;
     };
   };
 
