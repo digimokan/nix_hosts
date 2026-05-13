@@ -150,26 +150,33 @@ wipe_target_disks() {
     die "Safety abort: 'nixos-install' not found. You do not appear to be running the NixOS Live ISO."
   fi
 
-  # Extract specific target disks defined in the Disko configuration for this host
   echo "🔍 Querying flake configuration for target disks..."
+
+  # 1. Define the Nix query string to evaluate the target host's Disko devices
+  local nix_query=".#nixosConfigurations.${target}.config.disko.devices.disk"
+
+  # 2. Define the apply function to map over the devices and extract the 'device' path
+  local nix_apply='x: builtins.concatStringsSep "\n" (builtins.map (d: d.device) (builtins.attrValues x))'
+
+  # 3. Execute the query and capture the output
+  local raw_disk_output
+  raw_disk_output=$(nix eval --raw "${nix_query}" --apply "${nix_apply}" 2>/dev/null || true)
+
+  # 4. Read the output into an array, filtering out empty lines
   local target_disks=()
-  mapfile -t target_disks < <(nix eval --raw ".#nixosConfigurations.${target}.config.disko.devices.disk" --apply 'x: builtins.concatStringsSep "\n" (builtins.map (d: d.device) (builtins.attrValues x))' 2>/dev/null || true)
-
-  # Filter out empty strings that mapfile might catch
-  local filtered_disks=()
-  for disk in "${target_disks[@]}"; do
+  while IFS= read -r disk; do
     if [ -n "${disk}" ]; then
-      filtered_disks+=("${disk}")
+      target_disks+=("${disk}")
     fi
-  done
+  done <<< "${raw_disk_output}"
 
-  if [ "${#filtered_disks[@]}" -eq 0 ]; then
+  if [ "${#target_disks[@]}" -eq 0 ]; then
     die "No target disks found in Disko configuration for host '${target}'. Cannot proceed with safe wipe."
   fi
 
   echo ""
   echo "⚠️  WARNING: You are about to DESTROY ALL DATA on the following EXPLICITLY TARGETED disks:"
-  for disk in "${filtered_disks[@]}"; do
+  for disk in "${target_disks[@]}"; do
     echo "   -> ${disk}"
   done
   echo ""
@@ -192,7 +199,7 @@ wipe_target_disks() {
   vgchange -an 2>/dev/null || true
   mdadm --stop --scan 2>/dev/null || true
 
-  for disk in "${filtered_disks[@]}"; do
+  for disk in "${target_disks[@]}"; do
     echo "☢️ Nuking ${disk}..."
     blkdiscard -f "${disk}" 2>/dev/null || echo "     Warning: blkdiscard failed or is unsupported. Proceeding to software wipe..."
     wipefs -a -f "${disk}" 2>/dev/null || true
