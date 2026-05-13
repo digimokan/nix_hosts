@@ -22,7 +22,7 @@ in {
     # Tell the NixOS host exactly where to look for its private key.
     # Host will use the private key to decrypt the secrets.yaml file during the
     # boot sequence.
-    sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+    sops.age.keyFile = "/var/lib/sops-nix/host_privkey.age";
   };
 
 }

@@ -6,21 +6,19 @@
 #        "key_groups" block below that matches the file's path_regex.
 #
 # * The sops.nix module performs these actions:
-#     1. Looks for an SSH privkey at the location specified by
-#        sops.age.sshKeyPaths (e.g., /etc/ssh/ssh_host_ed25519_key).
-#     2. Converts the SSH privkey into an age privkey in RAM.
-#     3. Uses the age privkey to decrypt its designated secrets across
+#     1. Looks for the explicit host age privkey at the location specified by
+#        sops.age.keyFile (e.g., /var/lib/sops-nix/host_privkey.age).
+#     2. Uses that age privkey to decrypt its designated secrets across
 #        the various .yaml files (defaulting to shared_all_hosts_secrets.yaml).
 #
 # * To add a new keypair for a machine:
-#     1. Generate the SSH keypair:
-#          ssh-keygen -t ed25519 -N "" -f <hostname>_ssh_privkey
-#          mv <hostname>_ssh_privkey.pub <hostname>_ssh_pubkey
+#     1. Generate the pure Age keypair:
+#          age-keygen -o /tmp/host_privkey.age
 #     2. Run `sops secrets/admin_secrets.yaml` and add a new variable for
-#        ssh_privkey_host_<hostname>, pasting the generated SSH privkey.
-#     3. Convert the generated SSH pubkey to an age pubkey:
-#          ssh-to-age -i <hostname>_ssh_pubkey > <hostname>_age_pubkey
-#     4. Add the converted age pubkey to the "keys" dictionary below.
+#        age_privkey_host_<hostname>, pasting the generated private key.
+#     3. Extract the public key:
+#          age-keygen -y /tmp/host_privkey.age
+#     4. Add the public key alias to the "keys" dictionary below.
 #     5. Add the alias to the appropriate key_groups in creation_rules below.
 #     6. Force SOPS to re-encrypt all files with the new key matrix:
 #          for f in secrets/*.yaml; do sops updatekeys "$f"; done
@@ -29,7 +27,7 @@
 # Note: this variable is "local," and not used by SOPS.
 keys:
   - &age_pubkey_host_userg_workstation0 age1cnryfel34a36zkaayv9a0enmaetwrp3jk2nt807af8y6v6nefejs9jp9vk
-  - &age_pubkey_host_nas age1h3jge72g4mmwjyk8rw9nmt5ufhfm0at9e0qd6dxqgr3w7a57f5wq45xz0a
+  - &age_pubkey_host_nas age1fu4fdj4g09tqj4gzfn3trvzdfcgfjaeeplxnvydm8swq4ju0ggyquqzp8s
 
 # Each rule in this "creation_rules" list tells SOPS which public key(s) to
 # use to encrypt a specific SOPS secrets file.
