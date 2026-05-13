@@ -136,6 +136,7 @@ inject_key_to_mnt() {
   mkdir -p /mnt/var/lib/sops-nix
   cp "${key_path}" /mnt/var/lib/sops-nix/host_keypair.age
   chmod 400 /mnt/var/lib/sops-nix/host_keypair.age
+  echo "✅ SOPS keypair injected successfully."
 }
 
 wipe_target_disks() {
@@ -152,20 +153,14 @@ wipe_target_disks() {
 
   echo "🔍 Querying flake configuration for target disks..."
 
-  # 1. Define the Nix query string
   local nix_query=".#nixosConfigurations.${target}.config.disko.devices.disk"
-
-  # 2. Define the apply function. We extract the 'device' string from each disk entry.
   local nix_apply='x: builtins.concatStringsSep "\n" (builtins.map (d: d.device) (builtins.attrValues x))'
 
-  # 3. Execute the query with experimental features enabled
   local raw_disk_output
   raw_disk_output=$(nix --extra-experimental-features "nix-command flakes" eval --raw "${nix_query}" --apply "${nix_apply}" 2>/dev/null || true)
 
-  # 4. Read the output into an array
   local target_disks=()
   while IFS= read -r disk; do
-    # Only add non-empty strings that look like device paths (e.g., start with /dev/)
     if [[ -n "${disk}" && "${disk}" == /dev/* ]]; then
       target_disks+=("${disk}")
     fi
@@ -218,6 +213,8 @@ execute_disko_format() {
   # Run pure disko (formats and mounts, does NOT install NixOS)
   nix --extra-experimental-features "nix-command flakes" \
     run "github:nix-community/disko" -- --mode disko --flake ".#${target}"
+
+  echo "✅ Disko formatting complete."
 }
 
 execute_nixos_install() {
@@ -225,6 +222,7 @@ execute_nixos_install() {
   echo "🚀 Installing NixOS to /mnt..."
   # Note: do not have installer prompt to set initial root password
   nixos-install --flake ".#${target}" --no-root-passwd
+  echo "✅ NixOS installation complete."
 }
 
 # This function contains the actual build steps, meant to run on the target host
@@ -294,7 +292,6 @@ deploy_remote() {
     run_build_sequence "${local_target}" "${local_wipe}" "/tmp/secrets/host_keypair.age"
     rm -rf /tmp/secrets
 EOF
-  echo "✅ Build sequence executed successfully."
 
   if [ "${REBOOT_REMOTE}" = "yes" ]; then
     echo "🔄 Rebooting remote target..."
