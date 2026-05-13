@@ -95,13 +95,20 @@ extract_host_key() {
     die "Admin secrets vault not found at: ${secrets_file}"
   fi
 
-  # Extract using SOPS and yq
   local key_value
-  key_value=$(nix-shell -p yq --run "sops -d ${secrets_file} | yq -r '.age_keypair_host_${TARGET_HOST} // empty'")
+  key_value=$(sops -d "${secrets_file}" | awk -v target="age_keypair_host_${TARGET_HOST}:" '
+    $0 ~ target {flag=1; next}
+    flag && /^[[:space:]]/ {print; next}
+    flag && /^[^[:space:]]/ {flag=0}
+  ')
 
   if [ -z "${key_value}" ]; then
     die "Could not find 'age_keypair_host_${TARGET_HOST}' inside ${secrets_file}."
   fi
+
+  # Strip leading whitespace block indicator that YAML requires
+  # shellcheck disable=SC2001
+  key_value=$(echo "${key_value}" | sed 's/^[[:space:]]*//')
 
   local temp_key_file
   temp_key_file=$(mktemp)
