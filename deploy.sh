@@ -13,10 +13,6 @@ DEPLOY_MODE="local"
 WIPE_DISKS="no"
 REBOOT_REMOTE="yes"
 
-# ==========================================
-# Utility Functions
-# ==========================================
-
 die() {
   printf "Error: %s\n" "${1}" >&2
   exit 1
@@ -164,13 +160,16 @@ wipe_target_disks() {
   umount -R /mnt 2>/dev/null || true
   zfs unmount -a 2>/dev/null || true
   zpool export -f -a 2>/dev/null || true
+  dmsetup remove_all -f 2>/dev/null || true
+  vgchange -an 2>/dev/null || true
+  mdadm --stop --scan 2>/dev/null || true
 
   for disk in "${target_disks[@]}"; do
     echo "☢️ Nuking ${disk}..."
-    blkdiscard -f "${disk}" 2>/dev/null || true
+    blkdiscard -f "${disk}" 2>/dev/null || echo "     Warning: blkdiscard failed or is unsupported. Proceeding to software wipe..."
     wipefs -a -f "${disk}" 2>/dev/null || true
     sgdisk --zap-all "${disk}" >/dev/null 2>&1 || true
-    partprobe "${disk}" 2>/dev/null || true
+    partprobe "${disk}" 2>/dev/null || echo "     Warning: partprobe failed. The kernel is locked. A reboot is recommended."
     sleep 2
   done
   echo "✅ Wipe sequence complete."
@@ -242,15 +241,18 @@ deploy_remote() {
 
   echo "⚙️ Executing build sequence over SSH..."
 
-  ssh "root@${REMOTE_IP}" 'bash -s' << 'EOF'
+  ssh "root@${REMOTE_IP}" 'bash -s' -- "${TARGET_HOST}" "${WIPE_DISKS}" << 'EOF'
     set -euo pipefail
     cd /tmp/nix_hosts
+
+    local_target="${1}"
+    local_wipe="${2}"
 
     # Source the script to load the functions into this remote shell
     source ./deploy.sh
 
     # Run the sequence using arguments passed from the local script
-    run_build_sequence "${TARGET_HOST}" "${WIPE_DISKS}" "/tmp/secrets/host_keypair.age"
+    run_build_sequence "${local_target}" "${local_wipe}" "/tmp/secrets/host_keypair.age"
 
     # Clean up remote temp key
     rm -rf /tmp/secrets
@@ -264,10 +266,6 @@ EOF
     echo "✅ Remote deployment finished. Reboot into the newly-installed host."
   fi
 }
-
-# ==========================================
-# Main Entry Point
-# ==========================================
 
 main() {
   parse_args "${@}"
