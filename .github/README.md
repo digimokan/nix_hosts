@@ -10,6 +10,7 @@ NixOS configuration to set up various machines.
 * [Purpose](#purpose)
 * [Hardware](#hardware)
 * [Quick Start](#quick-start)
+    * [Secret Management With SOPS](#secret-management-with-sops)
     * [Boot From Installer Image](#boot-from-installer-image)
     * [Bootstrap New Machine Or Disks](#bootstrap-new-machine-or-disks)
         * [Set Host Attributes](#set-host-attributes)
@@ -29,6 +30,10 @@ NixOS configuration to set up various machines.
 * [`nas-0`](./docs/nas-0.md): main NAS on `GLAN`.
 
 ## Quick Start
+
+### Secret Management With SOPS
+
+See documentation in [`.sops.yaml`](../.sops.yaml).
 
 ### Boot From Installer Image
 

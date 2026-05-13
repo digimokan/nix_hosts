@@ -1,32 +1,38 @@
+# --- ARCHITECTURE & MASTER KEY ---
+# The Master Key is the singular "Key to the City." It is used exclusively by human
+# administrators on trusted machines to edit secrets. It is NEVER placed on deployed
+# hosts. The sops CLI tool looks for this Master Keypair via the SOPS_AGE_KEY
+# environment variable, or falls back to ~/.config/sops/age/keys.txt.
+#
 # * The "sops" CLI tool performs these actions:
-#     1. Decrypts (or creates) a target secrets file (e.g. admin_secrets.yaml),
-#        using the master privkey at ~/.config/sops/age/keys.txt.
+#     1. Decrypts (or creates) a target secrets file using the Master Keypair.
 #     2. Opens the decrypted file in an editor.
 #     3. On close, encrypts the file using EVERY pubkey listed in the
 #        "key_groups" block below that matches the file's path_regex.
 #
-# * The sops.nix module performs these actions:
-#     1. Looks for the explicit host age privkey at the location specified by
-#        sops.age.keyFile (e.g., /var/lib/sops-nix/host_privkey.age).
-#     2. Uses that age privkey to decrypt its designated secrets across
+# * The sops.nix module (on deployed hosts) performs these actions:
+#     1. Looks for its specific Host Keypair at the location specified by
+#        sops.age.keyFile (e.g., /var/lib/sops-nix/host_keypair.age).
+#     2. Uses that Keypair to decrypt its designated secrets across
 #        the various .yaml files (defaulting to shared_all_hosts_secrets.yaml).
 #
-# * To add a new keypair for a machine:
+# --- ADDING A NEW HOST ---
+# To add a new keypair for a machine:
 #     1. Generate the pure Age keypair:
-#          age-keygen -o /tmp/host_privkey.age
+#          age-keygen -o /tmp/host_keypair.age
 #     2. Run `sops secrets/admin_secrets.yaml` and add a new variable for
-#        age_privkey_host_<hostname>, pasting the generated private key.
+#        age_keypair_host_<hostname>, pasting the entire generated key file.
 #     3. Extract the public key:
-#          age-keygen -y /tmp/host_privkey.age
+#          age-keygen -y /tmp/host_keypair.age
 #     4. Add the public key alias to the "keys" dictionary below.
 #     5. Add the alias to the appropriate key_groups in creation_rules below.
-#     6. Force SOPS to re-encrypt all files with the new key matrix:
+#     6. CRITICAL: Force SOPS to re-encrypt all files with the new key matrix:
 #          for f in secrets/*.yaml; do sops updatekeys "$f"; done
 
 # Local "keys" dictionary defines variables (aliases) for PUBLIC KEYS only.
 # Note: this variable is "local," and not used by SOPS.
 keys:
-  - &age_pubkey_host_userg_workstation0 age1cnryfel34a36zkaayv9a0enmaetwrp3jk2nt807af8y6v6nefejs9jp9vk
+  - &age_pubkey_master age1cnryfel34a36zkaayv9a0enmaetwrp3jk2nt807af8y6v6nefejs9jp9vk
   - &age_pubkey_host_nas age1fu4fdj4g09tqj4gzfn3trvzdfcgfjaeeplxnvydm8swq4ju0ggyquqzp8s
 
 # Each rule in this "creation_rules" list tells SOPS which public key(s) to
@@ -36,15 +42,15 @@ creation_rules:
   - path_regex: secrets/admin_secrets\.yaml$
     key_groups:
       - age:
-          - *age_pubkey_host_userg_workstation0
+          - *age_pubkey_master
   - path_regex: secrets/server_host_secrets\.yaml$
     key_groups:
       - age:
-          - *age_pubkey_host_userg_workstation0
+          - *age_pubkey_master
           - *age_pubkey_host_nas
   - path_regex: secrets/shared_all_hosts_secrets\.yaml$
     key_groups:
       - age:
-          - *age_pubkey_host_userg_workstation0
+          - *age_pubkey_master
           - *age_pubkey_host_nas
 
