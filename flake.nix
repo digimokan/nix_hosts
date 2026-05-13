@@ -8,15 +8,9 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
 
-    disko = {
-      url = "github:nix-community/disko";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    sops-nix = {
-      url = "github:Mic92/sops-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # These inputs don't follow our stable/unstable. They track their own flakes.
+    disko = { url = "github:nix-community/disko"; };
+    sops-nix = { url = "github:Mic92/sops-nix"; };
   };
 
   outputs = { self, nixpkgs, nixpkgs-unstable, disko, sops-nix, ... } @inputs: {
