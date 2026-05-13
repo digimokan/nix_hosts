@@ -3,6 +3,10 @@
     disk = {
       main = {
         type = "disk";
+        # To obtain the Disk ID, run 'ls -l /dev/disk/by-id/':
+        #   * SATA SSD and USB Enclosures: use ID prefixed with 'ata-'
+        #   * NVME: use ID prefixed with 'nvme-eui.'
+        #   * USB Drives (not in Enclosures): use ID prefixed with 'usb-'
         device = "/dev/disk/by-id/nvme-eui.00000000000000000026b76876da41f5";
           content = {
             type = "gpt";

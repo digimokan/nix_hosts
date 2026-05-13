@@ -1,4 +1,4 @@
-# nas-0
+# nas
 
 ## Table Of Contents
 
@@ -12,7 +12,7 @@
 
 ## Purpose
 
-`nas-0` is a [45HomeLab HL8](https://store.45homelab.com/configure/hl8) that
+`nas` is a [45HomeLab HL8](https://store.45homelab.com/configure/hl8) that
 serves up files over NFS.
 
 ## Hardware
