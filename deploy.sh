@@ -13,6 +13,10 @@ DEPLOY_MODE="local"
 WIPE_DISKS="no"
 REBOOT_REMOTE="yes"
 
+# ==========================================
+# Utility Functions
+# ==========================================
+
 die() {
   printf "Error: %s\n" "${1}" >&2
   exit 1
@@ -266,13 +270,8 @@ deploy_remote() {
     local_target="${1}"
     local_wipe="${2}"
 
-    # Source the script to load the functions into this remote shell
-    source ./deploy.sh
-
-    # Run the sequence using arguments passed from the local script
+    source ./deploy.sh ""
     run_build_sequence "${local_target}" "${local_wipe}" "/tmp/secrets/host_keypair.age"
-
-    # Clean up remote temp key
     rm -rf /tmp/secrets
 EOF
 
@@ -285,20 +284,18 @@ EOF
   fi
 }
 
-main() {
-  parse_args "${@}"
+# ==========================================
+# Main Entry Point
+# ==========================================
 
-  # If script is sourced (e.g. over SSH), don't run main logic automatically
-  if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
-    return 0
-  fi
+# Only execute main if the script is run directly, not when sourced
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  parse_args "${@}"
 
   if [ "${DEPLOY_MODE}" = "remote" ]; then
     deploy_remote
   else
     deploy_local
   fi
-}
-
-main "${@}"
+fi
 
