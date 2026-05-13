@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # --- Configuration ---
-DEFAULT_REPO_URL="https://github.com/digimokan/nixos_hosts.git"
+DEFAULT_REPO_URL="https://github.com/digimokan/nix_hosts.git"
 
 # --- Globals ---
 TARGET_HOST=""
