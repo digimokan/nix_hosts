@@ -252,10 +252,12 @@ deploy_remote() {
   echo "📦 Cloning repository on remote target..."
   # shellcheck disable=SC2029
   ssh "${ssh_opts[@]}" "nixos@${REMOTE_IP}" "rm -rf /tmp/nix_hosts && git clone --single-branch --depth=1 '${REPO_URL}' /tmp/nix_hosts"
+  echo "✅ Repository cloned successfully."
 
   echo "💉 Transferring SOPS keypair to remote temporary storage..."
   ssh "${ssh_opts[@]}" "nixos@${REMOTE_IP}" "mkdir -p /tmp/secrets"
   scp "${ssh_opts[@]}" "${temp_key_file}" "nixos@${REMOTE_IP}:/tmp/secrets/host_keypair.age"
+  echo "✅ Keypair transferred successfully."
 
   # Clean up local key
   rm -f "${temp_key_file}"
@@ -274,6 +276,7 @@ deploy_remote() {
     run_build_sequence "${local_target}" "${local_wipe}" "/tmp/secrets/host_keypair.age"
     rm -rf /tmp/secrets
 EOF
+  echo "✅ Build sequence executed successfully."
 
   if [ "${REBOOT_REMOTE}" = "yes" ]; then
     echo "🔄 Rebooting remote target..."
