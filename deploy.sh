@@ -217,7 +217,7 @@ execute_disko_format() {
 
   # Run pure disko (formats and mounts, does NOT install NixOS)
   nix --extra-experimental-features "nix-command flakes" \
-    run "github:nix-community/disko" -- --mode disko ".#${target}"
+    run "github:nix-community/disko" -- --mode disko --flake ".#${target}"
 }
 
 execute_nixos_install() {
