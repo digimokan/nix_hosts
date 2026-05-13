@@ -95,8 +95,16 @@ extract_host_key() {
     die "Admin secrets vault not found at: ${secrets_file}"
   fi
 
+  # Determine the sops command based on environment (Native vs Live ISO)
+  local sops_cmd="sops"
+  if ! command -v sops &> /dev/null; then
+    echo "   - Native 'sops' not found. Fetching temporarily via Nix..."
+    sops_cmd="nix --extra-experimental-features 'nix-command flakes' shell nixpkgs#sops --command sops"
+  fi
+
+  # Extract using SOPS and standard Unix awk
   local key_value
-  key_value=$(sops -d "${secrets_file}" | awk -v target="age_keypair_host_${TARGET_HOST}:" '
+  key_value=$(eval "${sops_cmd} -d '${secrets_file}'" | awk -v target="age_keypair_host_${TARGET_HOST}:" '
     $0 ~ target {flag=1; next}
     flag && /^[[:space:]]/ {print; next}
     flag && /^[^[:space:]]/ {flag=0}
