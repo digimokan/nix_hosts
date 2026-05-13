@@ -88,7 +88,7 @@ parse_args() {
 }
 
 extract_host_key() {
-  echo "🔐 Attempting to extract pure-Age keypair for host '${TARGET_HOST}'..."
+  echo "🔐 Attempting to extract pure-Age keypair for host '${TARGET_HOST}'..." >&2
 
   local secrets_file="secrets/admin_secrets.yaml"
   if [ ! -f "${secrets_file}" ]; then
@@ -98,11 +98,10 @@ extract_host_key() {
   # Determine the sops command based on environment (Native vs Live ISO)
   local sops_cmd="sops"
   if ! command -v sops &> /dev/null; then
-    echo "   - Native 'sops' not found. Fetching temporarily via Nix..."
+    echo "   - Native 'sops' not found. Fetching temporarily via Nix..." >&2
     sops_cmd="nix --extra-experimental-features 'nix-command flakes' shell nixpkgs#sops --command sops"
   fi
 
-  # Extract using SOPS and standard Unix awk
   local key_value
   key_value=$(eval "${sops_cmd} -d '${secrets_file}'" | awk -v target="age_keypair_host_${TARGET_HOST}:" '
     $0 ~ target {flag=1; next}
@@ -123,7 +122,7 @@ extract_host_key() {
   chmod 600 "${temp_key_file}"
   echo "${key_value}" > "${temp_key_file}"
 
-  echo "✅ Host keypair extracted successfully."
+  echo "✅ Host keypair extracted successfully." >&2
   echo "${temp_key_file}"
 }
 
