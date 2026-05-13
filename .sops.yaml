@@ -1,28 +1,29 @@
 # * The "sops" CLI tool performs these actions:
-#     1. Decrypts (or creates) xxxx_secrets.yaml, using the privkey at
-#        ~/.config/sops/age/keys.txt.
-#     2. Opens the decrypted xxxx_secrets.yaml file in an editor.
-#     3. On close, encrypts xxxx_secrets.yaml using a combination of EVERY
-#        pubkey listed in the .sops.yaml "key_groups" block that matches the
-#        path_regex.
+#     1. Decrypts (or creates) a target secrets file (e.g. admin_secrets.yaml),
+#        using the master privkey at ~/.config/sops/age/keys.txt.
+#     2. Opens the decrypted file in an editor.
+#     3. On close, encrypts the file using EVERY pubkey listed in the
+#        "key_groups" block below that matches the file's path_regex.
+#
 # * The sops.nix module performs these actions:
 #     1. Looks for an SSH privkey at the location specified by
-#        sops.age.sshKeyPaths.
-#     2. Converts the SSH privkey into an age privkey.
-#     3. Uses the age privkey to decrypt and use all secrets in secrets.yaml.
+#        sops.age.sshKeyPaths (e.g., /etc/ssh/ssh_host_ed25519_key).
+#     2. Converts the SSH privkey into an age privkey in RAM.
+#     3. Uses the age privkey to decrypt its designated secrets across
+#        the various .yaml files (defaulting to shared_all_hosts_secrets.yaml).
+#
 # * To add a new keypair for a machine:
-#     1. Generate the SSH keypair with
+#     1. Generate the SSH keypair:
 #          ssh-keygen -t ed25519 -N "" -f <hostname>_ssh_privkey
 #          mv <hostname>_ssh_privkey.pub <hostname>_ssh_pubkey
-#     2. Use the sops CLI tool to add a new variable for
-#        ssh_privkey_host_<hostname> in admin_secrets.yaml, copying the
-#        generated SSH privkey.
-#     3. Convert the generated SSH pubkey to an age pubkey with
-#        ssh-to-age -i <hostname>_ssh_pubkey > <hostname>_age_pubkey.
-#     4. Add the converted age pubkey to the "keys" dictionary in this file.
-#     5. Add the pubkey to the appropriate key group in creation_rules.
-#     6. Open xxxx_secrets.yaml, and save and quit (without making changes).
-#        This action will induce SOPS to incorporate the new keys.
+#     2. Run `sops secrets/admin_secrets.yaml` and add a new variable for
+#        ssh_privkey_host_<hostname>, pasting the generated SSH privkey.
+#     3. Convert the generated SSH pubkey to an age pubkey:
+#          ssh-to-age -i <hostname>_ssh_pubkey > <hostname>_age_pubkey
+#     4. Add the converted age pubkey to the "keys" dictionary below.
+#     5. Add the alias to the appropriate key_groups in creation_rules below.
+#     6. Force SOPS to re-encrypt all files with the new key matrix:
+#          for f in secrets/*.yaml; do sops updatekeys "$f"; done
 
 # Local "keys" dictionary defines variables (aliases) for PUBLIC KEYS only.
 # Note: this variable is "local," and not used by SOPS.
