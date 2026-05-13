@@ -37,7 +37,7 @@ OPTIONS:
   -u, --url URL          (Optional) Git repository URL to clone on remote target
                          Default: ${DEFAULT_REPO_URL}
   -w, --wipe-disks       (Optional) Aggressively nuke old partitions and labels
-                         SAFETY: Only executes if running on the NixOS Live ISO.
+                         SAFETY: Only executes on disks defined in the host's Disko config.
   -n, --no-reboot-remote (Optional) Do NOT reboot the remote machine after deployment
   -h, --help             Show this help menu and exit
 
@@ -139,6 +139,7 @@ inject_key_to_mnt() {
 }
 
 wipe_target_disks() {
+  local target="${1}"
   echo "🛡️ Validating safety constraints for disk wipe..."
 
   if [ "$(uname -s)" != "Linux" ]; then
@@ -149,17 +150,26 @@ wipe_target_disks() {
     die "Safety abort: 'nixos-install' not found. You do not appear to be running the NixOS Live ISO."
   fi
 
-  # Find all block devices that are disks (ignoring loopbacks and ramdisks)
+  # Extract specific target disks defined in the Disko configuration for this host
+  echo "🔍 Querying flake configuration for target disks..."
   local target_disks=()
-  mapfile -t target_disks < <(lsblk -dpno NAME | grep -E '/dev/(sd|nvme|vd)')
+  mapfile -t target_disks < <(nix eval --raw ".#nixosConfigurations.${target}.config.disko.devices.disk" --apply 'x: builtins.concatStringsSep "\n" (builtins.map (d: d.device) (builtins.attrValues x))' 2>/dev/null || true)
 
-  if [ "${#target_disks[@]}" -eq 0 ]; then
-    die "No suitable block devices found to wipe."
+  # Filter out empty strings that mapfile might catch
+  local filtered_disks=()
+  for disk in "${target_disks[@]}"; do
+    if [ -n "${disk}" ]; then
+      filtered_disks+=("${disk}")
+    fi
+  done
+
+  if [ "${#filtered_disks[@]}" -eq 0 ]; then
+    die "No target disks found in Disko configuration for host '${target}'. Cannot proceed with safe wipe."
   fi
 
   echo ""
-  echo "⚠️  WARNING: You are about to DESTROY ALL DATA on ALL detected disks:"
-  for disk in "${target_disks[@]}"; do
+  echo "⚠️  WARNING: You are about to DESTROY ALL DATA on the following EXPLICITLY TARGETED disks:"
+  for disk in "${filtered_disks[@]}"; do
     echo "   -> ${disk}"
   done
   echo ""
@@ -170,7 +180,7 @@ wipe_target_disks() {
       die "Wipe aborted by user."
     fi
   else
-    echo "SSH Session detected. Proceeding with wipe automatically based on -w flag."
+    echo "SSH Session detected. Proceeding with targeted wipe automatically based on -w flag."
   fi
 
   echo "🧹 Tearing down active mounts and volumes system-wide..."
@@ -182,7 +192,7 @@ wipe_target_disks() {
   vgchange -an 2>/dev/null || true
   mdadm --stop --scan 2>/dev/null || true
 
-  for disk in "${target_disks[@]}"; do
+  for disk in "${filtered_disks[@]}"; do
     echo "☢️ Nuking ${disk}..."
     blkdiscard -f "${disk}" 2>/dev/null || echo "     Warning: blkdiscard failed or is unsupported. Proceeding to software wipe..."
     wipefs -a -f "${disk}" 2>/dev/null || true
@@ -190,7 +200,7 @@ wipe_target_disks() {
     partprobe "${disk}" 2>/dev/null || echo "     Warning: partprobe failed. The kernel is locked. A reboot is recommended."
     sleep 2
   done
-  echo "✅ Wipe sequence complete."
+  echo "✅ Targeted wipe sequence complete."
 }
 
 execute_disko_format() {
@@ -220,7 +230,7 @@ run_build_sequence() {
   fi
 
   if [ "${do_wipe}" = "yes" ]; then
-    wipe_target_disks
+    wipe_target_disks "${target}"
   fi
 
   execute_disko_format "${target}"
