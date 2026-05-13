@@ -237,18 +237,18 @@ deploy_remote() {
 
   echo "📦 Cloning repository on remote target..."
   # shellcheck disable=SC2029
-  ssh "root@${REMOTE_IP}" "rm -rf /tmp/nix_hosts && git clone --single-branch --depth=1 '${REPO_URL}' /tmp/nix_hosts"
+  ssh "nixos@${REMOTE_IP}" "rm -rf /tmp/nix_hosts && git clone --single-branch --depth=1 '${REPO_URL}' /tmp/nix_hosts"
 
   echo "💉 Transferring SOPS keypair to remote temporary storage..."
-  ssh "root@${REMOTE_IP}" "mkdir -p /tmp/secrets"
-  scp "${temp_key_file}" "root@${REMOTE_IP}:/tmp/secrets/host_keypair.age"
+  ssh "nixos@${REMOTE_IP}" "mkdir -p /tmp/secrets"
+  scp "${temp_key_file}" "nixos@${REMOTE_IP}:/tmp/secrets/host_keypair.age"
 
   # Clean up local key
   rm -f "${temp_key_file}"
 
   echo "⚙️ Executing build sequence over SSH..."
 
-  ssh "root@${REMOTE_IP}" 'bash -s' -- "${TARGET_HOST}" "${WIPE_DISKS}" << 'EOF'
+  ssh "nixos@${REMOTE_IP}" 'sudo bash -s' -- "${TARGET_HOST}" "${WIPE_DISKS}" << 'EOF'
     set -euo pipefail
     cd /tmp/nix_hosts
 
@@ -267,7 +267,7 @@ EOF
 
   if [ "${REBOOT_REMOTE}" = "yes" ]; then
     echo "🔄 Rebooting remote target..."
-    ssh "root@${REMOTE_IP}" "reboot" || true
+    ssh "nixos@${REMOTE_IP}" "sudo reboot" || true
     echo "✅ Remote deployment finished. Target is rebooting."
   else
     echo "✅ Remote deployment finished. Reboot into the newly-installed host."
