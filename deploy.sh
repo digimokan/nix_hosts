@@ -145,8 +145,8 @@ wipe_target_disks() {
     die "Safety abort: Disks can only be wiped on a Linux system."
   fi
 
-  if ! df -T / | grep -q 'overlay'; then
-    die "Safety abort: Root filesystem is not 'overlay'. You do not appear to be running the NixOS Live ISO."
+  if ! command -v nixos-install &> /dev/null; then
+    die "Safety abort: 'nixos-install' not found. You do not appear to be running the NixOS Live ISO."
   fi
 
   # Find all block devices that are disks (ignoring loopbacks and ramdisks)
