@@ -152,20 +152,21 @@ wipe_target_disks() {
 
   echo "🔍 Querying flake configuration for target disks..."
 
-  # 1. Define the Nix query string to evaluate the target host's Disko devices
+  # 1. Define the Nix query string
   local nix_query=".#nixosConfigurations.${target}.config.disko.devices.disk"
 
-  # 2. Define the apply function to map over the devices and extract the 'device' path
+  # 2. Define the apply function. We extract the 'device' string from each disk entry.
   local nix_apply='x: builtins.concatStringsSep "\n" (builtins.map (d: d.device) (builtins.attrValues x))'
 
-  # 3. Execute the query and capture the output
+  # 3. Execute the query with experimental features enabled
   local raw_disk_output
-  raw_disk_output=$(nix eval --raw "${nix_query}" --apply "${nix_apply}" 2>/dev/null || true)
+  raw_disk_output=$(nix --extra-experimental-features "nix-command flakes" eval --raw "${nix_query}" --apply "${nix_apply}" 2>/dev/null || true)
 
-  # 4. Read the output into an array, filtering out empty lines
+  # 4. Read the output into an array
   local target_disks=()
   while IFS= read -r disk; do
-    if [ -n "${disk}" ]; then
+    # Only add non-empty strings that look like device paths (e.g., start with /dev/)
+    if [[ -n "${disk}" && "${disk}" == /dev/* ]]; then
       target_disks+=("${disk}")
     fi
   done <<< "${raw_disk_output}"
