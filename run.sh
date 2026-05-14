@@ -13,6 +13,7 @@ DEPLOY_MODE=""
 WIPE_DISKS="no"
 REBOOT_REMOTE="yes"
 PROMPT_KEY="no"
+EDIT_SECRET_FILE=""
 
 # ==========================================
 # Utility Functions
@@ -31,6 +32,7 @@ PURPOSE:
   * Format disks via Disko, deploy NixOS, and securely inject pure-Age SOPS keys.
   * Facilitates both local orchestration (on the target machine) and remote
     orchestration (from an external machine via SSH).
+  * Manage SOPS secrets files.
 
 COMMANDS:
   --deploy-local         Execute deployment directly on the current machine.
@@ -39,10 +41,11 @@ COMMANDS:
                          (Requires the -R/--remote option).
   -w, --wipe-disks       Aggressively nuke old partitions and labels.
                          SAFETY: Only executes on disks defined in the host's Disko config.
+  -e, --edit-secret FILE Edit a SOPS file and automatically rekey all secrets.
   -h, --help             Show this help menu and exit
 
 OPTIONS:
-  -T, --target HOST      (Required) The NixOS configuration name (e.g., nas)
+  -T, --target HOST      (Required for deploy) The NixOS configuration name (e.g., nas)
   -R, --remote IP        (Required for --deploy-remote) Target IP address
   -p, --prompt-key       (Optional for --deploy-local) Securely prompt for the Age Master Key
   -N, --no-reboot-remote (Optional for --deploy-remote) Do not reboot after deployment
@@ -50,7 +53,7 @@ OPTIONS:
 EXAMPLES:
   Local Deploy  (run on minimal ISO): sudo ./$(basename "${0}") --deploy-local -p -w -T nas
   Remote Deploy (SSH to minimal ISO):      ./$(basename "${0}") --deploy-remote -w -T nas -R 192.168.1.50
-  Wipe Disks    (run on minimal ISO): sudo ./$(basename "${0}") -w -T nas
+  Edit Secret   (run on dev machine):      ./$(basename "${0}") -e secrets/admin_secrets.yaml
 EOF
 }
 
@@ -70,7 +73,7 @@ parse_args() {
         REBOOT_REMOTE="no"
         shift
         ;;
-      -p|--prompt-key)       # <--- Add this block
+      -p|--prompt-key)
         PROMPT_KEY="yes"
         shift
         ;;
@@ -80,6 +83,14 @@ parse_args() {
         ;;
       --deploy-remote)
         DEPLOY_MODE="remote"
+        shift
+        ;;
+      -e|--edit-secret)
+        shift
+        if [ "${#}" -eq 0 ] || [ "${1:0:1}" = "-" ]; then
+          die "Argument for --edit-secret is missing."
+        fi
+        EDIT_SECRET_FILE="${1}"
         shift
         ;;
       -T|--target|-R|--remote)
@@ -105,18 +116,27 @@ parse_args() {
   done
 
   # Validation
-  if [ -z "${DEPLOY_MODE}" ] && [ "${WIPE_DISKS}" = "no" ]; then
-    die "You must specify a command: --deploy-local, --deploy-remote, or -w/--wipe-disks."
+  if [ -z "${DEPLOY_MODE}" ] && \
+     [ "${WIPE_DISKS}" = "no" ] && \
+     [ -z "${EDIT_SECRET_FILE}" ]; then
+    errmsg="You must specify a command:"
+    errmsg="${errmsg} --deploy-local,"
+    errmsg="${errmsg} --deploy-remote,"
+    errmsg="${errmsg} -w/--wipe-disks,"
+    errmsg="${errmsg} -e/--edit-secret."
+    die "${errmsg}"
   fi
 
-  if [ -z "${TARGET_HOST}" ]; then
-    die "The -T/--target option is required."
-  fi
-
-  if [ "${DEPLOY_MODE}" = "remote" ] && [ -z "${REMOTE_IP}" ]; then
-    die "The -R/--remote option is required when using --deploy-remote."
+  if [ -n "${DEPLOY_MODE}" ]; then
+    if [ -z "${TARGET_HOST}" ]; then
+      die "The -T/--target option is required for deployment."
+    fi
+    if [ "${DEPLOY_MODE}" = "remote" ] && [ -z "${REMOTE_IP}" ]; then
+      die "The -R/--remote option is required when using --deploy-remote."
+    fi
   fi
 }
+
 prompt_for_master_key() {
   echo ""
   echo "🔒 LOCAL DEPLOYMENT DETECTED 🔒"
@@ -370,6 +390,32 @@ EOF
   fi
 }
 
+edit_and_rekey() {
+  local target_file="${1}"
+
+  if [ ! -f "${target_file}" ]; then
+    die "Target file not found: ${target_file}"
+  fi
+
+  local sops_cmd="sops"
+  if ! command -v sops &> /dev/null; then
+    sops_cmd="nix --extra-experimental-features 'nix-command flakes' shell nixpkgs#sops --command sops"
+  fi
+
+  echo "📝 Opening ${target_file} via SOPS..."
+  eval "${sops_cmd} '${target_file}'"
+
+  echo "🔄 Rekeying all YAML files in secrets/ directory..."
+  for secret_file in secrets/*.yaml; do
+    if [ -f "${secret_file}" ]; then
+      echo "   - Updating keys for ${secret_file}..."
+      eval "${sops_cmd} updatekeys -y '${secret_file}'" || echo "Warning: Failed to rekey ${secret_file}"
+    fi
+  done
+
+  echo "✅ Secrets modification and rekey operations complete. Commit changes to Git."
+}
+
 # ==========================================
 # Main Entry Point
 # ==========================================
@@ -378,7 +424,9 @@ EOF
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   parse_args "${@}"
 
-  if [ "${DEPLOY_MODE}" = "remote" ]; then
+  if [ -n "${EDIT_SECRET_FILE}" ]; then
+    edit_and_rekey "${EDIT_SECRET_FILE}"
+  elif [ "${DEPLOY_MODE}" = "remote" ]; then
     deploy_remote
   elif [ "${DEPLOY_MODE}" = "local" ]; then
     deploy_local
