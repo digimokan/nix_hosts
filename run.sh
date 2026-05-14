@@ -124,11 +124,23 @@ prompt_for_master_key() {
   echo "Your input will be hidden and stored only in volatile memory for this session."
 
   # Ensure the prompt goes to stderr so it displays properly, while reading from stdin
-  read -r -s -p "Enter Age Master Key (AGE-SECRET-KEY-...): " LOCAL_MASTER_KEY < /dev/tty
+  read -r -s -p "Enter Age Master Key (or just the part after 'AGE-SECRET-KEY-'): " RAW_INPUT < /dev/tty
   echo "" >&2 # Print a newline after the hidden input
 
-  if [[ ! "${LOCAL_MASTER_KEY}" =~ ^AGE-SECRET-KEY- ]]; then
-    die "Invalid key format. Age secret keys must begin with 'AGE-SECRET-KEY-'."
+  if [ -z "${RAW_INPUT}" ]; then
+    die "No key provided."
+  fi
+
+  # Forgive the user if they typed or pasted the prefix, otherwise prepend it for them
+  if [[ "${RAW_INPUT}" == AGE-SECRET-KEY-* ]]; then
+    LOCAL_MASTER_KEY="${RAW_INPUT}"
+  else
+    LOCAL_MASTER_KEY="AGE-SECRET-KEY-${RAW_INPUT}"
+  fi
+
+  # Basic validation: A valid Age secret key is always 73 characters long
+  if [ "${#LOCAL_MASTER_KEY}" -ne 73 ]; then
+    die "Invalid key length. An Age secret key must be exactly 73 characters long."
   fi
 
   # Export it so SOPS can pick it up automatically
