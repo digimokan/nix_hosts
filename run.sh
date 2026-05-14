@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck shell=bash
 
 set -euo pipefail
 
@@ -11,6 +12,7 @@ REMOTE_IP=""
 DEPLOY_MODE=""
 WIPE_DISKS="no"
 REBOOT_REMOTE="yes"
+PROMPT_KEY="no"
 
 # ==========================================
 # Utility Functions
@@ -42,10 +44,11 @@ COMMANDS:
 OPTIONS:
   -T, --target HOST      (Required) The NixOS configuration name (e.g., nas)
   -R, --remote IP        (Required for --deploy-remote) Target IP address
+  -p, --prompt-key       (Optional for --deploy-local) Securely prompt for the Age Master Key
   -N, --no-reboot-remote (Optional for --deploy-remote) Do not reboot after deployment
 
 EXAMPLES:
-  Local Deploy  (run on minimal ISO): sudo ./$(basename "${0}") --deploy-local -w -T nas
+  Local Deploy  (run on minimal ISO): sudo ./$(basename "${0}") --deploy-local -p -w -T nas
   Remote Deploy (SSH to minimal ISO):      ./$(basename "${0}") --deploy-remote -w -T nas -R 192.168.1.50
   Wipe Disks    (run on minimal ISO): sudo ./$(basename "${0}") -w -T nas
 EOF
@@ -65,6 +68,10 @@ parse_args() {
         ;;
       -N|--no-reboot-remote)
         REBOOT_REMOTE="no"
+        shift
+        ;;
+      -p|--prompt-key)       # <--- Add this block
+        PROMPT_KEY="yes"
         shift
         ;;
       --deploy-local)
@@ -110,6 +117,23 @@ parse_args() {
     die "The -R/--remote option is required when using --deploy-remote."
   fi
 }
+prompt_for_master_key() {
+  echo ""
+  echo "🔒 LOCAL DEPLOYMENT DETECTED 🔒"
+  echo "To decrypt the host key locally, you must provide your Age Master Private Key."
+  echo "Your input will be hidden and stored only in volatile memory for this session."
+
+  # Ensure the prompt goes to stderr so it displays properly, while reading from stdin
+  read -r -s -p "Enter Age Master Key (AGE-SECRET-KEY-...): " LOCAL_MASTER_KEY < /dev/tty
+  echo "" >&2 # Print a newline after the hidden input
+
+  if [[ ! "${LOCAL_MASTER_KEY}" =~ ^AGE-SECRET-KEY- ]]; then
+    die "Invalid key format. Age secret keys must begin with 'AGE-SECRET-KEY-'."
+  fi
+
+  # Export it so SOPS can pick it up automatically
+  export SOPS_AGE_KEY="${LOCAL_MASTER_KEY}"
+}
 
 extract_host_key() {
   echo "🔐 Attempting to extract pure-Age keypair for host '${TARGET_HOST}'..." >&2
@@ -127,11 +151,19 @@ extract_host_key() {
   fi
 
   local key_value
+  # SOPS will automatically use the SOPS_AGE_KEY environment variable if it's set
   key_value=$(eval "${sops_cmd} -d '${secrets_file}'" | awk -v target="age_keypair_host_${TARGET_HOST}:" '
     $0 ~ target {flag=1; next}
     flag && /^[[:space:]]/ {print; next}
     flag && /^[^[:space:]]/ {flag=0}
   ')
+
+  # CRITICAL SECURITY STEP: Purge the master key from memory immediately after use
+  if [ -n "${LOCAL_MASTER_KEY:-}" ]; then
+    unset SOPS_AGE_KEY
+    unset LOCAL_MASTER_KEY
+    echo "🧹 Master key purged from active memory." >&2
+  fi
 
   if [ -z "${key_value}" ]; then
     die "Could not find 'age_keypair_host_${TARGET_HOST}' inside ${secrets_file}."
@@ -266,6 +298,10 @@ run_build_sequence() {
 
 deploy_local() {
   echo "🚀 Initiating local deployment for ${TARGET_HOST}..."
+
+  if [ "${PROMPT_KEY}" = "yes" ]; then
+    prompt_for_master_key
+  fi
 
   local temp_key_file
   temp_key_file=$(extract_host_key)
