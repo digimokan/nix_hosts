@@ -3,13 +3,12 @@
 set -euo pipefail
 
 # --- Configuration ---
-DEFAULT_REPO_URL="https://github.com/digimokan/nix_hosts.git"
+REPO_URL="https://github.com/digimokan/nix_hosts.git"
 
 # --- Globals ---
 TARGET_HOST=""
 REMOTE_IP=""
-REPO_URL="${DEFAULT_REPO_URL}"
-DEPLOY_MODE="local"
+DEPLOY_MODE=""
 WIPE_DISKS="no"
 REBOOT_REMOTE="yes"
 
@@ -24,26 +23,31 @@ die() {
 
 print_usage() {
   cat <<EOF
-USAGE: $(basename "${0}") [OPTIONS]
+USAGE: $(basename "${0}") [COMMAND] [OPTIONS]
 
 PURPOSE:
   * Format disks via Disko, deploy NixOS, and securely inject pure-Age SOPS keys.
-  * For remote deployments, the orchestrating machine decrypts the host keypair
-    locally and securely transfers it to the target over SSH.
+  * Facilitates both local orchestration (on the target machine) and remote
+    orchestration (from an external machine via SSH).
 
-OPTIONS:
-  -t, --target HOST      (Required) The NixOS configuration name (e.g., nas)
-  -r, --remote IP        (Optional) Deploy remotely to the target IP address
-  -u, --url URL          (Optional) Git repository URL to clone on remote target
-                         Default: ${DEFAULT_REPO_URL}
-  -w, --wipe-disks       (Optional) Aggressively nuke old partitions and labels
+COMMANDS:
+  --deploy-local         Execute deployment directly on the current machine.
+                         (Requires running from the NixOS Live ISO).
+  --deploy-remote        Execute deployment on a remote target over SSH.
+                         (Requires the -R/--remote option).
+  -w, --wipe-disks       Aggressively nuke old partitions and labels.
                          SAFETY: Only executes on disks defined in the host's Disko config.
-  -n, --no-reboot-remote (Optional) Do NOT reboot the remote machine after deployment
   -h, --help             Show this help menu and exit
 
+OPTIONS:
+  -T, --target HOST      (Required) The NixOS configuration name (e.g., nas)
+  -R, --remote IP        (Required for --deploy-remote) Target IP address
+  -N, --no-reboot-remote (Optional for --deploy-remote) Do not reboot after deployment
+
 EXAMPLES:
-  Local Deploy  (run on minimal ISO): sudo ./$(basename "${0}") -t nas -w
-  Remote Deploy (SSH to minimal ISO):      ./$(basename "${0}") -t nas -w -r 192.168.1.50
+  Local Deploy  (run on minimal ISO): sudo ./$(basename "${0}") --deploy-local -w -T nas
+  Remote Deploy (SSH to minimal ISO):      ./$(basename "${0}") --deploy-remote -w -T nas -R 192.168.1.50
+  Wipe Disks    (run on minimal ISO): sudo ./$(basename "${0}") -w -T nas
 EOF
 }
 
@@ -59,11 +63,19 @@ parse_args() {
         WIPE_DISKS="yes"
         shift
         ;;
-      -n|--no-reboot-remote)
+      -N|--no-reboot-remote)
         REBOOT_REMOTE="no"
         shift
         ;;
-      -t|--target|-r|--remote|-u|--url)
+      --deploy-local)
+        DEPLOY_MODE="local"
+        shift
+        ;;
+      --deploy-remote)
+        DEPLOY_MODE="remote"
+        shift
+        ;;
+      -T|--target|-R|--remote)
         shift
         if [ "${#}" -eq 0 ] || [ "${1:0:1}" = "-" ]; then
           die "Argument for ${flag} is missing."
@@ -71,9 +83,8 @@ parse_args() {
 
         local val="${1}"
         case "${flag}" in
-          -t|--target) TARGET_HOST="${val}" ;;
-          -r|--remote) REMOTE_IP="${val}"; DEPLOY_MODE="remote" ;;
-          -u|--url)    REPO_URL="${val}" ;;
+          -T|--target) TARGET_HOST="${val}" ;;
+          -R|--remote) REMOTE_IP="${val}" ;;
         esac
         shift
         ;;
@@ -86,8 +97,17 @@ parse_args() {
     esac
   done
 
+  # Validation
+  if [ -z "${DEPLOY_MODE}" ] && [ "${WIPE_DISKS}" = "no" ]; then
+    die "You must specify a command: --deploy-local, --deploy-remote, or -w/--wipe-disks."
+  fi
+
   if [ -z "${TARGET_HOST}" ]; then
-    die "The --target option is required. Use -h for help."
+    die "The -T/--target option is required."
+  fi
+
+  if [ "${DEPLOY_MODE}" = "remote" ] && [ -z "${REMOTE_IP}" ]; then
+    die "The -R/--remote option is required when using --deploy-remote."
   fi
 }
 
@@ -288,7 +308,7 @@ deploy_remote() {
     local_target="${1}"
     local_wipe="${2}"
 
-    source ./deploy.sh ""
+    source ./run.sh ""
     run_build_sequence "${local_target}" "${local_wipe}" "/tmp/secrets/host_keypair.age"
     rm -rf /tmp/secrets
 EOF
@@ -312,8 +332,13 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   if [ "${DEPLOY_MODE}" = "remote" ]; then
     deploy_remote
-  else
+  elif [ "${DEPLOY_MODE}" = "local" ]; then
     deploy_local
+  elif [ "${WIPE_DISKS}" = "yes" ]; then
+    if [ "${EUID}" -ne 0 ]; then
+      die "Wiping disks requires root privileges. Please run with sudo."
+    fi
+    wipe_target_disks "${TARGET_HOST}"
   fi
 fi
 

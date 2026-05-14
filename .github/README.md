@@ -79,7 +79,7 @@ See documentation in [`.sops.yaml`](../.sops.yaml).
 4. On the orchestration host, deploy NixOS to the target machine over SSH:
 
    ```shell
-   $ ./deploy.sh -t nas -r 192.168.1.50 -w
+   $ ./run.sh --deploy-remote -T nas -R 192.168.1.50 -w
    ```
 
 ### Install NixOS To Target Host From Installer Image
@@ -107,7 +107,7 @@ See documentation in [`.sops.yaml`](../.sops.yaml).
 3. On the target host, deploy NixOS:
 
    ```shell
-   $ sudo ./deploy.sh -t nas -w
+   $ sudo ./deploy.sh --deploy-local -T nas -w
    ```
 
 ## Source Code Layout
@@ -136,7 +136,7 @@ See documentation in [`.sops.yaml`](../.sops.yaml).
 │ │
 │ ├── flake.nix             # registry of hosts, repo sources, shared options
 │ │
-│ ├── deploy.sh             # formats disk(s) and installs NixOS on host
+│ ├── run.sh                # deploy NixOS to host, configure host, etc
 │ │
 ```
 
