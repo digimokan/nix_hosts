@@ -104,6 +104,9 @@ See documentation in [`.sops.yaml`](../.sops.yaml).
           AGE-SECRET-KEY-XXXXXXXXX"
       ```
 
+   Option 3 is invoking `deploy.sh` with the `-p` option, in the next step,
+   which will prompt for entry of the age master secret key.
+
 3. On the target host, deploy NixOS:
 
    ```shell
