@@ -138,9 +138,9 @@ prompt_for_master_key() {
     LOCAL_MASTER_KEY="AGE-SECRET-KEY-${RAW_INPUT}"
   fi
 
-  # Basic validation: A valid Age secret key is always 73 characters long
-  if [ "${#LOCAL_MASTER_KEY}" -ne 73 ]; then
-    die "Invalid key length. An Age secret key must be exactly 73 characters long."
+  # Basic validation: A valid standard Age secret key is always 74 characters long
+  if [ "${#LOCAL_MASTER_KEY}" -ne 74 ]; then
+    die "Invalid key length. An Age secret key must be exactly 74 characters long (currently ${#LOCAL_MASTER_KEY})."
   fi
 
   # Export it so SOPS can pick it up automatically
