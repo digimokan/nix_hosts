@@ -12,6 +12,10 @@
   custom.system.networking.hostName = "nas";
   custom.system.networking.hostId = "76755dca";
 
+  custom.apps.tailscale.enable = true;
+  custom.apps.tailscale.enableSshServer = true;
+  custom.apps.tailscale.authKeyPath = sops.secrets.server_host_tailscale_auth_key.path;
+
   custom.users.root.enable = true;
 }
 

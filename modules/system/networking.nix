@@ -3,10 +3,11 @@
 let
 
   cfg = config.custom.system.networking;
+  opts = options.custom.system.networking;
 
 in {
 
-  options.custom.system.networking = {
+  opts = {
     hostName = lib.mkOption {
       type = lib.types.str;
       description = "The hostname of the machine.";
@@ -19,11 +20,7 @@ in {
       description = "The 8-character ZFS hostId.";
     };
 
-    useNetworkManager = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = "Whether to use NetworkManager (typically true for desktops, false for servers).";
-    };
+    useNetworkManager = lib.mkEnableOption "Whether to use NetworkManager (typically true for desktops, false for servers).";
   };
 
   config = {

@@ -1,6 +1,6 @@
 {
   imports = [
-    # TODO
+    ./tailscale.nix
   ];
 }
 
