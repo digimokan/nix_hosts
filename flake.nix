@@ -13,7 +13,7 @@
     # Note these input names, for all configuration that follows:
     #   -> Use "nixpkgs" for stable.
     #   -> Use "nixos-unstable" for unstable.
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
 
     # These inputs don't follow our stable/unstable. They track their own flakes.
