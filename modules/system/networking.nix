@@ -3,11 +3,10 @@
 let
 
   cfg = config.custom.system.networking;
-  opts = options.custom.system.networking;
 
 in {
 
-  opts = {
+  options.custom.system.networking = {
     hostName = lib.mkOption {
       type = lib.types.str;
       description = "The hostname of the machine.";

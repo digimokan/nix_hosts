@@ -3,11 +3,10 @@
 let
 
   cfg = config.custom.users.root;
-  opts = options.custom.users.root;
 
 in {
 
-  opts = {
+  options.custom.users.root = {
     enable = lib.mkEnableOption "Enable and configure the root user account";
   };
 
