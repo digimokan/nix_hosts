@@ -14,6 +14,9 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    # Note: the run.sh script emplaces the host key here, on deployment
+    sops.age.keyFile = "/var/lib/sops-nix/host_keypair.age";
+
     sops.secrets = lib.mkMerge [
 
       (wireSecrets ../../secrets/server_host_secrets.yaml {
