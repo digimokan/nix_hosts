@@ -1,31 +1,32 @@
-{ config, lib, ... }:
+{ config, lib, pkgs, options, ... }:
 
 let
+  cfg = config.custom.system.sops;
 
-  # Helper function to wire a list of secrets to a specific SOPS file
-  wireSecrets = file: neededForUsers: secretNames:
-    builtins.listToAttrs (map (name: {
-      name = name;
-      value = {
-        sopsFile = file;
-        inherit neededForUsers;
-      };
-    }) secretNames);
+  # Helper function to inject the file path into a set of secret definitions
+  wireSecrets = file: secrets:
+    lib.mapAttrs (name: opts: { sopsFile = file; } // opts) secrets;
 
 in {
 
-  sops.secrets = lib.mkMerge [
+  options.custom.system.sops = {
+    enable = lib.mkEnableOption "Enable SOPS secret management and default secrets";
+  };
 
-    (wireSecrets ../../secrets/server_host_secrets.yaml true [
-      "server_host_root_password"
-      "server_host_tailscale_auth_key"
-    ])
+  config = lib.mkIf cfg.enable {
+    sops.secrets = lib.mkMerge [
 
-    (wireSecrets ../../secrets/shared_all_hosts_secrets.yaml true [
-      "all_hosts_timezone"
-    ])
+      (wireSecrets ../../secrets/server_host_secrets.yaml {
+        server_host_root_password = { neededForUsers = true; };
+        server_host_tailscale_auth_key = { };
+      })
 
-  ];
+      (wireSecrets ../../secrets/shared_all_hosts_secrets.yaml {
+        all_hosts_timezone = { };
+      })
+
+    ];
+  };
 
 }
 
