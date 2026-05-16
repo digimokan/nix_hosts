@@ -26,6 +26,28 @@ in {
     networking.hostName = cfg.hostName;
     networking.hostId = cfg.hostId;
     networking.networkmanager.enable = cfg.useNetworkManager;
+    assertions = [
+      {
+        assertion = (builtins.stringLength cfg.hostId) == 8;
+        message = (
+          "The custom.system.networking.hostId option must be exactly 8 "
+          + "characters long. Length provided: "
+          + "${builtins.toString (builtins.stringLength cfg.hostId)} "
+          + "characters ('${cfg.hostId}')."
+        );
+      }
+
+      (let
+        isValidHex = str: (lib.strings.match "^[0-9a-f]+$" str) != null;
+      in {
+        assertion = isValidHex cfg.hostId;
+        message = (
+          "The custom.system.networking.hostId option must consist ONLY "
+          + "of lowercase hexadecimal letters (a-f) and numbers (0-9). "
+          + "Value provided: '${cfg.hostId}'"
+        );
+      })
+    ];
   };
 
 }

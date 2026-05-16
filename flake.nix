@@ -10,10 +10,9 @@
   description = "My constellation of NixOS hosts";
 
   inputs = {
-    # Note these input names, for all configuration that follows:
-    #   -> Use "nixpkgs" for stable.
-    #   -> Use "nixos-unstable" for unstable.
+    # versioned stable branch packages: access this via pkgs.stable overlay.
     nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
+    # unstable branch packages: access this via pkgs.unstable overlay.
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
 
     # These inputs don't follow our stable/unstable. They track their own flakes.
