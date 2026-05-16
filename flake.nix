@@ -71,7 +71,7 @@
       lib.<hostname>:
         Helper functions or libraries intended for use by other flakes.
   */
-  outputs = { self, nixpkgs, nixpkgs-unstable, disko, sops-nix, ... } @inputs: {
+  outputs = { self, nixpkgs, nixpkgs-unstable, disko, sops-nix, ... } @inputs:
     let
       localFunctions =
         let
@@ -92,8 +92,7 @@
           };
         };
       inherit (localFunctions) mkStableSystem mkUnstableSystem;
-    in
-    {
+    in {
       nixosConfigurations = {
         nas = mkStableSystem {
           system = "x86_64-linux";
@@ -106,5 +105,4 @@
         };
       };
     };
-}
 
