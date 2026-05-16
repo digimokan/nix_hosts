@@ -1,6 +1,7 @@
 { config, lib, pkgs, options, ... }:
 
 let
+
   cfg = config.custom.system.sops;
 
   # Helper function to inject the file path into a set of secret definitions

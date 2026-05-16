@@ -1,3 +1,5 @@
+{ config, lib, pkgs, options, ... }:
+
 {
   imports = [
     ./apps/default.nix

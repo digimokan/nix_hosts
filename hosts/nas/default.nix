@@ -9,6 +9,9 @@
   config = {
     system.stateVersion = "24.05";
 
+    custom.system.nix.enableUnifiedCli = true;
+    custom.system.nix.enableFlakes = true;
+
     custom.system.sops.enable = true;
 
     custom.system.systemdBootEfi.enable = true;
