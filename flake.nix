@@ -6,6 +6,7 @@
                  an attribute set that contains system configurations.
  */
  {
+
   description = "My constellation of NixOS hosts";
 
   inputs = {
@@ -105,4 +106,6 @@
         };
       };
     };
+
+}
 
