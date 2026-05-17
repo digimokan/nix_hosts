@@ -42,7 +42,7 @@
     custom.apps.tailscale.authKeyPath = config.sops.secrets.server_host_tailscale_auth_key.path;
 
     custom.system.zfs.dailyAutoScrubHour = "03";
-    custom.apps.sanoid.hourlySnapshotDatasets = [ "zroot/var" ];
+    custom.apps.sanoid.snapshottedDatasets = [ "zroot/var" ];
 
     custom.users.root.enable = true;
   };

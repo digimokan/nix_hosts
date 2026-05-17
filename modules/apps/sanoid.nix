@@ -19,48 +19,28 @@ let
 in {
 
   options.custom.apps.sanoid = {
-    hourlySnapshotDatasets = lib.mkOption {
+    snapshottedDatasets = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [];
-      description = "ZFS datasets to snapshot hourly (keep 24h, 7d, 4w, 12m).";
-    };
-
-    fifteenMinutelySnapshotDatasets = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [];
-      description = "ZFS datasets to snapshot every 15 mins (keep 16 frequent, 24h, 7d, 4w, 12m).";
+      description = "ZFS datasets to snapshot via Sanoid (15-minute, hourly, daily, weekly, monthly).";
     };
   };
 
-  config = lib.mkIf (
-    builtins.length cfg.hourlySnapshotDatasets > 0 ||
-    builtins.length cfg.fifteenMinutelySnapshotDatasets > 0
-  ) {
+  config = lib.mkIf (builtins.length cfg.snapshottedDatasets > 0) {
     services.sanoid = {
       enable = true;
       package = pkgs.unstable.sanoid;
-      datasets = lib.mkMerge [
-        (lib.genAttrs cfg.hourlySnapshotDatasets (dataset: {
-          hourly = 24;
-          daily = 7;
-          weekly = 4;
-          monthly = 12;
-          yearly = 0;
-          autosnap = true;
-          autoprune = true;
-        }))
-
-        (lib.genAttrs cfg.fifteenMinutelySnapshotDatasets (dataset: {
-          frequent = 16; # Keep 4 hours worth of 15-minute snapshots
-          hourly = 24;
-          daily = 7;
-          weekly = 4;
-          monthly = 12;
-          yearly = 0;
-          autosnap = true;
-          autoprune = true;
-        }))
-      ];
+      interval = "*-*-* *:00/15:00";
+      datasets = lib.genAttrs cfg.snapshottedDatasets (dataset: {
+        frequent = 16;
+        hourly = 24;
+        daily = 7;
+        weekly = 4;
+        monthly = 12;
+        yearly = 0;
+        autosnap = true;
+        autoprune = true;
+      });
     };
   };
 
