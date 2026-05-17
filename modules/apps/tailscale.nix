@@ -40,6 +40,17 @@ in {
         (lib.optional cfg.enableSshServer "--ssh") ++
         (lib.optional cfg.enableShieldsUp "--shields-up");
     };
+
+    assertions = [
+      {
+        assertion = !(cfg.enableSshServer && cfg.enableShieldsUp);
+        message = (
+          "The options custom.apps.tailscale.enableSshServer and "
+          + "custom.apps.tailscale.enableShieldsUp are mutually exclusive "
+          + "and cannot be enabled at the same time."
+        );
+      }
+    ];
   };
 
 }
