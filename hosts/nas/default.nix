@@ -44,7 +44,7 @@
     custom.system.zfs.dailyAutoScrubHour = "03";
     custom.apps.sanoid.snapshottedDatasets = [ "zroot/var" ];
 
-    custom.users.root.enable = true;
+    custom.users.root.password = config.sops.secrets.server_host_root_password.path;
   };
 
 }
