@@ -75,36 +75,22 @@
   */
   outputs = { self, nixpkgs, nixpkgs-unstable, disko, sops-nix, ... } @inputs:
     let
-      localFunctions =
-        let
-          sharedArgs = { inherit inputs; };
-        in {
-          # Create a system whose base packages track the stable/release
-          # packages of the release specified by nixpkgs.url.
-          mkStableSystem = { system, modules }: nixpkgs.lib.nixosSystem {
-            inherit system modules;
-            specialArgs = sharedArgs;
-          };
-
-          # Create a system whose base packages track the latest
-          # nixpkgs-unstable.
-          mkUnstableSystem = { system, modules }: nixpkgs-unstable.lib.nixosSystem {
-            inherit system modules;
-            specialArgs = sharedArgs;
-          };
-        };
-      inherit (localFunctions) mkStableSystem mkUnstableSystem;
+      # Build systems using the unstable branch.
+      # Individual modules and packages can still select the overlays
+      # for pkgs.stable and pkgs.unstable.
+      mkSystem = hostConfigPath: nixpkgs-unstable.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = { inherit inputs; };
+        modules = [
+          disko.nixosModules.disko
+          sops-nix.nixosModules.sops
+          ./modules/default.nix
+          hostConfigPath
+        ];
+      };
     in {
       nixosConfigurations = {
-        nas = mkStableSystem {
-          system = "x86_64-linux";
-          modules = [
-            disko.nixosModules.disko
-            sops-nix.nixosModules.sops
-            ./hosts/nas/default.nix
-            ./modules/default.nix
-          ];
-        };
+        nas = mkSystem ./hosts/nas/default.nix;
       };
     };
 
