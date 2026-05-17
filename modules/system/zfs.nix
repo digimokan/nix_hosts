@@ -24,14 +24,22 @@ in {
       default = null;
       description = "The hour (e.g., '03') to perform a daily ZFS scrub. If not set, autoscrub is disabled.";
     };
+
+    forceImportRoot = lib.mkEnableOption "Force-import ZFS root pool on boot. Strongly NOT recommended, to avoid data corruption.";
   };
 
-  config = lib.mkIf (cfg.dailyAutoScrubHour != null) {
-    services.zfs.autoScrub = {
-      enable = true;
-      interval = "*-*-* ${cfg.dailyAutoScrubHour}:00:00";
-    };
-  };
+  config = lib.mkMerge [
+    {
+      boot.zfs.forceImportRoot = cfg.forceImportRoot;
+    }
+
+    (lib.mkIf (cfg.dailyAutoScrubHour != null) {
+      services.zfs.autoScrub = {
+        enable = true;
+        interval = "*-*-* ${cfg.dailyAutoScrubHour}:00:00";
+      };
+    })
+  ];
 
 }
 
