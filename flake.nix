@@ -15,9 +15,11 @@
     # unstable branch packages: access this via pkgs.unstable overlay.
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
 
-    # These inputs don't follow our stable/unstable. They track their own flakes.
     disko.url = "github:nix-community/disko";
+    disko.inputs.nixpkgs.follows = "nixpkgs";
+
     sops-nix.url = "github:Mic92/sops-nix";
+    sops-nix.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   /**
