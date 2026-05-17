@@ -54,5 +54,7 @@ in {
     };
   };
 
+  systemd.services.sanoid.environment.TZ = lib.mkForce config.time.timeZone;
+
 }
 
