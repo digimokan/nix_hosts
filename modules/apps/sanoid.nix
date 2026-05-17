@@ -12,6 +12,16 @@
  */
 { config, lib, pkgs, options, ... }@allArgs:
 
+/**
+  === ESSENTIAL COMMANDS ===
+  List Snaps       : zfs list -t snapshot
+  List Snaps (Var) : zfs list -t snapshot -r <dataset_name>
+  View Snap Size   : zfs list -t snapshot -o name,used,creation
+  Browse Snap Files: cd <dataset_path>/.zfs/snapshot
+  Restore File     : sudo cp <dataset_path>/.zfs/snapshot/<snap_name>/<file> /tmp/
+  Rollback (DANGER): sudo zfs rollback -r <dataset_name>@<snapshot_name>
+*/
+
 let
 
   cfg = config.custom.apps.sanoid;

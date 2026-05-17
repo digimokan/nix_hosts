@@ -14,6 +14,8 @@ NixOS configuration to set up various hosts.
     * [Boot Target Host From Installer Image](#boot-target-host-from-installer-image)
     * [Install NixOS To Target Host Over SSH](#install-nixos-to-target-host-over-ssh)
     * [Install NixOS To Target Host From Installer Image](#install-nixos-to-target-host-from-installer-image)
+* [Usage](#usage)
+    * [ZFS Snapshots](#zfs-snapshots)
 * [Source Code Layout](#source-code-layout)
 * [Contributing](#contributing)
 
@@ -113,6 +115,14 @@ See documentation in [`.sops.yaml`](../.sops.yaml).
    $ sudo ./run.sh --deploy-local -T nas -w
    ```
 
+## Usage
+
+### ZFS Snapshots
+
+Snapshots are enabled in the host's `default.nix`. See
+[`sanoid.nix`](../modules/apps/sanoid.nix) for guidance on working with
+snapshots.
+
 ## Source Code Layout
 
 ```
@@ -128,6 +138,7 @@ See documentation in [`.sops.yaml`](../.sops.yaml).
 │ ├─┬ modules/
 │ │ │
 │ │ └─┬── apps/             # settings for installable apps and services
+│ │   ├── infrastructure/   # settings shared/used by multiple hosts/modules.
 │ │   ├── system/           # settings for linux "built-ins"
 │ │   └── users/            # settings for specific users
 │ │
