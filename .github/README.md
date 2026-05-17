@@ -119,9 +119,9 @@ See documentation in [`.sops.yaml`](../.sops.yaml).
 
 ### ZFS Snapshots
 
-Snapshots are enabled in the host's `default.nix`. See
-[`sanoid.nix`](../modules/apps/sanoid.nix) for guidance on working with
-snapshots.
+* Snapshots are enabled in the host's `default.nix`.
+* See [`sanoid.nix`](../modules/apps/sanoid.nix) for guidance on working with
+  snapshots.
 
 ## Source Code Layout
 
