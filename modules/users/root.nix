@@ -3,6 +3,7 @@
 let
 
   cfg = config.custom.users.root;
+  sec = config.sops.secrets;
 
 in {
 
@@ -13,7 +14,7 @@ in {
   config = lib.mkIf cfg.enable {
     users.users.root = {
       isNormalUser = false;
-      hashedPasswordFile = config.sops.secrets.server_host_root_password.path;
+      hashedPasswordFile = sec.server_host_root_password.path;
     };
   };
 

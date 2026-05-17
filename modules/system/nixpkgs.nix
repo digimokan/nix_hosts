@@ -13,13 +13,15 @@
 { config, lib, pkgs, options, ... }@allArgs:
 
 {
-  nixpkgs.overlays = [
-    (final: prev: {
-      # points to flake.nix nixpkgs.url <version> input
-      stable = allArgs.inputs.nixpkgs.legacyPackages.${prev.stdenv.hostPlatform.system};
-      # points to flake.nix nixpkgs-unstable.url input
-      unstable = allArgs.inputs.nixpkgs-unstable.legacyPackages.${prev.stdenv.hostPlatform.system};
-    })
-  ];
+  config = {
+    nixpkgs.overlays = [
+      (final: prev: {
+        # points to flake.nix nixpkgs.url <version> input
+        stable = allArgs.inputs.nixpkgs.legacyPackages.${prev.stdenv.hostPlatform.system};
+        # points to flake.nix nixpkgs-unstable.url input
+        unstable = allArgs.inputs.nixpkgs-unstable.legacyPackages.${prev.stdenv.hostPlatform.system};
+      })
+    ];
+  }
 }
 
