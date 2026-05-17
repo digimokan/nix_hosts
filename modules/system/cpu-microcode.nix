@@ -12,16 +12,29 @@
  */
 { config, lib, pkgs, options, ... }@allArgs:
 
-{
-  imports = [
-    ./cpu-microcode.nix
-    ./networking.nix
-    ./nix-core.nix
-    ./nixpkgs.nix
-    ./sops.nix
-    ./systemd-boot-efi.nix
-    ./timezone.nix
-    ./tmp-tmpfs.nix
+let
+
+  cfg = config.custom.system.cpuMicrocode;
+
+in {
+
+  options.custom.system.cpuMicrocode = {
+    vendor = lib.mkOption {
+      type = lib.types.enum [ "none" "amd" "intel" ];
+      default = "none";
+      description = "The CPU vendor for applying early microcode updates.";
+    };
+  };
+
+  config = lib.mkMerge [
+    (lib.mkIf (cfg.vendor == "amd") {
+      hardware.cpu.amd.updateMicrocode = true;
+    })
+
+    (lib.mkIf (cfg.vendor == "intel") {
+      hardware.cpu.intel.updateMicrocode = true;
+    })
   ];
+
 }
 
