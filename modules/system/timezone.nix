@@ -12,14 +12,21 @@
  */
 { config, lib, pkgs, options, ... }@allArgs:
 
-{
-  imports = [
-    ./networking.nix
-    ./nix-core.nix
-    ./nixpkgs.nix
-    ./sops.nix
-    ./systemd-boot-efi.nix
-    ./timezone.nix
-  ];
+let
+
+  cfg = config.custom.system.timezone;
+
+in {
+
+  options.custom.system.timezone = lib.mkOption {
+    type = lib.types.str;
+    default = "Etc/UTC";
+    description = "The timezone of the machine (e.g., 'America/Toronto').";
+  };
+
+  config = {
+    time.timeZone = cfg;
+  };
+
 }
 
