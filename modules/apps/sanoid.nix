@@ -19,6 +19,8 @@
   View Snap Size   : zfs list -t snapshot -o name,used,creation
   Browse Snap Files: cd <dataset_path>/.zfs/snapshot
   Restore File     : sudo cp <dataset_path>/.zfs/snapshot/<snap_name>/<file> /tmp/
+  Delete Snapshot  : sudo zfs destroy <dataset_name>@<snapshot_name>
+  Delete All Snaps : sudo zfs destroy zroot/var@%
   Rollback (DANGER): sudo zfs rollback -r <dataset_name>@<snapshot_name>
 */
 
