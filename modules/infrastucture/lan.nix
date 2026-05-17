@@ -13,11 +13,20 @@
 { config, lib, pkgs, options, ... }@allArgs:
 
 {
-  imports = [
-    ./apps/default.nix
-    ./infrastucture/default.nix
-    ./system/default.nix
-    ./users/default.nix
-  ];
+
+  options.custom.infrastructure.lan = {
+    routerIp = lib.mkOption {
+      type = lib.types.str;
+      default = "172.22.22.1";
+      description = "The IP address of the primary LAN router.";
+    };
+
+    domain = lib.mkOption {
+      type = lib.types.str;
+      default = "lan";
+      description = "The local search domain for the LAN.";
+    };
+  };
+
 }
 

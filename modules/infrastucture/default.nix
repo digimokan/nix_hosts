@@ -14,10 +14,7 @@
 
 {
   imports = [
-    ./apps/default.nix
-    ./infrastucture/default.nix
-    ./system/default.nix
-    ./users/default.nix
+    ./lan.nix
   ];
 }
 
