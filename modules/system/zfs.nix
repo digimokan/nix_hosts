@@ -12,17 +12,26 @@
  */
 { config, lib, pkgs, options, ... }@allArgs:
 
-{
-  imports = [
-    ./cpu-microcode.nix
-    ./networking.nix
-    ./nix-core.nix
-    ./nixpkgs.nix
-    ./sops.nix
-    ./systemd-boot-efi.nix
-    ./timezone.nix
-    ./tmp-tmpfs.nix
-    ./zfs.nix
-  ];
+let
+
+  cfg = config.custom.system.zfs;
+
+in {
+
+  options.custom.system.zfs = {
+    dailyAutoScrubHour = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "The hour (e.g., '03') to perform a daily ZFS scrub. If not set, autoscrub is disabled.";
+    };
+  };
+
+  config = lib.mkIf (cfg.dailyAutoScrubHour != null) {
+    services.zfs.autoScrub = {
+      enable = true;
+      interval = "*-*-* ${cfg.dailyAutoScrubHour}:00:00";
+    };
+  };
+
 }
 
