@@ -12,15 +12,26 @@
  */
 { config, lib, pkgs, options, ... }@allArgs:
 
-{
-  imports = [
-    ./networking.nix
-    ./nix-core.nix
-    ./nixpkgs.nix
-    ./sops.nix
-    ./systemd-boot-efi.nix
-    ./timezone.nix
-    ./tmp-tmpfs.nix
-  ];
+let
+
+  cfg = config.custom.system.tmpTmpfs;
+
+in {
+
+  options.custom.system.tmpTmpfs = {
+    enable = lib.mkEnableOption "Mount /tmp as a tmpfs (RAM disk)";
+
+    size = lib.mkOption {
+      type = lib.types.str;
+      default = "50%";
+      description = "Maximum size of the tmpfs. Can be a percentage (e.g., '50%') or absolute (e.g., '16G').";
+    };
+  };
+
+  config = lib.mkIf cfg.enable {
+    boot.tmp.useTmpfs = true;
+    boot.tmp.tmpfsSize = cfg.size;
+  };
+
 }
 

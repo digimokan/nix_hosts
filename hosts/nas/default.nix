@@ -18,6 +18,8 @@
 
     custom.system.timezone = "US/Central";
 
+    custom.system.tmpTmpfs.enable = true;
+
     custom.system.networking.hostName = "nas";
     custom.system.networking.hostId = "76755dca";
 
