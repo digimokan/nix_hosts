@@ -52,9 +52,9 @@ in {
         autoprune = true;
       });
     };
-  };
 
-  systemd.services.sanoid.environment.TZ = lib.mkForce config.time.timeZone;
+    systemd.services.sanoid.environment.TZ = lib.mkForce config.time.timeZone;
+  };
 
 }
 
