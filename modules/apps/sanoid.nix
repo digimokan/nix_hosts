@@ -42,7 +42,7 @@ in {
       package = pkgs.unstable.sanoid;
       interval = "*-*-* *:00/15:00";
       datasets = lib.genAttrs cfg.snapshottedDatasets (dataset: {
-        frequent = 16;
+        frequently = 16;
         hourly = 24;
         daily = 7;
         weekly = 4;
