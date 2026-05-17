@@ -21,7 +21,7 @@
   config = {
     system.stateVersion = "24.05";
 
-    custom.system.cpuMicrocode.vendor = "amd";
+    custom.system.cpuMicrocode = "amd";
 
     custom.system.nix.enableUnifiedCli = true;
     custom.system.nix.enableFlakes = true;

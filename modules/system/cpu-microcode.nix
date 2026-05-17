@@ -18,21 +18,20 @@ let
 
 in {
 
-  options.custom.system.cpuMicrocode = {
-    vendor = lib.mkOption {
-      type = lib.types.enum [ "none" "amd" "intel" ];
-      default = "none";
-      description = "The CPU vendor for applying early microcode updates.";
-    };
+  options.custom.system.cpuMicrocode = lib.mkOption {
+    type = lib.types.enum [ "none" "amd" "intel" ];
+    default = "none";
+    description = "The CPU vendor for applying early microcode updates.";
   };
 
   config = lib.mkMerge [
-    (lib.mkIf (cfg.vendor == "amd") {
+    (lib.mkIf (cfg == "amd") {
       hardware.cpu.amd.updateMicrocode = true;
+      hardware.cpu.amd.microcodePackage = pkgs.unstable.microcodeAmd;
     })
-
-    (lib.mkIf (cfg.vendor == "intel") {
+    (lib.mkIf (cfg == "intel") {
       hardware.cpu.intel.updateMicrocode = true;
+      hardware.cpu.intel.microcodePackage = pkgs.unstable.microcodeIntel;
     })
   ];
 
