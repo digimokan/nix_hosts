@@ -27,11 +27,9 @@ in {
   config = lib.mkMerge [
     (lib.mkIf (cfg == "amd") {
       hardware.cpu.amd.updateMicrocode = true;
-      hardware.cpu.amd.microcodePackage = pkgs.unstable.microcodeAmd;
     })
     (lib.mkIf (cfg == "intel") {
       hardware.cpu.intel.updateMicrocode = true;
-      hardware.cpu.intel.microcodePackage = pkgs.unstable.microcodeIntel;
     })
   ];
 
