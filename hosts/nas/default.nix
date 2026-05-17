@@ -12,7 +12,11 @@
  */
 { config, lib, pkgs, options, ... }@allArgs:
 
-{
+let
+
+  sec = config.sops.secrets;
+
+in {
 
   imports = [
     ./disko-config.nix
@@ -39,12 +43,12 @@
 
     custom.apps.tailscale.enable = true;
     custom.apps.tailscale.enableSshServer = true;
-    custom.apps.tailscale.authKeyPath = config.sops.secrets.server_host_tailscale_auth_key.path;
+    custom.apps.tailscale.authKeyPath = sec.server_host_tailscale_auth_key.path;
 
     custom.system.zfs.dailyAutoScrubHour = "03";
     custom.apps.sanoid.snapshottedDatasets = [ "zroot/var" ];
 
-    custom.users.root.password = config.sops.secrets.server_host_root_password.path;
+    custom.users.root.password = sec.server_host_root_password.path;
   };
 
 }
