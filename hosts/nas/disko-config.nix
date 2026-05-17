@@ -55,7 +55,7 @@
         type = "zpool";
         mode = "";
         # best practice: top-level pool dataset is unmounted
-        mountpoint = "none";
+        mountpoint = null;
         rootFsOptions = {
           compression = "lz4";
           acltype = "posixacl";
