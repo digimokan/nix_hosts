@@ -22,6 +22,6 @@
         unstable = allArgs.inputs.nixpkgs-unstable.legacyPackages.${prev.stdenv.hostPlatform.system};
       })
     ];
-  }
+  };
 }
 
