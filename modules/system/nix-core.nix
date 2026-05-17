@@ -14,11 +14,11 @@
 
 let
 
-  cfg = config.custom.system.nix;
+  cfg = config.custom.system.nixCore;
 
 in {
 
-  options.custom.system.nix = {
+  options.custom.system.nixCore = {
     enableUnifiedCli = lib.mkEnableOption "Enable the modern unified Nix CLI (nix-command)";
     enableFlakes = lib.mkEnableOption "Enable Nix flakes support";
   };

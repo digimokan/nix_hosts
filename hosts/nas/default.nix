@@ -23,8 +23,8 @@
 
     custom.system.cpuMicrocode = "amd";
 
-    custom.system.nix.enableUnifiedCli = true;
-    custom.system.nix.enableFlakes = true;
+    custom.system.nixCore.enableUnifiedCli = true;
+    custom.system.nixCore.enableFlakes = true;
 
     custom.system.sops.enable = true;
 
