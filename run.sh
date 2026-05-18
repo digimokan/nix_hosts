@@ -53,6 +53,7 @@ OPTIONS:
 EXAMPLES:
   Local Deploy  (run on minimal ISO): sudo ./$(basename "${0}") --deploy-local -p -w -T nas
   Remote Deploy (SSH to minimal ISO):      ./$(basename "${0}") --deploy-remote -w -T nas -R 192.168.1.50
+  Local Wipe    (run on minimal ISO): sudo ./$(basename "${0}") -w -T nas
   Edit Secret   (run on dev machine):      ./$(basename "${0}") -e secrets/admin_secrets.yaml
 EOF
 }
