@@ -15,7 +15,6 @@
 let
 
   cfg = config.custom.system.networking;
-  infra = config.custom.infrastructure.lan;
 
 in {
 
@@ -34,10 +33,10 @@ in {
 
     useNetworkManager = lib.mkEnableOption "Whether to use NetworkManager (typically true for desktops, false for servers).";
 
-    forceRouterDns = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
-      description = "Force the system to use the global router IP for DNS.";
+    primaryDnsServerIpAddr = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "The IP address of the primary DNS server. If set, this forces the system to use it.";
     };
   };
 
@@ -46,7 +45,7 @@ in {
     networking.hostId = cfg.hostId;
     networking.networkmanager.enable = cfg.useNetworkManager;
 
-    networking.nameservers = lib.mkIf cfg.forceRouterDns [ infra.routerIp ];
+    networking.nameservers = lib.mkIf (cfg.primaryDnsServerIpAddr != null) [ cfg.primaryDnsServerIpAddr ];
 
     assertions = [
       {

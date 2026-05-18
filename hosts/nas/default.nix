@@ -15,6 +15,7 @@
 let
 
   sec = config.sops.secrets;
+  infra = config.custom.infrastructure.lan;
 
 in {
 
@@ -40,6 +41,7 @@ in {
 
     custom.system.networking.hostName = "nas";
     custom.system.networking.hostId = "76755dca";
+    custom.system.networking.primaryDnsServerIpAddr = infra.lan.routerIpAddr;
 
     custom.apps.tailscale.enable = true;
     custom.apps.tailscale.enableSshServer = true;

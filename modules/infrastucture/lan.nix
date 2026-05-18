@@ -15,7 +15,7 @@
 {
 
   options.custom.infrastructure.lan = {
-    routerIp = lib.mkOption {
+    routerIpAddr = lib.mkOption {
       type = lib.types.str;
       default = "172.22.22.1";
       description = "The IP address of the primary LAN router.";
