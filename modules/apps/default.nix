@@ -14,6 +14,7 @@
 
 {
   imports = [
+    ./git.nix
     ./sanoid.nix
     ./tailscale.nix
   ];
