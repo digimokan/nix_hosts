@@ -14,15 +14,14 @@
 
 {
   config = {
+    # Ensure mdadm is available in the initrd to assemble the boot mirror early
+    boot.initrd.availableKernelModules = [ "md_mod" "raid1" ];
+
     disko.devices = {
       disk = {
-        main = {
+        disk1 = {
           type = "disk";
-          # To obtain the Disk ID, run 'ls -l /dev/disk/by-id/':
-          #   * SATA SSD and USB Enclosures: use ID prefixed with 'ata-'
-          #   * NVME: use ID prefixed with 'nvme-eui.'
-          #   * USB Drives (not in Enclosures): use ID prefixed with 'usb-'
-          device = "/dev/disk/by-id/nvme-eui.00000000000000000026b76876da41f5";
+          device = "/dev/disk/by-id/ata-SanDisk_SSD_PLUS_480GB_251610A001FD";
           content = {
             type = "gpt";
             partitions = {
@@ -34,10 +33,37 @@
                 size = "1G";
                 type = "EF00";
                 content = {
-                  type = "filesystem";
-                  format = "vfat";
-                  mountpoint = "/boot";
-                  mountOptions = [ "defaults" ];
+                  type = "mdraid";
+                  name = "boot";
+                };
+              };
+              zfs = {
+                size = "100%";
+                content = {
+                  type = "zfs";
+                  pool = "zroot";
+                };
+              };
+            };
+          };
+        };
+
+        disk2 = {
+          type = "disk";
+          device = "/dev/disk/by-id/ata-SanDisk_SSD_PLUS_480GB_25216S805688";
+          content = {
+            type = "gpt";
+            partitions = {
+              boot = {
+                size = "1M";
+                type = "EF02";
+              };
+              ESP = {
+                size = "1G";
+                type = "EF00";
+                content = {
+                  type = "mdraid";
+                  name = "boot";
                 };
               };
               zfs = {
@@ -51,9 +77,26 @@
           };
         };
       };
+
+      mdadm = {
+        boot = {
+          type = "mdadm";
+          level = 1;
+          # Metadata 1.0 places the superblock at the END of the partition.
+          # This is critical so the UEFI firmware still sees a raw FAT32 filesystem.
+          metadata = "1.0";
+          content = {
+            type = "filesystem";
+            format = "vfat";
+            mountpoint = "/boot";
+            mountOptions = [ "defaults" ];
+          };
+        };
+      };
+
       zpool.zroot = {
         type = "zpool";
-        mode = "";
+        mode = "mirror";
         # best practice: top-level pool dataset is unmounted
         mountpoint = null;
         rootFsOptions = {
