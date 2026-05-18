@@ -15,7 +15,7 @@
 let
 
   sec = config.sops.secrets;
-  infra = config.custom.infrastructure.lan;
+  infra = config.custom.infrastructure;
 
 in {
 
