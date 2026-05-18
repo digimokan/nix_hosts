@@ -13,9 +13,19 @@
 { config, lib, pkgs, options, ... }@allArgs:
 
 {
-  imports = [
-    ./editor.nix
-    ./lan.nix
-  ];
+  options.custom.infrastructure.editor = {
+    defaultEditor = lib.mkOption {
+      type = lib.types.str;
+      default = "vi";
+      description = "The global default CLI text editor command to use across the system.";
+    };
+  };
+
+  config = {
+    environment.variables = {
+      EDITOR = config.custom.infrastructure.editor.defaultEditor;
+      VISUAL = config.custom.infrastructure.editor.defaultEditor;
+    };
+  };
 }
 

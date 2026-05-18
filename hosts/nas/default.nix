@@ -48,6 +48,9 @@ in {
     custom.system.zfs.dailyAutoScrubHour = "03";
     custom.apps.sanoid.snapshottedDatasets = [ "zroot/var" ];
 
+    custom.apps.git.enable = true;
+    custom.apps.git.userName = "digimokan";
+
     custom.users.root.password = sec.server_host_root_password.path;
   };
 
