@@ -12,18 +12,26 @@
  */
 { config, lib, pkgs, options, ... }@allArgs:
 
-{
-  imports = [
-    ./cpu-microcode.nix
-    ./grub.nix
-    ./networking.nix
-    ./nix-core.nix
-    ./nixpkgs.nix
-    ./sops.nix
-    ./systemd-boot-efi.nix
-    ./timezone.nix
-    ./tmp-tmpfs.nix
-    ./zfs.nix
-  ];
+let
+
+  cfg = config.custom.infrastructure.bootloader;
+
+in {
+
+  options.custom.infrastructure.bootloader = lib.mkOption {
+    type = lib.types.enum [ "none" "grub" "systemd-boot" ];
+    default = "none";
+    description = "The active bootloader for the system (set automatically by bootloader modules).";
+  };
+
+  config = {
+    assertions = [
+      {
+        assertion = cfg != "none";
+        message = "A bootloader must be explicitly enabled (e.g., "
+          + "custom.system.grub.mode or custom.system.systemdBootEfi.enable).";
+      }
+    ];
+  };
 }
 

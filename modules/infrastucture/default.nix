@@ -14,6 +14,7 @@
 
 {
   imports = [
+    ./bootloader.nix
     ./editor.nix
     ./lan.nix
   ];
