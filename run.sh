@@ -243,7 +243,10 @@ wipe_target_disks() {
   local nix_apply='x: builtins.concatStringsSep "\n" (builtins.map (name: x.${name}.device) (builtins.attrNames x))'
 
   local raw_disk_output
-  raw_disk_output=$(nix --extra-experimental-features "nix-command flakes" eval --raw "${nix_query}" --apply "${nix_apply}" || true)
+  # normal cmd:
+  raw_disk_output=$(nix --extra-experimental-features "nix-command flakes" eval --raw "${nix_query}" --apply "${nix_apply}" 2>/dev/null || true)
+  # debug-log cmd:
+  # raw_disk_output=$(nix --extra-experimental-features "nix-command flakes" eval --raw "${nix_query}" --apply "${nix_apply}" || true)
   local target_disks=()
   while IFS= read -r disk; do
     if [[ -n "${disk}" && "${disk}" == /dev/* ]]; then
