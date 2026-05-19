@@ -239,6 +239,7 @@ wipe_target_disks() {
   echo "🔍 Querying flake configuration for target disks..."
 
   local nix_query=".#nixosConfigurations.${target}.config.disko.devices.disk"
+  # shellcheck disable=SC2016
   local nix_apply='x: builtins.concatStringsSep "\n" (builtins.map (name: x.${name}.device) (builtins.attrNames x))'
 
   local raw_disk_output
