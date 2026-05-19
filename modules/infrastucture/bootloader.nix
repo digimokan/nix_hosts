@@ -19,7 +19,7 @@ let
 in {
 
   options.custom.infrastructure.bootloader = lib.mkOption {
-    type = lib.types.enum [ "none" "grub" "systemd-boot" ];
+    type = lib.types.enum [ "none" "grub" "systemd-boot-efi" ];
     default = "none";
     description = "The active bootloader for the system (set automatically by bootloader modules).";
   };
