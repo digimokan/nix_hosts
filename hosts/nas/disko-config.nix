@@ -8,7 +8,7 @@
           #   * SATA SSD and USB Enclosures: use ID prefixed with 'ata-'
           #   * NVME: use ID prefixed with 'nvme-eui.'
           #   * USB Drives (not in Enclosures): use ID prefixed with 'usb-'
-          device = "/dev/disk/by-id/nvme-eui.00000000000000000026b76876da41f5";
+          device = "/dev/disk/by-id/ata-SanDisk_SSD_PLUS_480GB_25216S805688";
           content = {
             type = "gpt";
             partitions = {
