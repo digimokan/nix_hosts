@@ -5,10 +5,11 @@
         main = {
           type = "disk";
           # To obtain the Disk ID, run 'ls -l /dev/disk/by-id/':
-          #   * SATA SSD and USB Enclosures: use ID prefixed with 'ata-'
-          #   * NVME: use ID prefixed with 'nvme-eui.'
-          #   * USB Drives (not in Enclosures): use ID prefixed with 'usb-'
-          device = "/dev/disk/by-id/ata-SanDisk_SSD_PLUS_480GB_25216S805688";
+          #   * SATA SSDs:      use ID prefixed with 'wwn-'
+          #   * USB Enclosures: use ID prefixed with 'wwn-'
+          #   * NVME SSDs:      use ID prefixed with 'nvme-eui.'
+          #   * USB Sticks:     use ID prefixed with 'usb-'
+          device = "/dev/disk/by-id/wwn-0x5001b448c8589b8d";
           content = {
             type = "gpt";
             partitions = {
