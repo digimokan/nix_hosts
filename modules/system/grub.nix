@@ -28,9 +28,9 @@ in {
     efiModeMirrorTwoDisks = lib.mkEnableOption "Use mirrored EFI partitions mounted at /boot and /boot-fallback.";
 
     efiModeRemovableDisks = lib.mkEnableOption
-      "Install GRUB to the fallback EFI path (of one disk, or two mirrored disks) "
+      ("Install GRUB to the fallback EFI path (of one disk, or two mirrored disks) "
       + "without modifying NVRAM boot entries "
-      + "(CRITICAL for USB enclosures, as ports can re-enumerate).";
+      + "(CRITICAL for USB enclosures, as ports can re-enumerate).");
 
     biosModeDevices = lib.mkOption {
       type = lib.types.listOf lib.types.str;
