@@ -311,13 +311,22 @@ wipe_target_disks() {
 
 execute_disko_format() {
   local target="${1}"
-  echo "⚙️ Formatting disks and mounting to /mnt via Disko..."
 
-  # Run pure disko (formats and mounts, does NOT install NixOS)
+  echo "⚙️ Formatting disks via Disko..."
   nix --extra-experimental-features "nix-command flakes" \
-    run "github:nix-community/disko" -- --mode disko --flake ".#${target}"
+    run "github:nix-community/disko" -- --mode format --flake ".#${target}"
+
+  echo "⏳ Waiting for USB enclosure block devices to settle..."
+  udevadm settle
+  sleep 5
 
   echo "✅ Disko formatting complete."
+
+  echo "⚙️ Mounting disks to /mnt via Disko..."
+  nix --extra-experimental-features "nix-command flakes" \
+    run "github:nix-community/disko" -- --mode mount --flake ".#${target}"
+
+  echo "✅ Disko mounting complete."
 }
 
 execute_nixos_install() {
