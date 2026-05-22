@@ -291,6 +291,24 @@ wipe_target_disks() {
   echo "✅ Targeted wipe sequence complete."
 }
 
+emplace_target_hostid() {
+  local target="${1}"
+
+  echo "🧬 Extracting target hostId to prevent ZFS import mismatch..."
+  local target_hostid
+  target_hostid=$(nix --extra-experimental-features "nix-command flakes" eval --raw ".#nixosConfigurations.${target}.config.networking.hostId")
+
+  if [ -z "${target_hostid}" ]; then
+    die "Could not extract networking.hostId for '${target}'."
+  fi
+
+  # The Live ISO symlinks /etc/hostid to the read-only Nix store.
+  # Remove the symlink and write the target's hostId to the RAM overlay filesystem.
+  rm -f /etc/hostid
+  zgenhostid "${target_hostid}"
+  echo "✅ Installer hostId temporarily assumed as ${target_hostid}."
+}
+
 execute_disko_format() {
   local target="${1}"
   echo "⚙️ Formatting disks and mounting to /mnt via Disko..."
@@ -319,6 +337,8 @@ run_build_sequence() {
   if [ "${EUID}" -ne 0 ]; then
     die "Build sequence requires root privileges."
   fi
+
+  emplace_target_hostid "${target}"
 
   if [ "${do_wipe}" = "yes" ]; then
     wipe_target_disks "${target}"

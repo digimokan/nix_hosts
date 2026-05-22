@@ -48,7 +48,6 @@ in {
     custom.apps.tailscale.authKeyPath = sec.server_host_tailscale_auth_key.path;
 
     custom.system.zfs.dailyAutoScrubHour = "03";
-    custom.system.zfs.forceImportRoot = true;
     custom.apps.sanoid.snapshottedDatasets = [ "zroot/var" ];
 
     custom.apps.git.enable = true;
