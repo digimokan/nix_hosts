@@ -51,6 +51,9 @@ in {
       boot.loader.grub.efiInstallAsRemovable = cfg.efiModeRemovableDisks;
       boot.loader.efi.canTouchEfiVariables = !cfg.efiModeRemovableDisks;
 
+      # testing. todo-optionalize this.....
+      boot.initrd.availableKernelModules = [ "usb_storage" "uas" ];
+
       boot.loader.grub.mirroredBoots = lib.mkIf cfg.efiModeMirrorTwoDisks [
         { devices = [ "nodev" ]; path = "/boot"; }
         { devices = [ "nodev" ]; path = "/boot-fallback"; }
