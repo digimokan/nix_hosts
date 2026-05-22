@@ -51,8 +51,10 @@ in {
       boot.loader.grub.efiInstallAsRemovable = cfg.efiModeRemovableDisks;
       boot.loader.efi.canTouchEfiVariables = !cfg.efiModeRemovableDisks;
 
-      # testing. todo-optionalize this.....
-      boot.initrd.availableKernelModules = [ "usb_storage" "uas" ];
+      boot.initrd.availableKernelModules = lib.mkIf cfg.efiModeRemovableDisks [
+        "usb_storage"
+        "uas"
+      ];
 
       boot.loader.grub.mirroredBoots = lib.mkIf cfg.efiModeMirrorTwoDisks [
         { devices = [ "nodev" ]; path = "/boot"; }
