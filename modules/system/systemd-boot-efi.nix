@@ -19,7 +19,7 @@ let
 in {
 
   options.custom.system.systemdBootEfi = {
-    enable = lib.mkEnableOption "Enable systemd-boot with EFI variable modification";
+    enable = lib.mkEnableOption "Enable systemd-boot for single-disk system, with EFI variable modification";
   };
 
   config = lib.mkIf cfg.enable {

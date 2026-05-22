@@ -239,14 +239,11 @@ wipe_target_disks() {
   echo "🔍 Querying flake configuration for target disks..."
 
   local nix_query=".#nixosConfigurations.${target}.config.disko.devices.disk"
-  # shellcheck disable=SC2016
-  local nix_apply='x: builtins.concatStringsSep "\n" (builtins.map (name: x.${name}.device) (builtins.attrNames x))'
+  local nix_apply='x: builtins.concatStringsSep "\n" (builtins.map (d: d.device) (builtins.attrValues x))'
 
   local raw_disk_output
-  # normal cmd:
-  # raw_disk_output=$(nix --extra-experimental-features "nix-command flakes" eval --raw "${nix_query}" --apply "${nix_apply}" 2>/dev/null || true)
-  # debug-log cmd:
-  raw_disk_output=$(nix --extra-experimental-features "nix-command flakes" eval --raw "${nix_query}" --apply "${nix_apply}" || true)
+  raw_disk_output=$(nix --extra-experimental-features "nix-command flakes" eval --raw "${nix_query}" --apply "${nix_apply}" 2>/dev/null || true)
+
   local target_disks=()
   while IFS= read -r disk; do
     if [[ -n "${disk}" && "${disk}" == /dev/* ]]; then

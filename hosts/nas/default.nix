@@ -33,9 +33,7 @@ in {
 
     custom.system.sops.enable = true;
 
-    custom.system.grub.enableMode = "efi";
-    custom.system.grub.efiModeMirrorTwoDisks = true;
-    custom.system.grub.efiModeRemovableDisks = true;
+    custom.system.systemdBootEfi.enable = true;
 
     custom.system.timezone = "US/Central";
 
