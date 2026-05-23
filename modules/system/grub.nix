@@ -15,37 +15,26 @@
 let
 
   cfg = config.custom.system.grub;
+  diskoDisks = config.disko.devices.disk;
+  isMirror = builtins.length (builtins.attrValues diskoDisks) == 2;
 
 in {
 
   options.custom.system.grub = {
     enableMode = lib.mkOption {
-      type = lib.types.enum [ "none" "efi" "bios" ];
-      default = "none";
-      description = "Enable GRUB bootloader in specific mode";
+      type = lib.types.enum [ "efi" "bios" ];
+      description = "Enable GRUB bootloader in EFI or BIOS mode.";
     };
-
-    efiModeMirrorTwoDisks = lib.mkEnableOption "Use mirrored EFI partitions mounted at /boot and /boot-fallback.";
 
     efiModeRemovableDisks = lib.mkEnableOption
       ("Install GRUB to the fallback EFI path (of one disk, or two mirrored disks) "
       + "without modifying NVRAM boot entries "
       + "(CRITICAL for USB enclosures, as ports can re-enumerate).");
-
-    biosModeDevices = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [];
-      description =
-        "List of devices to install GRUB to for BIOS mode (e.g., ['/dev/disk/by-id/nvme-eui...']).";
-    };
   };
 
-  config = lib.mkMerge [
-    (lib.mkIf (cfg.enableMode != "none") {
-      boot.loader.grub.enable = true;
-      custom.infrastructure.bootloader = "grub";
-    })
-
+  config = {
+    boot.loader.grub.enable = true;
+  } // lib.mkMerge [
     (lib.mkIf (cfg.enableMode == "efi") {
       boot.loader.grub.efiSupport = true;
       boot.loader.grub.efiInstallAsRemovable = cfg.efiModeRemovableDisks;
@@ -56,16 +45,16 @@ in {
         "uas"
       ];
 
-      boot.loader.grub.mirroredBoots = lib.mkIf cfg.efiModeMirrorTwoDisks [
+      boot.loader.grub.mirroredBoots = lib.mkIf isMirror [
         { devices = [ "nodev" ]; path = "/boot"; }
         { devices = [ "nodev" ]; path = "/boot-fallback"; }
       ];
 
-      boot.loader.grub.devices = lib.mkIf (!cfg.efiModeMirrorTwoDisks) [ "nodev" ];
+      boot.loader.grub.devices = lib.mkIf (!isMirror) [ "nodev" ];
     })
 
     (lib.mkIf (cfg.enableMode == "bios") {
-      boot.loader.grub.devices = cfg.biosModeDevices;
+      boot.loader.grub.devices = lib.mapAttrsToList (name: disk: disk.device) diskoDisks;
     })
   ];
 

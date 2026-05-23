@@ -20,7 +20,6 @@
     ./nix-core.nix
     ./nixpkgs.nix
     ./sops.nix
-    ./systemd-boot-efi.nix
     ./timezone.nix
     ./tmp-tmpfs.nix
     ./zfs.nix
