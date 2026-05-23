@@ -9,11 +9,11 @@
           - USB Sticks:     use ID prefixed with 'usb-'
   output (attribute set):
     An attribute set of disk(s) and filesystem(s) parsable by disko. Includes
-      - GRUB bootloader.
-      - The zpool 'zroot' mounted on root.
-      - A single-disk zpool, or two-disk mirror zpool.
+      - Partitions suitable for GRUB bootloader.
       - Support for UEFI BIOS or Legacy BIOS.
- */
+      - A single-disk zpool, or two-disk mirror zpool.
+      - The zpool 'zroot' mounted on root.
+*/
 { lib }:
 diskIds:
 
