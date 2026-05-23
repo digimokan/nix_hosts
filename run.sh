@@ -300,7 +300,6 @@ wipe_target_disks() {
 
   for disk in "${target_disks[@]}"; do
     echo "☢️ Nuking ${disk}..."
-    blkdiscard -f "${disk}" 2>/dev/null || echo "     Warning: blkdiscard failed or is unsupported. Proceeding to software wipe..."
 
     # Deep wipe: identify all partitions and the parent disk, reverse sorted
     # so child partitions (e.g., sda2, sda1) are wiped before the parent (sda).
@@ -316,8 +315,12 @@ wipe_target_disks() {
       wipefs -a -f "${part}" 2>/dev/null || true
     done
 
-    # Ensure GPT backup structures are fully destroyed on the parent disk
+    blkdiscard -f "${disk}" 2>/dev/null || true
+    mdadm --zero-superblock --force "${disk}" 2>/dev/null || true
+    zpool labelclear -f "${disk}" 2>/dev/null || true
+    wipefs -a -f "${disk}" 2>/dev/null || true
     sgdisk --zap-all "${disk}" >/dev/null 2>&1 || true
+
     partprobe "${disk}" 2>/dev/null || echo "     Warning: partprobe failed. The kernel is locked. A reboot is recommended."
     sleep 2
   done
