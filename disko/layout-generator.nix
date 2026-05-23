@@ -97,6 +97,11 @@ in {
           type = "zfs_fs";
           mountpoint = "/var";
         };
+        # impermanence: persist data from "/" (e.g. /etc/xxxx) into this dataset
+        "persist" = {
+          type = "zfs_fs";
+          mountpoint = "/persist";
+        };
       };
     };
   };

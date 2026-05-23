@@ -345,6 +345,11 @@ execute_disko_format() {
     run "github:nix-community/disko" -- --mode mount --flake ".#${target}"
 
   echo "✅ Disko mounting complete."
+
+  echo "📸 Creating 'blank' snapshot for impermanence..."
+  zfs snapshot zroot/nixos@blank
+
+  echo "✅ Initial 'blank' impermanence snapshot complete."
 }
 
 execute_nixos_install() {

@@ -13,17 +13,23 @@
 { config, lib, pkgs, options, ... }@allArgs:
 
 {
-  imports = [
-    ./cpu-microcode.nix
-    ./grub.nix
-    ./impermanence.nix
-    ./networking.nix
-    ./nix-core.nix
-    ./nixpkgs.nix
-    ./sops.nix
-    ./timezone.nix
-    ./tmp-tmpfs.nix
-    ./zfs.nix
-  ];
+
+  config = {
+    environment.persistence."/persist" = {
+      # keep bind-mounted dirs from appearing as visible drives in file managers
+      hideMounts = true;
+      directories = [
+        # preserve SSH host keys
+        "/etc/ssh"
+        # preserve known WiFi/Network state if used
+        "/etc/NetworkManager"
+      ];
+      files = [
+        # preserve systemd journal linking
+        "/etc/machine-id"
+      ];
+    };
+  };
+
 }
 

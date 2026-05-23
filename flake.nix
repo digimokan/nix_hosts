@@ -16,10 +16,14 @@
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
 
     disko.url = "github:nix-community/disko";
-    disko.inputs.nixpkgs.follows = "nixpkgs";
+    disko.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
     sops-nix.url = "github:Mic92/sops-nix";
-    sops-nix.inputs.nixpkgs.follows = "nixpkgs";
+    sops-nix.inputs.nixpkgs.follows = "nixpkgs-unstable";
+
+    impermanence.url = "github:nix-community/impermanence";
+    impermanence.inputs.nixpkgs.follows = "nixpkgs-unstable";
+    impermanence.inputs.home-manager.follows = "nixpkgs-unstable";
   };
 
   /**
@@ -85,6 +89,7 @@
           { networking.hostName = hostName; }
           disko.nixosModules.disko
           sops-nix.nixosModules.sops
+          impermanence.nixosModules.impermanence
           ./modules/default.nix
           ./hosts/${hostName}/default.nix
         ];
