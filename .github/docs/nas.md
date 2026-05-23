@@ -103,8 +103,17 @@ BACK OF PC
 
 ### Hardware BIOS Configuration
 
+#### General Settings
+
 * `Settings` -> `Platform Power`
 * `AC BACK`: "Always On"
+
+#### Boot Devices
+
+Once NixOS has been installed to the two mirrored drives:
+
+* `Boot` -> `Boot Option Priorities`: ensure the two `UEFI OS (SABRENT)`
+  entries are at the top of the list. Set all other enries to `Disabled`.
 
 ## Configuration
 
