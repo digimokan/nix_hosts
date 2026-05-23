@@ -21,9 +21,18 @@ in {
   options.custom.system.nixCore = {
     enableUnifiedCli = lib.mkEnableOption "Enable the modern unified Nix CLI (nix-command)";
     enableFlakes = lib.mkEnableOption "Enable Nix flakes support";
+
+    initialStateVersion = lib.mkOption {
+      type = lib.types.str;
+      description = "Nix version that apps will use for mutable data. Treat this as config 'born-on' date.";
+    };
   };
 
   config = lib.mkMerge [
+    {
+      system.stateVersion = cfg.initialStateVersion;
+    }
+
     (lib.mkIf cfg.enableUnifiedCli {
        nix.settings.experimental-features = [ "nix-command" ];
     })

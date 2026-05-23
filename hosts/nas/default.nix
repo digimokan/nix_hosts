@@ -21,24 +21,16 @@ in {
 
   imports = [
     ./disko-config.nix
+    ../all-hosts.nix
   ];
 
   config = {
-    system.stateVersion = "24.05";
+    custom.system.nixCore.initialStateVersion = "24.05";
 
     custom.system.cpuMicrocode = "amd";
 
-    custom.system.nixCore.enableUnifiedCli = true;
-    custom.system.nixCore.enableFlakes = true;
-
-    custom.system.sops.enable = true;
-
     custom.system.grub.enableMode = "efi";
     custom.system.grub.efiModeRemovableDisks = true;
-
-    custom.system.timezone = "US/Central";
-
-    custom.system.tmpTmpfs.enable = true;
 
     custom.system.networking.hostName = "nas";
     custom.system.networking.hostId = "76755dca";
@@ -47,9 +39,6 @@ in {
     custom.apps.tailscale.enable = true;
     custom.apps.tailscale.enableSshServer = true;
     custom.apps.tailscale.authKeyPath = sec.server_host_tailscale_auth_key.path;
-
-    custom.system.zfs.dailyAutoScrubHour = "03";
-    custom.apps.sanoid.snapshottedDatasets = [ "zroot/var" ];
 
     custom.apps.git.enable = true;
     custom.apps.git.userName = "digimokan";
