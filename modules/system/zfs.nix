@@ -26,6 +26,10 @@ in {
     };
 
     forceImportRoot = lib.mkEnableOption "Force-import ZFS root pool on boot. Strongly NOT recommended, to avoid data corruption.";
+
+    # Disable "device cache file", to force live scan of disks on boot
+    # Prevents 3-minute wait on boot if disk is missing
+    boot.zfs.importCache = false;
   };
 
   config = lib.mkMerge [
