@@ -78,19 +78,20 @@
       # Build systems using the unstable branch.
       # Individual modules and packages can still select the overlays
       # for pkgs.stable and pkgs.unstable.
-      mkSystem = hostConfigPath: nixpkgs-unstable.lib.nixosSystem {
+      mkSystem = hostName: nixpkgs-unstable.lib.nixosSystem {
         system = "x86_64-linux";
         specialArgs = { inherit inputs; };
         modules = [
+          { networking.hostName = hostName; }
           disko.nixosModules.disko
           sops-nix.nixosModules.sops
           ./modules/default.nix
-          hostConfigPath
+          ./hosts/${hostName}/default.nix
         ];
       };
     in {
       nixosConfigurations = {
-        nas = mkSystem ./hosts/nas/default.nix;
+        nas = mkSystem "nas";
       };
     };
 

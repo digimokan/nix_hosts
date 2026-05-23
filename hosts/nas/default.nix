@@ -32,8 +32,6 @@ in {
     custom.system.grub.enableMode = "efi";
     custom.system.grub.efiModeRemovableDisks = true;
 
-    custom.system.networking.hostName = "nas";
-    custom.system.networking.hostId = "76755dca";
     custom.system.networking.primaryDnsServerIpAddr = infra.lan.routerIpAddr;
 
     custom.apps.tailscale.enable = true;
