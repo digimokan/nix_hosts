@@ -30,11 +30,6 @@ in {
     {
       # Forces import of zroot on boot. Strongly not recommended by NixOS.
       boot.zfs.forceImportRoot = false;
-
-      # impermanence: revert root dataset to "blank" dataset created by run.sh
-      boot.initrd.postDeviceCommands = lib.mkAfter ''
-        zfs rollback -r zroot/nixos@blank
-      '';
     }
 
     (lib.mkIf (cfg.dailyAutoScrubHour != null) {

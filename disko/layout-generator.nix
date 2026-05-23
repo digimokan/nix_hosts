@@ -62,6 +62,16 @@ let
 
 in {
   disko.devices = {
+    # tmpfs RAM disk for the root filesystem, for use with impermanence
+    nodev."/" = {
+      fsType = "tmpfs";
+      mountOptions = [
+        "defaults"
+        "size=4G"
+        "mode=755"
+      ];
+    };
+
     # Generate the primary disk, and conditionally append the secondary disk
     disk = {
       main = mkDisk "main" disk1Id;
@@ -81,10 +91,6 @@ in {
         atime = "off";
       };
       datasets = {
-        "nixos" = {
-          type = "zfs_fs";
-          mountpoint = "/";
-        };
         "nix" = {
           type = "zfs_fs";
           mountpoint = "/nix";
