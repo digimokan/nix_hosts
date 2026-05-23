@@ -77,7 +77,7 @@
       lib.<hostname>:
         Helper functions or libraries intended for use by other flakes.
   */
-  outputs = { self, nixpkgs, nixpkgs-unstable, disko, sops-nix, ... } @inputs:
+  outputs = { self, nixpkgs, nixpkgs-unstable, disko, sops-nix, impermanence, ... } @inputs:
     let
       # Build systems using the unstable branch.
       # Individual modules and packages can still select the overlays
