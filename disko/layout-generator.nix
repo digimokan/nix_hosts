@@ -44,7 +44,9 @@ let
             format = "vfat";
             # Grub mirrored boot requires distinct mountpoints to manage both bootloaders
             mountpoint = if name == "main" then "/boot" else "/boot-fallback";
-            mountOptions = [ "defaults" ];
+            # "nofail" prevents booting in emergency mode.
+            # "x-systemd.device-timeout=" is max wait time for partition mounting
+            mountOptions = [ "defaults" "nofail" "x-systemd.device-timeout=5s" ];
           };
         };
         zfs = {
