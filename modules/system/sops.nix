@@ -27,7 +27,7 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-    environment.systemPackages = [ pkgs.stable.sops ];
+    environment.systemPackages = [ pkgs.unstable.sops ];
 
     # Note: the run.sh script emplaces the host key here, on deployment
     sops.age.keyFile = "/var/lib/sops-nix/host_keypair.age";
