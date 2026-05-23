@@ -30,10 +30,6 @@ in {
     {
       # Forces import of zroot on boot. Strongly not recommended by NixOS.
       boot.zfs.forceImportRoot = false;
-
-      # Disable "device cache file", to force live scan of disks on boot
-      # Prevents 3-minute wait on boot if disk is missing
-      boot.zfs.importCache = false;
     }
 
     (lib.mkIf (cfg.dailyAutoScrubHour != null) {
