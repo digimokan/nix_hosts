@@ -15,6 +15,9 @@
 {
 
   config = {
+    # mount /persist on early boot, so impermanence can read preserved files
+    fileSystems."/persist".neededForBoot = true;
+
     environment.persistence."/persist" = {
       # keep bind-mounted dirs from appearing as visible drives in file managers
       hideMounts = true;
