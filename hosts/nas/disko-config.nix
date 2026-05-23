@@ -11,5 +11,6 @@ let
 in
   genDiskoLayout [
     "/dev/disk/by-id/wwn-0x5001b448c8589b8d"
+    "/dev/disk/by-id/wwn-0x5001b448c8e4e17e"
   ]
 
