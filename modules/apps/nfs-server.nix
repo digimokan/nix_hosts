@@ -41,7 +41,7 @@ in {
           childDirs = lib.mkOption {
             type = lib.types.listOf lib.types.str;
             default = [];
-            description = "List of child dirs under the base path, to export as shares.";
+            description = "List of child dirs under the base path, to export as shares. If empty, only base path is exported.";
           };
           allowedClients = lib.mkOption {
             type = lib.types.str;
