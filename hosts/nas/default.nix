@@ -17,11 +17,17 @@ let
   sec = config.sops.secrets;
   infra = config.custom.infrastructure;
   tscale = config.custom.apps.tailscale;
+  nasCfg = config.custom.hosts.nas;
 
   storagePoolName = "zdata";
-  storagePoolMountPoint = "/data";
-
-  nasCfg = config.custom.hosts.nas;
+  storagePoolBaseMountDir = "/data";
+  storagePoolChildDirs = [
+    "Movies"
+    "Pictures"
+    "Shows"
+    "HomeVideos"
+    "Software"
+  ];
 
 in {
 
@@ -31,22 +37,14 @@ in {
   ];
 
   options.custom.hosts.nas = {
-    baseNfsExportDir = lib.mkOption {
+    nfsBaseExportDir = lib.mkOption {
       type = lib.types.str;
-      default = storagePoolMountPoint;
-      description = "The absolute base directory on the NAS where NFS shares originate.";
+      description = "The absolute base dir on the NAS where NFS shares originate. Clients use this to mount.";
     };
 
-    childNfsExportDirs = lib.mkOption {
+    nfsChildExportDirs = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [
-        "Movies"
-        "Pictures"
-        "Shows"
-        "HomeVideos"
-        "Software"
-      ];
-      description = "The list of NFS share child directories.";
+      description = "The list of child dirs to export. Exposed for client awareness.";
     };
   };
 
@@ -70,11 +68,16 @@ in {
     custom.apps.git.enable = true;
     custom.apps.git.userName = "digimokan";
 
+    custom.hosts.nas.nfsBaseExportDir = storagePoolBaseMountDir;
+    custom.hosts.nas.nfsChildExportDirs = storagePoolChildDirs;
+
     custom.apps.nfsServer.enableVersion = "v4";
-    custom.apps.nfsServer.exports = ''
-      ${nasCfg.baseNfsExportDir} ${tscale.defaultTailnetCidr}(rw,fsid=0,no_subtree_check)
-      ${lib.concatMapStringsSep "\n" (dir: "${nasCfg.baseNfsExportDir}/${dir} ${tscale.defaultTailnetCidr}(rw,nohide,no_subtree_check)") nasCfg.childNfsExportDirs}
-    '';
+    custom.apps.nfsServer.sharesToExport = {
+      "${nasCfg.nfsBaseExportDir}" = {
+        allowedClients = tscale.defaultTailnetCidr;
+        childDirs = nasCfg.nfsChildExportDirs;
+      };
+    };
 
     custom.users.root.password = sec.server_host_root_password.path;
   };

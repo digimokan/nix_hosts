@@ -16,6 +16,14 @@ let
 
   cfg = config.custom.apps.nfsServer;
 
+  generateExports = shares:
+    lib.concatStringsSep "\n" (lib.mapAttrsToList (parentPath: shareCfg: ''
+      # Parent pseudo-root
+      ${parentPath} ${shareCfg.allowedClients}(rw,fsid=0,no_subtree_check)
+      # Child datasets
+      ${lib.concatMapStringsSep "\n" (child: "${parentPath}/${child} ${shareCfg.allowedClients}(rw,nohide,no_subtree_check)") shareCfg.childDirs}
+    '') shares);
+
 in {
 
   options.custom.apps.nfsServer = {
@@ -25,16 +33,28 @@ in {
       description = "Enable the NFS server and pin it to a specific protocol version.";
     };
 
-    exports = lib.mkOption {
-      type = lib.types.str;
-      default = "";
-      description = "The raw string content to populate /etc/exports.";
+    sharesToExport = lib.mkOption {
+      description = "Attribute set of NFS shares. Key is the base path, value contains child dirs to export and allowed NFS clients.";
+      default = {};
+      type = lib.types.attrsOf (lib.types.submodule {
+        options = {
+          childDirs = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [];
+            description = "List of child dirs under the base path, to export as shares.";
+          };
+          allowedClients = lib.mkOption {
+            type = lib.types.str;
+            description = "The client IP, CIDR, or '*' allowed to mount all the exported child dir shares.";
+          };
+        };
+      });
     };
   };
 
   config = lib.mkIf (cfg.enableVersion != "none") {
     services.nfs.server.enable = true;
-    services.nfs.server.exports = cfg.exports;
+    services.nfs.server.exports = generateExports cfg.sharesToExport;
 
     services.nfs.settings = lib.mkMerge [
       (lib.mkIf (cfg.enableVersion == "v4") {
