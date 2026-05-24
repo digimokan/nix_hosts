@@ -117,6 +117,19 @@ See documentation in [`.sops.yaml`](../.sops.yaml).
 
 ## Usage
 
+### ZFS Storage Pools
+
+Some hosts have one or more additional storage pools, in addition to the root
+`zroot` pool. Storage pools and their vdevs and datasets are managed manually.
+
+1. Create a new storage pool `zdata`, mounted on `/data`, from one disk:
+
+   ```shell
+   $ sudo zpool create -o ashift=12 -m /data zdata mirror \
+       /dev/disk/by-id/<DISK1-BY-ID> \
+       /dev/disk/by-id/<DISK2-BY-ID>
+   ```
+                                 ```
 ### ZFS Snapshots
 
 * Snapshots are enabled in the host's `default.nix`.
