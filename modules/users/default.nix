@@ -13,8 +13,15 @@
 { config, lib, pkgs, options, ... }@allArgs:
 
 {
+
   imports = [
     ./root.nix
   ];
+
+  config = {
+    # impermanence: rebuild /etc/shadow from nix config on every tmpfs boot
+    users.mutableUsers = false;
+  };
+
 }
 

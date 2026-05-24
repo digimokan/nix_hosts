@@ -15,8 +15,10 @@
 {
 
   config = {
-    # mount /persist on early boot, so impermanence can read preserved files
+    # /persist: SSH key and machine-id are needed for boot
     fileSystems."/persist".neededForBoot = true;
+    # /var: SOPS age key root password is needed for boot
+    fileSystems."/var".neededForBoot = true;
 
     environment.persistence."/persist" = {
       # keep bind-mounted dirs from appearing as visible drives in file managers
