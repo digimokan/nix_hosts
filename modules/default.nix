@@ -15,7 +15,7 @@
 {
   imports = [
     ./apps/default.nix
-    ./infrastucture/default.nix
+    ./infrastructure/default.nix
     ./system/default.nix
     ./users/default.nix
   ];
