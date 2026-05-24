@@ -25,6 +25,12 @@ in {
       description = "The hour (e.g., '03') to perform a daily ZFS scrub. If not set, autoscrub is disabled.";
     };
 
+    randomizedScrubDelayDuration = lib.mkOption {
+      type = lib.types.str;
+      default = "0";
+      description = "Randomized time span (e.g., '0', '6h', '30m', '30s') to delay the scrub.";
+    };
+
     storagePools = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [];
@@ -44,6 +50,7 @@ in {
       services.zfs.autoScrub = {
         enable = true;
         interval = "*-*-* ${cfg.dailyAutoScrubHour}:00:00";
+        randomizedDelaySec = cfg.randomizedScrubDelayDuration;
       };
     })
   ];
