@@ -29,6 +29,18 @@ in {
       type = lib.types.str;
       description = "Auth key to authenticate and join the tailnet.";
     };
+
+    ipLinkInterfaces = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ "tailscale0" ];
+      description = "The virtual network interfaces created by Tailscale.";
+    };
+
+    defaultTailnetCidr = lib.mkOption {
+      type = lib.types.str;
+      default = "100.64.0.0/10";
+      description = "The default carrier-grade NAT CIDR IP address block used by Tailscale.";
+    };
   };
 
   config = lib.mkIf cfg.enable {

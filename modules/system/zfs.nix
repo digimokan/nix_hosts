@@ -24,12 +24,20 @@ in {
       default = null;
       description = "The hour (e.g., '03') to perform a daily ZFS scrub. If not set, autoscrub is disabled.";
     };
+
+    storagePools = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [];
+      description = "List of additional ZFS pools to import automatically on boot.";
+    };
   };
 
   config = lib.mkMerge [
     {
       # Forces import of zroot on boot. Strongly not recommended by NixOS.
       boot.zfs.forceImportRoot = false;
+      # Extra pools to import on boot, along with main zroot pool.
+      boot.zfs.extraPools = cfg.storagePools;
     }
 
     (lib.mkIf (cfg.dailyAutoScrubHour != null) {

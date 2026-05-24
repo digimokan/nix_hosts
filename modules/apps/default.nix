@@ -15,6 +15,7 @@
 {
   imports = [
     ./git.nix
+    ./nfs-server.nix
     ./sanoid.nix
     ./tailscale.nix
   ];

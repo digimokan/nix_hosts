@@ -26,6 +26,12 @@ in {
       default = null;
       description = "The IP address of the primary DNS server. If set, this forces the system to use it.";
     };
+
+    trustedIpLinkInterfaces = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [];
+      description = "Network interfaces that bypass the firewall (fully trusted).";
+    };
   };
 
   config = {
@@ -35,6 +41,8 @@ in {
     networking.hostId = lib.mkDefault (
       builtins.substring 0 8 (builtins.hashString "sha256" config.networking.hostName)
     );
+
+    networking.firewall.trustedInterfaces = cfg.trustedIpLinkInterfaces;
   };
 
 }
