@@ -133,7 +133,7 @@ Create a new storage pool `zdata`, mounted on `/data`, from two mirrored disks:
        /dev/disk/by-id/<DISK1-BY-ID> \
        /dev/disk/by-id/<DISK2-BY-ID>
    ```
-                                 ```
+
 #### Add Mirror Vdev
 
 Add two new disks to existing storage pool `zdata`, as a mirror vdev:
