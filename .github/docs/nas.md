@@ -8,7 +8,6 @@
    * [Hardware Connections](#hardware-connections)
    * [Hardware BIOS Configuration](#hardware-bios-configuration)
 * [Configuration](#configuration)
-   * [Creating Storage Pool](#creating-storage-pool)
 
 ## Purpose
 
@@ -117,25 +116,12 @@ Once NixOS has been installed to the two mirrored drives:
 
 ## Configuration
 
-### Creating Storage Pool
-
-1. Prerequisites:
-
-   1. NixOS has been installed and configured to the root pool.
-
-   2. Two additional, new storage disks have been aded to the machine.
-
-2. Obtain the two new disk IDs:
-
-   ```shell
-   $ ls -l /dev/disk/by-id/
-   ```
-
-3. Create the storage `zdata` pool using the new disks as a single-mirror vdev:
-
-   ```shell
-   $ sudo zpool create -o ashift=12 -m /data zdata mirror \
-       dev/disk/by-id/<DISK1-BY-ID> \
-       dev/disk/by-id/<DISK2-BY-ID>
-   ```
+* See [`nas/default.nix`](../../hosts/nas/default.nix) for info about the
+storage zpool expected to reside on the HL8s storage disks.
+* See [`nas/default.nix`](../../hosts/nas/default.nix) for info about the
+datasets expected to exist on the storage zpool.
+* See [ZFS Storage Pools](../README.md#zfs-storage-pools) for info about
+creating the storage zpool.
+* See [ZFS Datasets](../README.md#zfs-datasets) for info about creating
+datasets.
 

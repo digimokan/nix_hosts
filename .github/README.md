@@ -15,6 +15,8 @@ NixOS configuration to set up various hosts.
     * [Install NixOS To Target Host Over SSH](#install-nixos-to-target-host-over-ssh)
     * [Install NixOS To Target Host From Installer Image](#install-nixos-to-target-host-from-installer-image)
 * [Usage](#usage)
+    * [ZFS Storage Pools](#zfs-storage-pools)
+    * [ZFS Datasets](#zfs-datasets)
     * [ZFS Snapshots](#zfs-snapshots)
 * [Source Code Layout](#source-code-layout)
 * [Contributing](#contributing)
@@ -122,14 +124,78 @@ See documentation in [`.sops.yaml`](../.sops.yaml).
 Some hosts have one or more additional storage pools, in addition to the root
 `zroot` pool. Storage pools and their vdevs and datasets are managed manually.
 
-1. Create a new storage pool `zdata`, mounted on `/data`, from one disk:
+#### Create Pool
+
+Create a new storage pool `zdata`, mounted on `/data`, from two mirrored disks:
 
    ```shell
-   $ sudo zpool create -o ashift=12 -m /data zdata mirror \
+   $ zpool create -o ashift=12 -m /data zdata mirror \
        /dev/disk/by-id/<DISK1-BY-ID> \
        /dev/disk/by-id/<DISK2-BY-ID>
    ```
                                  ```
+#### Add Mirror Vdev
+
+Add two new disks to existing storage pool `zdata`, as a mirror vdev:
+
+   ```shell
+   $ zpool add zdata mirror \
+       /dev/disk/by-id/<DISK3-BY-ID> \
+       /dev/disk/by-id/<DISK4-BY-ID>
+   ```
+
+#### Replace Failed Or Old Disk
+
+##### Note Failed Or Old Disk ID
+
+The failed (or old, removed) disk will show up like this, with `zpool status`:
+
+   ```shell
+   mirror-x                DEGRADED  0  0  0
+     wwn-abc777def777ghi7  ONLINE    0  0  0
+     14829562948105726384  UNAVAIL   0  0  0  was /dev/disk/by-id/wwn-stu666vwx666yzz6
+   ```
+
+##### Replace Disk
+
+Remove the failed disk from the NAS. Put a new disk in the NAS in its place.
+Note the `/dev/disk/by-id` of the new disk, e.g. `wwn-jkl888mno888pqr8`.
+Activate the new disk:
+
+   ```shell
+   $ zpool replace zdata 14829562948105726384 /dev/disk/by-id/wwn-jkl888mno888pqr8
+   ```
+
+##### Expand Space
+
+Once the `replace` operation is complete, if the vdev can now be expanded to
+make use of larger disks in the vdev, tell zfs to expand the vdev's size:
+
+   ```shell
+   $ zpool online -e zdata /dev/disk/by-id/wwn-jkl888mno888pqr8
+   ```
+
+### ZFS Datasets
+
+#### Add Dataset To Pool
+
+##### Large-Files Dataset
+
+Add a dataset to pool `zdata`, suited for storage of large (e.g. media) files:
+
+   ```shell
+   $ zfs create -o recordsize=1M -o compression=lz4 -o atime=off zdata/LargeFiles
+   ```
+
+##### Mixed-Files Dataset
+
+Add a dataset to pool `zdata`, suited for storage of mixed (e.g. picture,
+software, documents, etc) files:
+
+   ```shell
+   $ zfs create -o recordsize=128k -o compression=lz4 -o atime=off zdata/MixedFiles
+   ```
+
 ### ZFS Snapshots
 
 * Snapshots are enabled in the host's `default.nix`.
