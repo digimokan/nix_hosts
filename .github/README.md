@@ -30,6 +30,7 @@ NixOS configuration to set up various hosts.
 ## List Of Hosts
 
 * [`nas`](./docs/nas.md): main NAS on `GLAN`.
+* [`tm1`](./docs/tm1.md): test user machine on `GLAN`.
 
 ## Quick Start
 
