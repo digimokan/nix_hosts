@@ -47,7 +47,7 @@ in {
 
     sops.secrets = lib.mkMerge (
       builtins.map (entry:
-        lib.mapAttrs (name: opts: { sopsFilePath = entry.sopsFilePath; } // opts) entry.secrets
+        lib.mapAttrs (name: opts: { sopsFile = entry.sopsFilePath; } // opts) entry.secrets
       ) cfg.hostSecrets
     );
   };
