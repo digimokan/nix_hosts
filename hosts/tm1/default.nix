@@ -9,7 +9,7 @@
     options: merged tree of all option _declarations_ across the system
     config: final, merged config tree of entire system, shared among modules
   allArgs: all other args passed into this function (normally ignored with ...)
- */
+*/
 { config, lib, pkgs, options, ... }@allArgs:
 
 let
@@ -30,6 +30,8 @@ in {
     custom.system.cpuMicrocode = "intel";
     custom.system.grub.enableMode = "efi";
 
+    custom.system.security.enableRealTimeKit = true;
+
     custom.system.networking.primaryDnsServerIpAddr = infra.lan.routerIpAddr;
     custom.system.networking.trustedIpLinkInterfaces = tscale.ipLinkInterfaces;
     custom.system.networking.useNetworkManager = true;
@@ -41,8 +43,12 @@ in {
     custom.apps.git.enable = true;
     custom.apps.git.userName = "digimokan";
 
-    custom.system.desktop.enableKdeWayland = true;
-    custom.system.sound.enablePipewire = true;
+    custom.system.wayland.enableXWayland = true;
+    custom.apps.sddm.enable = true;
+    custom.apps.sddm.enableWayland = true;
+    custom.apps.kdePlasmaWayland.enable = true;
+
+    custom.apps.pipewire.enable = true;
 
     custom.users.root.hashedPasswordFile = sec.flan_user_facing_host_root_password.path;
     custom.users.admin.hashedPasswordFile = sec.flan_user_facing_host_admin_password.path;

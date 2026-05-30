@@ -12,22 +12,11 @@
  */
 { config, lib, pkgs, options, ... }@allArgs:
 
-let
-
-  cfg = config.custom.apps.kde;
-
-in {
-
-  options.custom.apps.kde = {
-    enableKdeWayland = lib.mkEnableOption "Enable KDE Plasma with Wayland and SDDM";
+{
+  options.custom.infrastructure.displayManager = lib.mkOption {
+      type = lib.types.enum [ "none" "sddm" ];
+      default = "none";
+      description = "The display manager (login screen) provider to use.";
   };
-
-  config = lib.mkIf cfg.enableKdeWayland {
-    services.displayManager.sddm.enable = true;
-    services.displayManager.sddm.wayland.enable = true;
-    services.desktopManager.plasma6.enable = true;
-    programs.xwayland.enable = true;
-  };
-
 }
 

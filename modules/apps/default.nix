@@ -15,10 +15,11 @@
 {
   imports = [
     ./git.nix
-    ./kde.nix
+    ./kde-plasma-wayland.nix
     ./nfs-server.nix
     ./pipewire.nix
     ./sanoid.nix
+    ./sddm.nix
     ./tailscale.nix
   ];
 }

@@ -12,20 +12,23 @@
  */
 { config, lib, pkgs, options, ... }@allArgs:
 
-{
-  imports = [
-    ./cpu-microcode.nix
-    ./grub.nix
-    ./impermanence.nix
-    ./networking.nix
-    ./nix-core.nix
-    ./nixpkgs.nix
-    ./security.nix
-    ./sops.nix
-    ./timezone.nix
-    ./tmp-tmpfs.nix
-    ./wayland.nix
-    ./zfs.nix
-  ];
+let
+
+  cfg = config.custom.system.wayland;
+
+in {
+
+  options.custom.system.wayland = {
+    enableXWayland = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Enable XWayland, allowing legacy X11 applications to run inside the Wayland session.";
+    };
+  };
+
+  config = {
+    programs.xwayland.enable = cfg.enableXWayland;
+  };
+
 }
 

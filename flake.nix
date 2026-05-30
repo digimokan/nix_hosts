@@ -88,7 +88,8 @@
     sops-nix,
     home-manager,
     impermanence,
-  ... } @inputs:
+    ...
+  } @inputs:
 
     let
       # Build systems using the unstable branch.
