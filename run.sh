@@ -54,7 +54,7 @@ EXAMPLES:
   Local Deploy  (run on minimal ISO): sudo ./$(basename "${0}") --deploy-local -p -w -T nas
   Remote Deploy (SSH to minimal ISO):      ./$(basename "${0}") --deploy-remote -w -T nas -R 192.168.1.50
   Local Wipe    (run on minimal ISO): sudo ./$(basename "${0}") -w -T nas
-  Edit Secret   (run on dev machine):      ./$(basename "${0}") -e secrets/admin_secrets.yaml
+  Edit Secret   (run on dev machine):      ./$(basename "${0}") -e secrets/master_secrets.yaml
 EOF
 }
 
@@ -171,7 +171,7 @@ prompt_for_master_key() {
 extract_host_key() {
   echo "🔐 Attempting to extract pure-Age keypair for host '${TARGET_HOST}'..." >&2
 
-  local secrets_file="secrets/admin_secrets.yaml"
+  local secrets_file="secrets/master_secrets.yaml"
   if [ ! -f "${secrets_file}" ]; then
     die "Admin secrets vault not found at: ${secrets_file}"
   fi
@@ -213,6 +213,52 @@ extract_host_key() {
 
   echo "✅ Host keypair extracted successfully." >&2
   echo "${temp_key_file}"
+}
+
+extract_zfs_passphrase() {
+  local target="${1}"
+  local key_file="${2}"
+
+  echo "🔍 Checking if target '${target}' requires ZFS native encryption..." >&2
+
+  # query Nix config to see if the zroot pool has an encryption option set
+  local nix_query=".#nixosConfigurations.${target}.config.disko.devices.zpool.zroot.rootFsOptions.encryption"
+  local enc_status
+  enc_status=$(nix --extra-experimental-features "nix-command flakes" eval --raw "${nix_query}" 2>/dev/null || true)
+
+  if [ -z "${enc_status}" ]; then
+    echo "   - No encryption configured for zroot. Skipping passphrase extraction." >&2
+    return 0
+  fi
+
+  echo "   - Encryption (${enc_status}) detected. Extracting passphrase..." >&2
+
+  local secrets_file="secrets/${target}_host_secrets.yaml"
+  if [ ! -f "${secrets_file}" ]; then
+    die "ZFS encryption is required by Disko, but secrets file ${secrets_file} is missing."
+  fi
+
+  local sops_cmd="sops"
+  if ! command -v sops &> /dev/null; then
+    sops_cmd="nix --extra-experimental-features 'nix-command flakes' shell nixpkgs#sops --command sops"
+  fi
+
+  # Temporarily instruct SOPS to use the specific host keypair to decrypt the file
+  export SOPS_AGE_KEY_FILE="${key_file}"
+
+  local passphrase
+  # Execute the extraction, catching failures explicitly
+  if ! passphrase=$(eval "${sops_cmd} -d --extract '[\"${target}_host_zfs_encryption_passphrase\"]' '${secrets_file}'" 2>/dev/null); then
+    unset SOPS_AGE_KEY_FILE
+    die "Failed to extract '${target}_host_zfs_encryption_passphrase' from ${secrets_file}. Ensure it exists."
+  fi
+
+  unset SOPS_AGE_KEY_FILE
+
+  # -n is critical here to prevent a trailing newline from becoming part of the password
+  echo -n "${passphrase}" > "/tmp/zfs_passphrase"
+  chmod 600 "/tmp/zfs_passphrase"
+  echo "✅ Extracted ZFS plaintext passphrase to secure temporary storage." >&2
 }
 
 inject_key_to_mnt() {
@@ -371,7 +417,14 @@ run_build_sequence() {
     wipe_target_disks "${target}"
   fi
 
+  # Extract the plaintext passphrase directly into the RAM disk before Disko runs
+  extract_zfs_passphrase "${target}" "${key_file}"
+
   execute_disko_format "${target}"
+
+  # Immediately destroy the plaintext passphrase file now that ZFS is formatted
+  rm -f "/tmp/zfs_passphrase"
+
   inject_key_to_mnt "${key_file}"
   execute_nixos_install "${target}"
 }

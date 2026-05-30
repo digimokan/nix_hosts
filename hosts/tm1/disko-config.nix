@@ -10,9 +10,8 @@ let
   genDiskoLayout = import ../../disko/layout-generator.nix { inherit lib; };
 in
   genDiskoLayout
-    { enableEncryption = false; }
+    { enableEncryption = true; }
     [
-      "/dev/disk/by-id/wwn-0x5001b448c8589b8d"
-      "/dev/disk/by-id/wwn-0x5001b448c8e4e17e"
+      "/dev/disk/by-id/wwn-0xXXXXXXXXXXXXXXXX"
     ]
 

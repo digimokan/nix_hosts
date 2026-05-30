@@ -32,6 +32,11 @@ in {
       default = [];
       description = "Network interfaces that bypass the firewall (fully trusted).";
     };
+
+    netMgrGroup = lib.mkOption {
+      type = lib.types.str;
+      description = "The NetworkManager group name. Only exported if NetworkManager is enabled.";
+    };
   };
 
   config = {
@@ -43,6 +48,10 @@ in {
     );
 
     networking.firewall.trustedInterfaces = cfg.trustedIpLinkInterfaces;
+
+    (lib.mkIf cfg.useNetworkManager {
+      custom.system.networking.netMgrGroup = "networkmanager";
+    })
   };
 
 }

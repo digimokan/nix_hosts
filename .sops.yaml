@@ -13,14 +13,16 @@
 # * The sops.nix module (on deployed hosts) performs these actions:
 #     1. Looks for its specific Host Keypair at the location specified by
 #        sops.age.keyFile (e.g., /var/lib/sops-nix/host_keypair.age).
-#     2. Uses that Keypair to decrypt its designated secrets across
-#        the various .yaml files (defaulting to shared_all_hosts_secrets.yaml).
+#     2. Looks for the secrets/xxxx_yyyy.yaml files, that were copied into
+#        the nix store (/nix) during system evaluation and deployment.
+#     3. Uses the Host Keypair to decrypt the yaml secrets files and
+#        put the decrypted secrets into volatile root-readable /run/secrets.
 #
 # --- ADDING A NEW HOST ---
 # To add a new keypair for a machine:
 #     1. Generate the pure Age keypair:
 #          age-keygen -o /tmp/host_keypair.age
-#     2. Run `sops secrets/admin_secrets.yaml` and add a new variable for
+#     2. Run `sops secrets/master_secrets.yaml` and add a new variable for
 #        age_keypair_host_<hostname>, pasting the entire generated key file.
 #     3. Extract the public key:
 #          age-keygen -y /tmp/host_keypair.age
@@ -34,12 +36,13 @@
 keys:
   - &age_pubkey_master age1cnryfel34a36zkaayv9a0enmaetwrp3jk2nt807af8y6v6nefejs9jp9vk
   - &age_pubkey_host_nas age1fu4fdj4g09tqj4gzfn3trvzdfcgfjaeeplxnvydm8swq4ju0ggyquqzp8s
+  - &age_pubkey_host_tm1 age1x4fdtv0m97wy7d0fs00xq0ehrnjfrxe98er5lz7kz5jhjd76ksusyp53wn
 
 # Each rule in this "creation_rules" list tells SOPS which public key(s) to
 # use to encrypt a specific SOPS secrets file.
 # Any host in the list with a matching privkey can decrypt the secrets file.
 creation_rules:
-  - path_regex: secrets/admin_secrets\.yaml$
+  - path_regex: secrets/master_secrets\.yaml$
     key_groups:
       - age:
           - *age_pubkey_master
@@ -48,9 +51,25 @@ creation_rules:
       - age:
           - *age_pubkey_master
           - *age_pubkey_host_nas
-  - path_regex: secrets/shared_all_hosts_secrets\.yaml$
+  - path_regex: secrets/user_facing_host_secrets\.yaml$
+    key_groups:
+      - age:
+          - *age_pubkey_master
+          - *age_pubkey_host_tm1
+  - path_regex: secrets/flan_user_facing_host_secrets\.yaml$
+    key_groups:
+      - age:
+          - *age_pubkey_master
+          - *age_pubkey_host_tm1
+  - path_regex: secrets/tm1_host_secrets\.yaml$
+    key_groups:
+      - age:
+          - *age_pubkey_master
+          - *age_pubkey_host_tm1
+  - path_regex: secrets/shared_all_host_secrets\.yaml$
     key_groups:
       - age:
           - *age_pubkey_master
           - *age_pubkey_host_nas
+          - *age_pubkey_host_tm1
 

@@ -14,21 +14,29 @@
 
 let
 
-  cfg = config.custom.users.root;
+  cfg = config.custom.users.testuser1;
 
 in {
 
-  options.custom.users.root = {
+  options.custom.users.testuser1 = {
     hashedPasswordFile = lib.mkOption {
-      type = lib.types.str;
-      description = "Path to the hashed password file for the root user.";
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Path to hashed password file. Setting this to a path adds the user to the system.";
+    };
+
+    extraGroups = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [];
+      description = "List of additional groups to make user a member of.";
     };
   };
 
-  config = {
-    users.users.root = {
-      isNormalUser = false;
-      hashedPasswordFile = cfg.password;
+  config = lib.mkIf (cfg.hashedPasswordFile != null) {
+    users.users.testuser1 = {
+      isNormalUser = true;
+      extraGroups = cfg.extraGroups;
+      hashedPasswordFile = cfg.hashedPasswordFile;
     };
   };
 

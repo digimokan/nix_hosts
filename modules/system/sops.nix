@@ -39,6 +39,19 @@ in {
         server_host_tailscale_auth_key = { };
       })
 
+      (wireSecrets ../../secrets/user_facing_host_secrets.yaml {
+        user_facing_host_tailscale_auth_key = { };
+      })
+
+      (wireSecrets ../../secrets/flan_user_facing_host_secrets.yaml {
+        flan_user_facing_host_root_password = { neededForUsers = true; };
+        flan_user_facing_host_admin_password = { neededForUsers = true; };
+      })
+
+      (wireSecrets ../../secrets/tm1_host_secrets.yaml {
+        tm1_flan_user_facing_host_testuser1_password = { neededForUsers = true; };
+      })
+
       (wireSecrets ../../secrets/shared_all_hosts_secrets.yaml {
         all_hosts_timezone = { };
       })

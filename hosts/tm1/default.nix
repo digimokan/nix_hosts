@@ -17,17 +17,6 @@ let
   sec = config.sops.secrets;
   infra = config.custom.infrastructure;
   tscale = config.custom.apps.tailscale;
-  nasCfg = config.custom.hosts.nas;
-
-  storagePoolName = "zdata";
-  storagePoolBaseMountDir = "/data";
-  storagePoolChildDirs = [
-    "Movies"
-    "Pictures"
-    "Shows"
-    "HomeVideos"
-    "Software"
-  ];
 
 in {
 
@@ -36,44 +25,30 @@ in {
     ../all-hosts.nix
   ];
 
-  options.custom.hosts.nas = {
-    nfsChildExportDirs = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      description = "The list of child dirs to export. Exposed for client awareness.";
-    };
-  };
-
   config = {
-    custom.system.nixCore.initialStateVersion = "24.05";
-
-    custom.system.cpuMicrocode = "amd";
-
+    custom.system.nixCore.initialStateVersion = "25.11";
+    custom.system.cpuMicrocode = "intel";
     custom.system.grub.enableMode = "efi";
-    custom.system.grub.efiModeRemovableDisks = true;
 
     custom.system.networking.primaryDnsServerIpAddr = infra.lan.routerIpAddr;
     custom.system.networking.trustedIpLinkInterfaces = tscale.ipLinkInterfaces;
-
-    custom.system.zfs.storagePools = [ storagePoolName ];
+    custom.system.networking.useNetworkManager = true;
 
     custom.apps.tailscale.enable = true;
     custom.apps.tailscale.enableSshServer = true;
-    custom.apps.tailscale.authKeyPath = sec.server_host_tailscale_auth_key.path;
+    custom.apps.tailscale.authKeyPath = sec.user_facing_host_tailscale_auth_key.path;
 
     custom.apps.git.enable = true;
     custom.apps.git.userName = "digimokan";
 
-    custom.hosts.nas.nfsChildExportDirs = storagePoolChildDirs;
+    custom.system.desktop.enableKdeWayland = true;
+    custom.system.sound.enablePipewire = true;
 
-    custom.apps.nfsServer.enableVersion = "v4";
-    custom.apps.nfsServer.sharesToExport = {
-      "${storagePoolBaseMountDir}" = {
-        allowedClients = tscale.defaultTailnetCidr;
-        childDirs = nasCfg.nfsChildExportDirs;
-      };
-    };
-
-    custom.users.root.hashedPasswordFile = sec.server_host_root_password.path;
+    custom.users.root.hashedPasswordFile = sec.flan_user_facing_host_root_password.path;
+    custom.users.admin.hashedPasswordFile = sec.flan_user_facing_host_admin_password.path;
+    custom.users.admin.extraGroups = [ config.custom.system.networking.netMgrGroup ];
+    custom.users.testuser1.hashedPasswordFile = sec.tm1_flan_user_facing_host_testuser1_password.path;
+    custom.users.testuser1.extraGroups = [ config.custom.system.networking.netMgrGroup ];
   };
 
 }

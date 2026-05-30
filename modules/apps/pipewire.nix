@@ -12,14 +12,25 @@
  */
 { config, lib, pkgs, options, ... }@allArgs:
 
-{
-  imports = [
-    ./git.nix
-    ./kde.nix
-    ./nfs-server.nix
-    ./pipewire.nix
-    ./sanoid.nix
-    ./tailscale.nix
-  ];
+let
+
+  cfg = config.custom.apps.pipewire;
+
+in {
+
+  options.custom.apps.pipewire = {
+    enable = lib.mkEnableOption "Enable PipeWire sound server";
+  };
+
+  config = lib.mkIf cfg.enable {
+    security.rtkit.enable = true;
+    services.pipewire = {
+      enable = true;
+      alsa.enable = true;
+      alsa.support32Bit = true;
+      pulse.enable = true;
+    };
+  };
+
 }
 

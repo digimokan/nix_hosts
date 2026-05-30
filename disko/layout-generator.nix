@@ -1,6 +1,7 @@
 /**
   params:
     lib: Nixpkgs library utility functions (like lib.mkIf)
+    enableEncryption: enable zfs native encryption for all zroot datasets
     diskIds: A list of strings representing the physical device paths.
       * To obtain the Disk ID, run 'ls -l /dev/disk/by-id/':
           - SATA SSDs:      use ID prefixed with 'wwn-'
@@ -15,17 +16,18 @@
       - The zpool 'zroot' mounted on root.
 */
 { lib }:
+{ enableEncryption }:
 diskIds:
 
 let
   diskCount = builtins.length diskIds;
   isMirror = diskCount == 2;
 
-  # Extract paths from the parameter list
+  # extract paths from the parameter list
   disk1Id = builtins.elemAt diskIds 0;
   disk2Id = if isMirror then builtins.elemAt diskIds 1 else null;
 
-  # Helper function: Generates the identical GPT partition structures for each drive
+  # helper function: Generates the identical GPT partition structures for each drive
   mkDisk = name: device: {
     type = "disk";
     inherit device;
@@ -72,7 +74,7 @@ in {
       ];
     };
 
-    # Generate the primary disk, and conditionally append the secondary disk
+    # generate the primary disk, and conditionally append the secondary disk
     disk = {
       main = mkDisk "main" disk1Id;
     } // lib.optionalAttrs isMirror {
@@ -82,19 +84,36 @@ in {
     zpool.zroot = {
       type = "zpool";
       mode = if isMirror then "mirror" else "";
-      # Best practice: top-level pool dataset is unmounted
+      # best practice: top-level pool dataset is unmounted
       mountpoint = null;
+
+      # pool-level options
+      options = {
+        ashift = "12";
+        # lock feature set to specific OpenZFS version to suppress upgrade warns
+        compatibility = "openzfs-2.2-linux";
+      };
+
       rootFsOptions = {
         compression = "lz4";
         acltype = "posixacl";
         xattr = "sa";
         atime = "off";
+      } // lib.optionalAttrs enableEncryption {
+        encryption = "aes-256-gcm";
+        keyformat = "passphrase";
+        # expect the run.sh script to put passphrase in a file at this location
+        keylocation = "file:///tmp/zfs_passphrase";
       };
+
+      # revert keylocation to standard prompt, so user can boot normally
+      postCreateHook = lib.mkIf enableEncryption "zfs set keylocation=prompt zroot";
+
       datasets = {
         "nix" = {
           type = "zfs_fs";
           mountpoint = "/nix";
-          # Apply highly-efficient zstd compression specifically to the Nix store
+          # apply highly-efficient zstd compression specifically to the Nix store
           options = {
             compression = "zstd";
           };

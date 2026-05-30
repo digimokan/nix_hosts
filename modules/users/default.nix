@@ -15,6 +15,8 @@
 {
 
   imports = [
+    ./admin.nix
+    ./testuser1.nix
     ./root.nix
   ];
 

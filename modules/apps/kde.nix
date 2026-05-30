@@ -12,14 +12,22 @@
  */
 { config, lib, pkgs, options, ... }@allArgs:
 
-{
-  imports = [
-    ./git.nix
-    ./kde.nix
-    ./nfs-server.nix
-    ./pipewire.nix
-    ./sanoid.nix
-    ./tailscale.nix
-  ];
+let
+
+  cfg = config.custom.apps.kde;
+
+in {
+
+  options.custom.apps.kde = {
+    enableKdeWayland = lib.mkEnableOption "Enable KDE Plasma with Wayland and SDDM";
+  };
+
+  config = lib.mkIf cfg.enableKdeWayland {
+    services.displayManager.sddm.enable = true;
+    services.displayManager.sddm.wayland.enable = true;
+    services.desktopManager.plasma6.enable = true;
+    programs.xwayland.enable = true;
+  };
+
 }
 

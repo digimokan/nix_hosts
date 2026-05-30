@@ -21,6 +21,9 @@
     sops-nix.url = "github:Mic92/sops-nix";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
+    home-manager.url = "github:nix-community/home-manager";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs-unstable";
+
     impermanence.url = "github:nix-community/impermanence";
     impermanence.inputs.nixpkgs.follows = "nixpkgs-unstable";
     impermanence.inputs.home-manager.follows = "nixpkgs-unstable";
@@ -77,7 +80,16 @@
       lib.<hostname>:
         Helper functions or libraries intended for use by other flakes.
   */
-  outputs = { self, nixpkgs, nixpkgs-unstable, disko, sops-nix, impermanence, ... } @inputs:
+  outputs = {
+    self,
+    nixpkgs,
+    nixpkgs-unstable,
+    disko,
+    sops-nix,
+    home-manager,
+    impermanence,
+  ... } @inputs:
+
     let
       # Build systems using the unstable branch.
       # Individual modules and packages can still select the overlays
@@ -89,6 +101,7 @@
           { networking.hostName = hostName; }
           disko.nixosModules.disko
           sops-nix.nixosModules.sops
+          home-manager.nixosModules.home-manager
           impermanence.nixosModules.impermanence
           ./modules/default.nix
           ./hosts/${hostName}/default.nix
@@ -97,6 +110,7 @@
     in {
       nixosConfigurations = {
         nas = mkSystem "nas";
+        tm1 = mkSystem "tm1";
       };
     };
 
