@@ -28,7 +28,7 @@ in {
   config = {
     users.users.root = {
       isNormalUser = false;
-      hashedPasswordFile = cfg.password;
+      hashedPasswordFile = cfg.hashedPasswordFile;
     };
   };
 
