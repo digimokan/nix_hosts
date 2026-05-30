@@ -16,47 +16,40 @@ let
 
   cfg = config.custom.system.sops;
 
-  # Helper function to inject the file path into a set of secret definitions
-  wireSecrets = file: secrets:
-    lib.mapAttrs (name: opts: { sopsFile = file; } // opts) secrets;
-
 in {
 
   options.custom.system.sops = {
     enable = lib.mkEnableOption "Enable SOPS secret management and default secrets";
+
+    hostSecrets = lib.mkOption {
+      description = "List of SOPS files and the secrets to extract from them for this host.";
+      default = [];
+      type = lib.types.listOf (lib.types.submodule {
+        options = {
+          sopsFilePath = lib.mkOption {
+            type = lib.types.path;
+            description = "Path to the encrypted SOPS YAML file.";
+          };
+          secrets = lib.mkOption {
+            type = lib.types.attrs;
+            default = {};
+            description = "Attribute set of secrets to map to this file (e.g., { my_secret = { neededForUsers = true; }; }).";
+          };
+        };
+      });
+    };
   };
 
   config = lib.mkIf cfg.enable {
     environment.systemPackages = [ pkgs.unstable.sops ];
 
-    # Note: the run.sh script emplaces the host key here, on deployment
     sops.age.keyFile = "/var/lib/sops-nix/host_keypair.age";
 
-    sops.secrets = lib.mkMerge [
-
-      (wireSecrets ../../secrets/server_host_secrets.yaml {
-        server_host_root_password = { neededForUsers = true; };
-        server_host_tailscale_auth_key = { };
-      })
-
-      (wireSecrets ../../secrets/user_facing_host_secrets.yaml {
-        user_facing_host_tailscale_auth_key = { };
-      })
-
-      (wireSecrets ../../secrets/flan_user_facing_host_secrets.yaml {
-        flan_user_facing_host_root_password = { neededForUsers = true; };
-        flan_user_facing_host_admin_password = { neededForUsers = true; };
-      })
-
-      (wireSecrets ../../secrets/tm1_host_secrets.yaml {
-        tm1_flan_user_facing_host_testuser1_password = { neededForUsers = true; };
-      })
-
-      (wireSecrets ../../secrets/shared_all_host_secrets.yaml {
-        all_hosts_timezone = { };
-      })
-
-    ];
+    sops.secrets = lib.mkMerge (
+      builtins.map (entry:
+        lib.mapAttrs (name: opts: { sopsFilePath = entry.sopsFilePath; } // opts) entry.secrets
+      ) cfg.hostSecrets
+    );
   };
 
 }

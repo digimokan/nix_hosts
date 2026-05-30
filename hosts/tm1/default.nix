@@ -26,6 +26,28 @@ in {
   ];
 
   config = {
+    custom.system.sops.hostSecrets = [
+      {
+        sopsFilePath = ../../secrets/user_facing_host_secrets.yaml;
+        secrets = {
+          user_facing_host_tailscale_auth_key = { };
+        };
+      }
+      {
+        sopsFilePath = ../../secrets/flan_user_facing_host_secrets.yaml;
+        secrets = {
+          flan_user_facing_host_root_password = { neededForUsers = true; };
+          flan_user_facing_host_admin_password = { neededForUsers = true; };
+        };
+      }
+      {
+        sopsFilePath = ../../secrets/tm1_host_secrets.yaml;
+        secrets = {
+          tm1_flan_user_facing_host_testuser1_password = { neededForUsers = true; };
+        };
+      }
+    ];
+
     custom.system.nixCore.initialStateVersion = "25.11";
     custom.system.cpuMicrocode = "intel";
     custom.system.grub.enableMode = "efi";
