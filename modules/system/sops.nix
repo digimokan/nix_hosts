@@ -52,7 +52,7 @@ in {
         tm1_flan_user_facing_host_testuser1_password = { neededForUsers = true; };
       })
 
-      (wireSecrets ../../secrets/shared_all_hosts_secrets.yaml {
+      (wireSecrets ../../secrets/shared_all_host_secrets.yaml {
         all_hosts_timezone = { };
       })
 
