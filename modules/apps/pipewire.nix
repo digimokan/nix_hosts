@@ -50,7 +50,7 @@ in {
 
     assertions = [
       {
-        assertion = config.custom.system.security.enableRtkit;
+        assertion = config.custom.system.security.enableRealTimeKit;
         message = (
           "Pipewire requires RTKit to prevent audio crackling. "
           + "Set `custom.system.security.enableRtkit = true` in your "
