@@ -39,20 +39,20 @@ in {
     };
   };
 
-  config = {
-    networking.networkmanager.enable = cfg.useNetworkManager;
-    networking.nameservers = lib.mkIf (cfg.primaryDnsServerIpAddr != null) [ cfg.primaryDnsServerIpAddr ];
-
-    networking.hostId = lib.mkDefault (
-      builtins.substring 0 8 (builtins.hashString "sha256" config.networking.hostName)
-    );
-
-    networking.firewall.trustedInterfaces = cfg.trustedIpLinkInterfaces;
+  config = lib.mkMerge [
+    {
+      networking.networkmanager.enable = cfg.useNetworkManager;
+      networking.nameservers = lib.mkIf (cfg.primaryDnsServerIpAddr != null) [ cfg.primaryDnsServerIpAddr ];
+      networking.hostId = lib.mkDefault (
+        builtins.substring 0 8 (builtins.hashString "sha256" config.networking.hostName)
+      );
+      networking.firewall.trustedInterfaces = cfg.trustedIpLinkInterfaces;
+    }
 
     (lib.mkIf cfg.useNetworkManager {
       custom.system.networking.netMgrGroup = "networkmanager";
     })
-  };
+  ];
 
 }
 
