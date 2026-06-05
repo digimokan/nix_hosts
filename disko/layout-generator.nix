@@ -90,7 +90,10 @@ in {
       # pool-level options
       options = {
         ashift = "12";
-        # lock feature set to specific OpenZFS version to suppress upgrade warns
+        # Lock feature set to specific OpenZFS version to suppress upgrade warns.
+        # This can be updated to zfs version on the latest minimal installer.
+        # Warning: after updating, reinstalling OS zpools on all hosts should
+        # be done, else rollbacks may not work.
         compatibility = "openzfs-2.2-linux";
       };
 

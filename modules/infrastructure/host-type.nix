@@ -13,11 +13,21 @@
 { config, lib, pkgs, options, ... }@allArgs:
 
 {
-  imports = [
-    ./display-manager.nix
-    ./editor.nix
-    ./host-type.nix
-    ./lan.nix
-  ];
+  options.custom.infrastructure = {
+    hostType = lib.mkOption {
+      type = lib.types.enum [ "none" "server" "user-facing" ];
+      default = "none";
+      description = "Defines the type of host.";
+    };
+  };
+
+  config = {
+    assertions = [
+      {
+        assertion = config.custom.infrastructure.hostType != "none";
+        message = "The host custom.infrastructure.hostType must be defined.";
+      }
+    ];
+  };
 }
 

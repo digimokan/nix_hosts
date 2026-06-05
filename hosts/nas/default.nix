@@ -19,7 +19,10 @@ let
   tscale = config.custom.apps.tailscale;
   nasCfg = config.custom.hosts.nas;
 
-  storagePoolName = "zdata";
+  # storagePoolName = "zdata";
+
+  storagePoolName = "zdata_nas";
+  storagePoolBaseDataset = "data";
   storagePoolBaseMountDir = "/data";
   storagePoolChildDirs = [
     "Movies"
@@ -56,6 +59,8 @@ in {
 
     custom.system.nixCore.initialStateVersion = "24.05";
 
+    custom.infrastructure.hostType = "server";
+
     custom.system.cpuMicrocode = "amd";
 
     custom.system.grub.enableMode = "efi";
@@ -64,7 +69,14 @@ in {
     custom.system.networking.primaryDnsServerIpAddr = infra.lan.routerIpAddr;
     custom.system.networking.trustedIpLinkInterfaces = tscale.ipLinkInterfaces;
 
-    custom.system.zfs.storagePools = [ storagePoolName ];
+    custom.system.zfs.storagePools = [
+      {
+        poolName = storagePoolName;
+        baseDataset = storagePoolBaseDataset;
+        baseMountPoint = storagePoolBaseMountDir;
+        childDatasets = storagePoolChildDirs;
+      }
+    ];
 
     custom.apps.tailscale.enable = true;
     custom.apps.tailscale.enableSshServer = true;

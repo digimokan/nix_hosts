@@ -32,9 +32,29 @@ in {
     };
 
     storagePools = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
+      description = "List of extra ZFS pools to import, and their specific datasets to mount via systemd.";
       default = [];
-      description = "List of additional ZFS pools to import automatically on boot.";
+      type = lib.types.listOf (lib.types.submodule {
+        options = {
+          poolName = lib.mkOption {
+            type = lib.types.str;
+            description = "The root name of the zpool (e.g., 'zdata_tm1'). The root dataset will remain unmounted.";
+          };
+          baseDataset = lib.mkOption {
+            type = lib.types.str;
+            description = "The name of the primary child dataset (e.g., 'data' or 'home').";
+          };
+          baseMountPoint = lib.mkOption {
+            type = lib.types.str;
+            description = "The absolute path where the baseDataset is mounted (e.g., '/data' or '/home').";
+          };
+          childDatasets = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [];
+            description = "List of child directories to create as dedicated ZFS datasets under the baseDataset (e.g., [ 'testuser1' ]).";
+          };
+        };
+      });
     };
   };
 
@@ -43,7 +63,29 @@ in {
       # Forces import of zroot on boot. Strongly not recommended by NixOS.
       boot.zfs.forceImportRoot = false;
       # Extra pools to import on boot, along with main zroot pool.
-      boot.zfs.extraPools = cfg.storagePools;
+      boot.zfs.extraPools = builtins.map (p: p.poolName) cfg.storagePools;
+
+      # Datasets in each extra pool.
+      fileSystems = lib.mkMerge (builtins.map (pool:
+        let
+          # The base mount (e.g., zdata_tm1/home -> /home).
+          baseMount = lib.nameValuePair pool.baseMountPoint {
+            device = "${pool.poolName}/${pool.baseDataset}";
+            fsType = "zfs";
+            options = [ "zfsutil" ];
+          };
+
+          # The child mounts (e.g., zdata_tm1/home/testuser1 -> /home/testuser1)
+          childMounts = builtins.listToAttrs (builtins.map (child:
+            lib.nameValuePair "${pool.baseMountPoint}/${child}" {
+              device = "${pool.poolName}/${pool.baseDataset}/${child}";
+              fsType = "zfs";
+              options = [ "zfsutil" ];
+            }
+          ) pool.childDatasets);
+        in
+          { "${baseMount.name}" = baseMount.value; } // childMounts
+      ) cfg.storagePools);
     }
 
     (lib.mkIf (cfg.dailyAutoScrubHour != null) {

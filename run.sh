@@ -14,6 +14,9 @@ WIPE_DISKS="no"
 REBOOT_REMOTE="yes"
 PROMPT_KEY="no"
 EDIT_SECRET_FILE=""
+FORMAT_USER_DATA="no"
+FORMAT_SERVER_DATA="no"
+DATA_DISK_IDS=()
 
 # ==========================================
 # Utility Functions
@@ -35,26 +38,32 @@ PURPOSE:
   * Manage SOPS secrets files.
 
 COMMANDS:
-  --deploy-local         Execute deployment directly on the current machine.
-                         (Requires running from the NixOS Live ISO).
-  --deploy-remote        Execute deployment on a remote target over SSH.
-                         (Requires the -R/--remote option).
-  -w, --wipe-disks       Aggressively nuke old partitions and labels.
-                         SAFETY: Only executes on disks defined in the host's Disko config.
-  -e, --edit-secret FILE Edit a SOPS file and automatically rekey all secrets.
-  -h, --help             Show this help menu and exit
+  --deploy-local             Execute deployment directly on the current machine.
+                             (Requires running from the NixOS Live ISO).
+  --deploy-remote            Execute deployment on a remote target over SSH.
+                             (Requires the -R/--remote option).
+  -w, --wipe-disks           Aggressively nuke old partitions and labels.
+                             SAFETY: Only executes on disks defined in host's Disko config.
+  --format-user-data-disk    format user-facing-host disk(s) with empty zdata pool
+  --format-server-data-disk  format server-host disk(s) with empty zdata pool
+  -e, --edit-secret FILE     Edit a SOPS file and automatically rekey all secrets.
+  -h, --help                 Show this help menu and exit
 
 OPTIONS:
   -T, --target HOST      (Required for deploy) The NixOS configuration name (e.g., nas)
+  -D, --data-disk PATH   (Required for --format-data-disk, multiple for mirrored drives)
   -R, --remote IP        (Required for --deploy-remote) Target IP address
   -p, --prompt-key       (Optional for --deploy-local) Securely prompt for the Age Master Key
   -N, --no-reboot-remote (Optional for --deploy-remote) Do not reboot after deployment
 
 EXAMPLES:
-  Local Deploy  (run on minimal ISO): sudo ./$(basename "${0}") --deploy-local -p -w -T nas
-  Remote Deploy (SSH to minimal ISO):      ./$(basename "${0}") --deploy-remote -w -T nas -R 192.168.1.50
-  Local Wipe    (run on minimal ISO): sudo ./$(basename "${0}") -w -T nas
-  Edit Secret   (run on dev machine):      ./$(basename "${0}") -e secrets/master_secrets.yaml
+  Local Deploy   (run on minimal ISO): sudo ./$(basename "${0}") --deploy-local -p -w -T nas
+  Remote Deploy  (SSH to minimal ISO):      ./$(basename "${0}") --deploy-remote -w -T nas -R 192.168.1.50
+  Local Format   (run on minimal ISO): sudo ./$(basename "${0}") --format-user-data-disk -D /dev/disk/by-id/xxxx -T nas
+  Remote Format  (run on dev machine):      ./$(basename "${0}") --format-user-data-disk -D /dev/disk/by-id/xxxx -T nas -R 192.168.1.50
+  Remote Fmt+Dep (SSH to minimal ISO):      ./$(basename "${0}") --deploy-remote --format-server-data-disk -D /dev/disk/by-id/xxxx -w -T nas -R 192.168.1.50
+  Local Wipe     (run on minimal ISO): sudo ./$(basename "${0}") -w -T nas
+  Edit Secret    (run on dev machine):      ./$(basename "${0}") -e secrets/master_secrets.yaml
 EOF
 }
 
@@ -94,6 +103,14 @@ parse_args() {
         EDIT_SECRET_FILE="${1}"
         shift
         ;;
+      --format-user-data-disk)
+        FORMAT_USER_DATA="yes"
+        shift
+        ;;
+      --format-server-data-disk)
+        FORMAT_SERVER_DATA="yes"
+        shift
+        ;;
       -T|--target|-R|--remote)
         shift
         if [ "${#}" -eq 0 ] || [ "${1:0:1}" = "-" ]; then
@@ -107,6 +124,14 @@ parse_args() {
         esac
         shift
         ;;
+      -D|--data-disk)
+        shift
+        if [ "${#}" -eq 0 ] || [ "${1:0:1}" = "-" ]; then
+          die "Argument for --data-disk is missing."
+        fi
+        DATA_DISK_IDS+=("${1}")
+        shift
+        ;;
       -*)
         die "Unsupported option '${flag}'."
         ;;
@@ -117,25 +142,90 @@ parse_args() {
   done
 
   # Validation
-  if [ -z "${DEPLOY_MODE}" ] && \
-     [ "${WIPE_DISKS}" = "no" ] && \
-     [ -z "${EDIT_SECRET_FILE}" ]; then
+if [ -z "${DEPLOY_MODE}" ] && \
+   [ "${WIPE_DISKS}" = "no" ] && \
+   [ -z "${EDIT_SECRET_FILE}" ] && \
+   [ "${FORMAT_USER_DATA}" = "no" ] && \
+   [ "${FORMAT_SERVER_DATA}" = "no" ]; then
     errmsg="You must specify a command:"
     errmsg="${errmsg} --deploy-local,"
     errmsg="${errmsg} --deploy-remote,"
     errmsg="${errmsg} -w/--wipe-disks,"
-    errmsg="${errmsg} -e/--edit-secret."
+    errmsg="${errmsg} -e/--edit-secret,"
+    errmsg="${errmsg} --format-user-data-disk,"
+    errmsg="${errmsg} --format-server-data-disk."
     die "${errmsg}"
   fi
 
-  if [ -n "${DEPLOY_MODE}" ]; then
-    if [ -z "${TARGET_HOST}" ]; then
-      die "The -T/--target option is required for deployment."
-    fi
-    if [ "${DEPLOY_MODE}" = "remote" ] && [ -z "${REMOTE_IP}" ]; then
-      die "The -R/--remote option is required when using --deploy-remote."
-    fi
+  if [ "${FORMAT_USER_DATA}" = "yes" ] && [ -z "${DATA_DISK_ID}" ]; then
+    die "You must specify a target disk via -D/--data-disk when using --format-data-disk."
   fi
+
+  if [ "${FORMAT_SERVER_DATA}" = "yes" ] && [ -z "${TARGET_HOST}" ]; then
+    die "You must specify a -T/--target host when formatting a data disk."
+  fi
+}
+
+query_nix_config() {
+  local target="${1}"
+  local query="${2}"
+  local apply="${3:-}"
+
+  if [ -n "${apply}" ]; then
+    nix --extra-experimental-features "nix-command flakes" \
+    eval --raw ".#nixosConfigurations.${target}.config.${query}" \
+    --apply "${apply}" 2>/dev/null || true
+  else
+    nix --extra-experimental-features "nix-command flakes" \
+    eval --raw ".#nixosConfigurations.${target}.config.${query}" \
+    2>/dev/null || true
+  fi
+}
+
+run_sops() {
+  if ! command -v sops &> /dev/null; then
+    nix --extra-experimental-features "nix-command flakes" \
+    shell nixpkgs#sops --command sops "$@"
+  else
+    sops "$@"
+  fi
+}
+
+get_sops_secret() {
+  local secret_key="${1}"
+  local file_path="${2}"
+
+  if [ ! -f "${file_path}" ]; then return 1; fi
+  run_sops -d --extract "[\"${secret_key}\"]" "${file_path}" 2>/dev/null || true
+}
+
+deep_wipe_partition() {
+  local part="${1}"
+  echo "    - Erasing signatures on ${part}..."
+  mdadm --zero-superblock --force "${part}" 2>/dev/null || true
+  zpool labelclear -f "${part}" 2>/dev/null || true
+  wipefs -a -f "${part}" 2>/dev/null || true
+}
+
+deep_wipe_disk() {
+  local disk="${1}"
+  echo "☢️  Nuking ${disk}..."
+
+  local partitions
+  partitions=$(lsblk -plno NAME "${disk}" 2>/dev/null | sort -r)
+  for part in ${partitions}; do
+    if [ "${part}" != "${disk}" ]; then
+      deep_wipe_partition "${part}"
+    fi
+  done
+
+  blkdiscard -f "${disk}" 2>/dev/null || true
+  mdadm --zero-superblock --force "${disk}" 2>/dev/null || true
+  zpool labelclear -f "${disk}" 2>/dev/null || true
+  wipefs -a -f "${disk}" 2>/dev/null || true
+  sgdisk --zap-all "${disk}" >/dev/null 2>&1 || true
+  partprobe "${disk}" 2>/dev/null || echo "    Warning: partprobe failed. The kernel is locked. A reboot is recommended."
+  sleep 2
 }
 
 prompt_for_master_key() {
@@ -248,9 +338,9 @@ extract_zfs_passphrase() {
 
   local passphrase
   # Execute the extraction, catching failures explicitly
-  if ! passphrase=$(eval "${sops_cmd} -d --extract '[\"${target}_host_zfs_encryption_passphrase\"]' '${secrets_file}'" 2>/dev/null); then
+  if ! passphrase=$(eval "${sops_cmd} -d --extract '[\"${target}_host_zfs_zroot_encryption_passphrase\"]' '${secrets_file}'" 2>/dev/null); then
     unset SOPS_AGE_KEY_FILE
-    die "Failed to extract '${target}_host_zfs_encryption_passphrase' from ${secrets_file}. Ensure it exists."
+    die "Failed to extract '${target}_host_zfs_zroot_encryption_passphrase' from ${secrets_file}. Ensure it exists."
   fi
 
   unset SOPS_AGE_KEY_FILE
@@ -261,7 +351,7 @@ extract_zfs_passphrase() {
   echo "✅ Extracted ZFS plaintext passphrase to secure temporary storage." >&2
 }
 
-inject_key_to_mnt() {
+inject_sops_host_keypair_to_mnt() {
   local key_path="${1}"
   echo "💉 Injecting SOPS host keypair into the newly formatted volume (/mnt)..."
   mkdir -p /mnt/var/lib/sops-nix
@@ -275,7 +365,12 @@ emplace_target_hostid() {
 
   echo "🧬 Extracting target hostId to prevent ZFS import mismatch..."
   local target_hostid
-  target_hostid=$(nix --extra-experimental-features "nix-command flakes" eval --raw ".#nixosConfigurations.${target}.config.networking.hostId")
+  target_hostid="$(nix \
+    --extra-experimental-features "nix-command flakes" \
+    eval \
+    --raw \
+    ".#nixosConfigurations.${target}.config.networking.hostId"
+  )"
 
   if [ -z "${target_hostid}" ]; then
     die "Could not extract networking.hostId for '${target}'."
@@ -286,6 +381,84 @@ emplace_target_hostid() {
   rm -f /etc/hostid
   zgenhostid "${target_hostid}"
   echo "✅ Installer hostId temporarily assumed as ${target_hostid}."
+}
+
+format_data_disk() {
+  local target="${1}"
+  local disk_id="${2}"
+  local secrets_file="secrets/${target}_secrets.yaml"
+
+  if [ "${EUID}" -ne 0 ]; then
+    die "Formatting disks requires root privileges. Please run with sudo."
+  fi
+
+  if [ ! -f "${secrets_file}" ]; then
+    die "Secrets vault not found at: ${secrets_file}. Cannot retrieve hex key."
+  fi
+
+  echo ""
+  echo "⚠️  WARNING: You are about to DESTROY ALL DATA on the following EXPLICITLY TARGETED disk:"
+  echo "   -> ${disk_id}"
+  echo ""
+
+  read -r -p "Type 'NUKE' in all caps to confirm destruction: " confirm_wipe
+  if [ "${confirm_wipe}" != "NUKE" ]; then
+    die "Data format aborted by user."
+  fi
+
+  echo "🔑 Extracting hex key for zdata_${target} from SOPS..."
+  local sops_cmd="sops"
+  if ! command -v sops &> /dev/null; then
+    sops_cmd="nix --extra-experimental-features 'nix-command flakes' shell nixpkgs#sops --command sops"
+  fi
+
+  local hex_key
+  if ! hex_key=$(eval "${sops_cmd} -d --extract '[\"${target}_host_zfs_zdata_encryption_symkey\"]' '${secrets_file}'" 2>/dev/null); then
+    die "Failed to extract '${target}_host_zfs_zdata_encryption_symkey' from ${secrets_file}."
+  fi
+
+  local temp_key="/tmp/zdata_${target}.key"
+  echo -n "${hex_key}" > "${temp_key}"
+
+  echo "☢️  Nuking ${disk_id} and formatting as zdata_${target}..."
+  sgdisk --zap-all "${disk_id}" >/dev/null 2>&1 || true
+
+  zpool create -o ashift=12 \
+    -O encryption=aes-256-gcm \
+    -O keyformat=hex \
+    -O keylocation=file://"${temp_key}" \
+    "zdata_${target}" "${disk_id}"
+
+    zfs create -o compression=lz4 "zdata_${target}/home"
+
+    zpool export "zdata_${target}"
+    rm -f "${temp_key}"
+
+    echo "✅ Data drive formatted and encrypted successfully."
+  }
+
+inject_zdata_key_to_mnt() {
+  local target="${1}"
+  local secrets_file="secrets/${target}_secrets.yaml"
+
+  if [ ! -f "${secrets_file}" ]; then return 0; fi
+
+  echo "🔑 Checking for persistent zdata key in SOPS..."
+  local sops_cmd="sops"
+  if ! command -v sops &> /dev/null; then
+    sops_cmd="nix --extra-experimental-features 'nix-command flakes' shell nixpkgs#sops --command sops"
+  fi
+
+  local hex_key
+  hex_key=$(eval "${sops_cmd} -d --extract '[\"host_${target}_zdata_hex_key\"]' '${secrets_file}'" 2>/dev/null || true)
+
+  if [ -n "${hex_key}" ]; then
+    echo "   - Key found. Injecting into /mnt/persist/zfs-keys..."
+    mkdir -p /mnt/persist/zfs-keys
+    echo -n "${hex_key}" > "/mnt/persist/zfs-keys/zdata_${target}.key"
+    chmod 400 "/mnt/persist/zfs-keys/zdata_${target}.key"
+    echo "✅ Zdata hex key injected successfully."
+  fi
 }
 
 wipe_target_disks() {
@@ -306,7 +479,7 @@ wipe_target_disks() {
   local nix_apply='x: builtins.concatStringsSep "\n" (builtins.map (d: d.device) (builtins.attrValues x))'
 
   local raw_disk_output
-  raw_disk_output=$(nix --extra-experimental-features "nix-command flakes" eval --raw "${nix_query}" --apply "${nix_apply}" 2>/dev/null || true)
+  raw_disk_output="$(query_nix_config "${target}" "disko.devices.disk" "${nix_apply}")"
 
   local target_disks=()
   while IFS= read -r disk; do
@@ -322,7 +495,8 @@ wipe_target_disks() {
   echo ""
   echo "⚠️  WARNING: You are about to DESTROY ALL DATA on the following EXPLICITLY TARGETED disks:"
   for disk in "${target_disks[@]}"; do
-    echo "   -> ${disk}"
+    deep_wipe_disk "${disk}"
+    sleep 2
   done
   echo ""
 
@@ -372,6 +546,118 @@ wipe_target_disks() {
   done
 
   echo "✅ Targeted wipe sequence complete."
+}
+
+execute_data_format() {
+  local target="${1}"
+  local format_type="${2}" # "user" or "server"
+
+  if [ "${EUID}" -ne 0 ]; then
+    die "Formatting disks requires root privileges."
+  fi
+
+  local host_type
+  host_type="$(nix \
+    --extra-experimental-features "nix-command flakes" \
+    eval \
+    --raw \
+    ".#nixosConfigurations.${target}.config.custom.infrastructure.hostType" \
+    2>/dev/null || true)"
+
+  if [ "${format_type}" = "user" ] && [ "${host_type}" != "user-facing" ]; then
+    die "Safety abort: You requested user-data format, but host ${target} is type '${host_type}'."
+  fi
+  if [ "${format_type}" = "server" ] && [ "${host_type}" != "server" ]; then
+    die "Safety abort: You requested server-data format, but host ${target} is type '${host_type}'."
+  fi
+
+  echo ""
+  echo "⚠️  WARNING: You are about to DESTROY ALL DATA on these explicitly targeted disks:"
+  for disk in "${DATA_DISK_IDS[@]}"; do
+    echo "   -> ${disk}"
+  done
+  echo ""
+
+  if [ -t 0 ]; then
+    read -r -p "Type 'NUKE' in all caps to confirm destruction: " confirm_wipe
+    if [ "${confirm_wipe}" != "NUKE" ]; then
+      die "Data format aborted by user."
+    fi
+  else
+    echo "SSH Session detected. Proceeding automatically based on command flags."
+  fi
+
+  local compat_flag=""
+  local compat_val
+  compat_val="$(nix \
+    --extra-experimental-features "nix-command flakes" \
+    eval \
+    --raw \
+    ".#nixosConfigurations.${target}.config.disko.devices.zpool.zroot.options.compatibility" \
+    2>/dev/null || true)"
+
+  if [ -n "${compat_val}" ]; then
+    compat_flag="-o compatibility=${compat_val}"
+  fi
+
+  local pool_mode=""
+  if [ "${#DATA_DISK_IDS[@]}" -eq 2 ]; then
+    pool_mode="mirror"
+  elif [ "${#DATA_DISK_IDS[@]}" -gt 2 ]; then
+    die "Script currently only supports 1 disk, or 2 disks (mirror)."
+  fi
+
+  local pool_name="zdata_${target}"
+
+  for disk in "${DATA_DISK_IDS[@]}"; do
+    deep_wipe_disk "${disk}"
+  done
+
+  if [ "${format_type}" = "user" ]; then
+    local secrets_file="secrets/${target}_secrets.yaml"
+    if [ ! -f "${secrets_file}" ]; then
+      die "Secrets vault missing: ${secrets_file}. Cannot retrieve hex key."
+    fi
+
+    echo "🔑 Extracting hex key for ${pool_name} from SOPS..."
+    local sops_cmd="sops"
+    if ! command -v sops &> /dev/null; then
+      sops_cmd="nix --extra-experimental-features 'nix-command flakes' shell nixpkgs#sops --command sops"
+    fi
+
+    local hex_key
+    if ! hex_key=$(eval "${sops_cmd} -d --extract '[\"${target}_host_zfs_zdata_encryption_symkey\"]' '${secrets_file}'" 2>/dev/null); then
+      die "Failed to extract '${target}_host_zfs_zdata_encryption_symkey'."
+    fi
+
+    local temp_key="/tmp/${pool_name}.key"
+    echo -n "${hex_key}" > "${temp_key}"
+
+    zpool create -o ashift=12 "${compat_flag}" \
+      -O encryption=aes-256-gcm \
+      -O keyformat=hex \
+      -O keylocation="file://${temp_key}" \
+      "${pool_name}" "${pool_mode}" "${DATA_DISK_IDS[@]}"
+
+    # mountpoint=legacy is explicitly required by NixOS fileSystems ZFS mounts
+    zfs create -o mountpoint=legacy -o compression=lz4 "${pool_name}/home"
+
+    zpool export "${pool_name}"
+    rm -f "${temp_key}"
+    echo "✅ User data drive formatted and encrypted successfully."
+
+  elif [ "${format_type}" = "server" ]; then
+    zpool create -o ashift=12 "${compat_flag}" \
+      -O compression=lz4 \
+      -O atime=off \
+      -O xattr=sa \
+      -O acltype=posixacl \
+      -m /data \
+      "${pool_name}" ${pool_mode} "${DATA_DISK_IDS[@]}"
+
+    zpool export "${pool_name}"
+    echo "✅ Server data drive formatted successfully."
+  fi
 }
 
 execute_disko_format() {
@@ -425,7 +711,10 @@ run_build_sequence() {
   # Immediately destroy the plaintext passphrase file now that ZFS is formatted
   rm -f "/tmp/zfs_passphrase"
 
-  inject_key_to_mnt "${key_file}"
+  inject_sops_host_keypair_to_mnt "${key_file}"
+
+  inject_zdata_key_to_mnt "${target}"
+
   execute_nixos_install "${target}"
 }
 
@@ -527,13 +816,22 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   if [ -n "${EDIT_SECRET_FILE}" ]; then
     edit_and_rekey "${EDIT_SECRET_FILE}"
-  elif [ "${DEPLOY_MODE}" = "remote" ]; then
+    exit 0
+  fi
+
+  if [ "${FORMAT_USER_DATA}" = "yes" ]; then
+    execute_data_format "${TARGET_HOST}" "user"
+  elif [ "${FORMAT_SERVER_DATA}" = "yes" ]; then
+    execute_data_format "${TARGET_HOST}" "server"
+  fi
+
+  if [ "${DEPLOY_MODE}" = "remote" ]; then
     deploy_remote
   elif [ "${DEPLOY_MODE}" = "local" ]; then
     deploy_local
-  elif [ "${WIPE_DISKS}" = "yes" ]; then
+  elif [ "${WIPE_DISKS}" = "yes" ] && [ "${DEPLOY_MODE}" = "" ]; then
     if [ "${EUID}" -ne 0 ]; then
-      die "Wiping disks requires root privileges. Please run with sudo."
+      die "Wiping disks requires root privileges."
     fi
     wipe_target_disks "${TARGET_HOST}"
   fi

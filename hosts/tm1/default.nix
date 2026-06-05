@@ -49,7 +49,11 @@ in {
     ];
 
     custom.system.nixCore.initialStateVersion = "25.11";
+
+    custom.infrastructure.hostType = "user-facing";
+
     custom.system.cpuMicrocode = "intel";
+
     custom.system.grub.enableMode = "efi";
 
     custom.system.security.enableRealTimeKit = true;
@@ -57,6 +61,15 @@ in {
     custom.system.networking.primaryDnsServerIpAddr = infra.lan.routerIpAddr;
     custom.system.networking.trustedIpLinkInterfaces = tscale.ipLinkInterfaces;
     custom.system.networking.useNetworkManager = true;
+
+    custom.system.zfs.storagePools = [
+      {
+        poolName = "zdata_tm1";
+        baseDataset = "home";
+        baseMountPoint = "/home";
+        childDatasets = [ "testuser1" ];
+      }
+    ];
 
     custom.apps.tailscale.enable = true;
     custom.apps.tailscale.enableSshServer = true;
