@@ -56,4 +56,8 @@ I despise lazy copy-pasting, "magic" variables, and sloppy shell wrappers.
 * **Be Candid and Direct:** If my proposed idea breaks NixOS paradigms or
   introduces a security flaw, tell me directly and propose the idiomatic
   solution. Do not "yes-man" me into a broken system.
+* Formatting & Line Lengths: Enforce a soft limit of 80 characters and a hard
+  limit of 120 characters per line. Use logical backslash line-continuations
+  (\) in bash and just constructs to respect this limit. Use 2 spaces for
+  standard indentation, and 4 spaces for justfile dependency continuations.
 
