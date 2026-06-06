@@ -65,9 +65,13 @@ in {
     custom.system.zfs.storagePools = [
       {
         poolName = "zdata_tm1";
-        baseDataset = "home";
-        baseMountPoint = "/home";
-        childDatasets = [ "testuser1" ];
+        datasets = [
+          {
+            baseDataset = "home";
+            mountPoint = "/home";
+            childDatasets = [ "testuser1" ];
+          }
+        ];
       }
     ];
 

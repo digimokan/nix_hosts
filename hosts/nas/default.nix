@@ -72,9 +72,13 @@ in {
     custom.system.zfs.storagePools = [
       {
         poolName = storagePoolName;
-        baseDataset = storagePoolBaseDataset;
-        baseMountPoint = storagePoolBaseMountDir;
-        childDatasets = storagePoolChildDirs;
+        datasets = [
+          {
+            baseDataset = storagePoolBaseDataset;
+            mountPoint = storagePoolBaseMountDir;
+            childDatasets = storagePoolChildDirs;
+          }
+        ];
       }
     ];
 
