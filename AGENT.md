@@ -60,4 +60,7 @@ I despise lazy copy-pasting, "magic" variables, and sloppy shell wrappers.
   limit of 120 characters per line. Use logical backslash line-continuations
   (\) in bash and just constructs to respect this limit. Use 2 spaces for
   standard indentation, and 4 spaces for justfile dependency continuations.
+* Zero Trailing Whitespace: You must rigorously check all generated code
+  blocks. Absolutely no trailing whitespace is permitted at the end of lines,
+  and empty lines must be genuinely empty (no spaces).
 
