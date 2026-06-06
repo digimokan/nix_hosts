@@ -54,7 +54,7 @@ in {
                 childDatasets = lib.mkOption {
                   type = lib.types.listOf lib.types.str;
                   default = [];
-                  description = "List of child directories to create as dedicated ZFS datasets under the baseDataset (e.g., [ 'testuser1' ]).";
+                  description = "List of child directories to mount as dedicated ZFS datasets under the baseDataset (e.g., [ 'testuser1' ]).";
                 };
               };
             });

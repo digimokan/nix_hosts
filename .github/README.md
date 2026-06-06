@@ -67,6 +67,7 @@ See documentation in [`.sops.yaml`](../.sops.yaml).
 
    * `age`
    * `sops`
+   * `jq`
 
 3. On the orchestration host, emplace the age master key.
 

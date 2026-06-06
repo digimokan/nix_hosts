@@ -15,6 +15,7 @@ PROMPT_KEY="no"
 EDIT_SECRET_FILE=""
 FORMAT_USER_DATA="no"
 FORMAT_SERVER_DATA="no"
+CREATE_DATASETS="no"
 DATA_DISK_IDS=()
 
 # ==========================================
@@ -45,6 +46,7 @@ COMMANDS:
                              SAFETY: Only executes on disks defined in host's Disko config.
   --format-user-data-disk    Format targeted disk(s) as an encrypted ZFS user data pool.
   --format-server-data-disk  Format targeted disk(s) as an unencrypted ZFS server data pool.
+  --create-datasets          Query Nix config and dynamically create missing ZFS datasets.
   -e, --edit-secret FILE     Edit a SOPS file and automatically rekey all secrets.
   -h, --help                 Show this help menu and exit
 
@@ -61,6 +63,7 @@ EXAMPLES:
   Local Format   (run on minimal ISO): sudo ./$(basename "${0}") --format-user-data-disk -D /dev/disk/by-id/xxxx -T nas
   Remote Format  (run on dev machine):      ./$(basename "${0}") --format-user-data-disk -D /dev/disk/by-id/xxxx -T nas -R 192.168.1.50
   Remote Fmt+Dep (SSH to minimal ISO):      ./$(basename "${0}") --deploy-remote --format-server-data-disk -D /dev/disk/by-id/xxxx -w -T nas -R 192.168.1.50
+  Create Datasets(run on minimal ISO): sudo ./$(basename "${0}") --create-datasets -T tm1
   Local Wipe     (run on minimal ISO): sudo ./$(basename "${0}") -w -T nas
   Edit Secret    (run on dev machine):      ./$(basename "${0}") -e secrets/master_secrets.yaml
 EOF
@@ -110,6 +113,10 @@ parse_args() {
         FORMAT_SERVER_DATA="yes"
         shift
         ;;
+      --create-datasets)
+        CREATE_DATASETS="yes"
+        shift
+        ;;
       -T|--target|-R|--remote)
         shift
         if [ "${#}" -eq 0 ] || [ "${1:0:1}" = "-" ]; then
@@ -140,11 +147,17 @@ parse_args() {
   done
 
   # Validation
-  if [ -z "${DEPLOY_MODE}" ] && [ "${WIPE_DISKS}" = "no" ] && [ -z "${EDIT_SECRET_FILE}" ] && [ "${FORMAT_USER_DATA}" = "no" ] && [ "${FORMAT_SERVER_DATA}" = "no" ]; then
+  if [ -z "${DEPLOY_MODE}" ] && \
+     [ "${WIPE_DISKS}" = "no" ] && \
+     [ -z "${EDIT_SECRET_FILE}" ] && \
+     [ "${FORMAT_USER_DATA}" = "no" ] && \
+     [ "${FORMAT_SERVER_DATA}" = "no" ] && \
+     [ "${CREATE_DATASETS}" = "no" ]; then
     errmsg="You must specify a command:"
     errmsg="${errmsg} --deploy-local, --deploy-remote,"
     errmsg="${errmsg} -w/--wipe-disks, -e/--edit-secret,"
-    errmsg="${errmsg} --format-user-data-disk, --format-server-data-disk."
+    errmsg="${errmsg} --format-user-data-disk, --format-server-data-disk,"
+    errmsg="${errmsg} --create-datasets."
     die "${errmsg}"
   fi
 
@@ -161,6 +174,9 @@ parse_args() {
     if [ -z "${TARGET_HOST}" ]; then
       die "You must specify a -T/--target host when formatting a data disk."
     fi
+  fi
+  if [ "${CREATE_DATASETS}" = "yes" ] && [ -z "${TARGET_HOST}" ]; then
+    die "You must specify a -T/--target host when creating datasets."
   fi
 }
 
@@ -289,6 +305,25 @@ inject_sops_host_keypair_to_mnt() {
   echo "✅ SOPS keypair injected successfully."
 }
 
+inject_zdata_key_to_mnt() {
+  local target="${1}"
+  local secrets_file="secrets/${target}_host_secrets.yaml"
+
+  if [ ! -f "${secrets_file}" ]; then return 0; fi
+
+  echo "🔑 Checking for persistent zdata key in SOPS..."
+  local hex_key
+  hex_key=$(get_sops_secret "${target}_host_zfs_zdata_encryption_symkey" "${secrets_file}")
+
+  if [ -n "${hex_key}" ]; then
+    echo "   - Key found. Injecting into /mnt/persist/zfs-keys..."
+    mkdir -p /mnt/persist/zfs-keys
+    echo -n "${hex_key}" > "/mnt/persist/zfs-keys/zdata_${target}.key"
+    chmod 400 "/mnt/persist/zfs-keys/zdata_${target}.key"
+    echo "✅ Zdata hex key injected successfully."
+  fi
+}
+
 emplace_target_hostid() {
   local target="${1}"
   echo "🧬 Extracting target hostId to prevent ZFS import mismatch..."
@@ -396,6 +431,42 @@ wipe_target_disks() {
   echo "✅ Targeted wipe sequence complete."
 }
 
+create_zfs_datasets() {
+  local target="${1}"
+  echo "📂 Querying Nix config for required ZFS datasets..."
+
+  local json_data
+  if ! json_data=$(nix \
+      --extra-experimental-features "nix-command flakes" \
+      eval --json ".#nixosConfigurations.${target}.config.custom.system.zfs.storagePools" \
+      2>/dev/null); then
+    die "Failed to evaluate storagePools from Nix configuration."
+  fi
+
+  local jq_cmd="jq"
+  if ! command -v jq &> /dev/null; then
+    jq_cmd="nix --extra-experimental-features 'nix-command flakes' shell nixpkgs#jq --command jq"
+  fi
+
+  # Parse the structure into a flat list of ZFS paths (only baseDatasets)
+  local ds_paths
+  ds_paths=$(echo "${json_data}" | eval "${jq_cmd}" -r '
+    .[] as $pool |
+    $pool.datasets[] as $ds |
+    ($pool.poolName + "/" + $ds.baseDataset)
+  ')
+
+  for ds_path in ${ds_paths}; do
+    if zfs list "${ds_path}" >/dev/null 2>&1; then
+      echo "   - Dataset ${ds_path} already exists. Skipping."
+    else
+      echo "   - Creating dataset: ${ds_path}"
+      zfs create -o mountpoint=legacy "${ds_path}"
+    fi
+  done
+  echo "✅ ZFS dataset creation complete."
+}
+
 execute_zpool_create() {
   local target="${1}"
   local format_type="${2}" # "user" or "server"
@@ -432,10 +503,8 @@ execute_zpool_create() {
     -m none \
     "${pool_name}" ${pool_mode} "${DATA_DISK_IDS[@]}"
 
-  # Create base dataset with legacy mountpoint to defer mounting to systemd
-  local base_dataset="data"
-  if [ "${format_type}" = "user" ]; then base_dataset="home"; fi
-  zfs create -o mountpoint=legacy "${pool_name}/${base_dataset}"
+  # Dynamically create configured datasets
+  create_zfs_datasets "${target}"
 
   zpool export "${pool_name}"
   rm -f "${temp_key}"
@@ -530,6 +599,7 @@ run_build_sequence() {
 
   execute_disko_format "${target}"
   inject_sops_host_keypair_to_mnt "${key_file}"
+  inject_zdata_key_to_mnt "${target}"
   execute_nixos_install "${target}"
 }
 
@@ -632,6 +702,11 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     format_data_disk "${TARGET_HOST}" "user"
   elif [ "${FORMAT_SERVER_DATA}" = "yes" ]; then
     format_data_disk "${TARGET_HOST}" "server"
+  elif [ "${CREATE_DATASETS}" = "yes" ]; then
+    if [ "${EUID}" -ne 0 ]; then
+      die "Creating datasets requires root privileges. Please run with sudo."
+    fi
+    create_zfs_datasets "${TARGET_HOST}"
   fi
 
   if [ "${DEPLOY_MODE}" = "remote" ]; then
