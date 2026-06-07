@@ -105,12 +105,16 @@ _query_nix_config hostname query nix_apply_expr="":
 
 [private]
 [doc("Extract a secret from SOPS. Asserts file exists and secret is not empty.")]
-_get_sops_secret secret_key file_path:
+_get_sops_secret secret_to_get secrets_file_path:
   #!/usr/bin/env bash
   set -euo pipefail
-  just _runtime_assert condition='[ -f "{{file_path}}" ]' exit_msg="Could not find {{file_path}}"
-  secret_val=$({{sops_cmd}} -d --extract "[\"{{secret_key}}\"]" "{{file_path}}")
-  just _runtime_assert condition="[ -n \"\${secret_val}\" ]" exit_msg="Could not find {{secret_key}} in {{file_path}}"
+  just _runtime_assert \
+    condition='[ -f "{{secrets_file_path}}" ]' \
+    exit_msg="Could not find {{secrets_file_path}}"
+  secret_val=$({{sops_cmd}} -d --extract "[\"{{secret_to_get}}\"]" "{{secrets_file_path}}")
+  just _runtime_assert \
+    condition="[ -n \"\${secret_val}\" ]" \
+    exit_msg="Could not find {{secret_to_get}} in {{secrets_file_path}}"
   echo -n "${secret_val}"
 
 [private]
@@ -152,7 +156,7 @@ _host_type_is hostname expected_type:
 # ==========================================
 
 [private]
-[doc("Route deployment to local execution or remote execution based on auto-detection.")]
+[doc("Select and run the appropriate install: local or remote.")]
 _deploy_internal hostname host_ip prompt_for_master_secret:
   #!/usr/bin/env bash
   set -euo pipefail
@@ -165,7 +169,7 @@ _deploy_internal hostname host_ip prompt_for_master_secret:
   fi
 
 [private]
-[doc("Execute local deployment orchestration.")]
+[doc("Deploy NixOS on local host that is running the NixOS installer ISO.")]
 _deploy_local hostname prompt_for_master_secret:
   @echo "🚀 Initiating local deployment for {{hostname}}..."
   @just _query_sops_for_host_age_keypair hostname="{{hostname}}" \
@@ -174,35 +178,41 @@ _deploy_local hostname prompt_for_master_secret:
   @echo "✅ Local deployment finished."
 
 [private]
-[doc("Execute remote deployment orchestration over SSH.")]
+[doc("Deploy NixOS to remote host (via SSH) that is running the NixOS installer ISO.")]
 _deploy_remote hostname host_ip:
   #!/usr/bin/env bash
   set -euo pipefail
-  echo "🚀 Initiating remote orchestration for {{hostname}} at {{host_ip}}..."
+  echo "🚀 Initiating remote deployment to host {{hostname}} at {{host_ip}}..."
   just _query_sops_for_host_age_keypair hostname="{{hostname}}" prompt_for_master_secret="no"
-  echo "📦 Preparing remote temporary storage..."
-  just _ssh_to_installer host_ip="{{host_ip}}" cmd="rm -rf /tmp/nix_hosts {{host_keypair_tempfile_path}}"
-  echo "📦 Cloning repository on remote target..."
-  just _ssh_to_installer host_ip="{{host_ip}}" \
+  echo "📦 Preparing remote temporary storage on remote host..."
+  just _ssh_to_installer \
+    host_ip="{{host_ip}}" \
+    cmd="rm -rf /tmp/nix_hosts {{host_keypair_tempfile_path}}"
+  echo "📦 Cloning repository on remote host..."
+  just _ssh_to_installer \
+    host_ip="{{host_ip}}" \
     cmd="git clone --single-branch --depth=1 '{{repo_url}}' /tmp/nix_hosts"
-  echo "💉 Transferring SOPS keypair to remote temporary storage..."
-  just _scp_to_installer host_ip="{{host_ip}}" local_path="{{host_keypair_tempfile_path}}" \
+  echo "💉 Transferring SOPS keypair to remote host temporary storage..."
+  just _scp_to_installer \
+    host_ip="{{host_ip}}" \
+    local_path="{{host_keypair_tempfile_path}}" \
     remote_path="{{host_keypair_tempfile_path}}"
-  echo "⚙️  Executing build sequence over SSH..."
+  echo "⚙️  Executing build sequence on remote host over SSH..."
   just _ssh_to_installer host_ip="{{host_ip}}" \
     cmd="cd /tmp/nix_hosts && {{nix_shell}} nixpkgs#just --command just _run_build_sequence \
     hostname=\"{{hostname}}\" && rm -f {{host_keypair_tempfile_path}}"
-  echo "🔄 Remote deployment finished. Target must be manually rebooted into new OS."
+  echo "🔄 Remote deployment finished. Remote host must be manually rebooted into new OS."
 
 # ==========================================
 # SECRETS EXTRACTION & INJECTION
 # ==========================================
 
 [private]
-[doc("Extract the Age keypair from the master SOPS vault.")]
+[doc("Extract the target host Age keypair from the master SOPS vault.")]
 _query_sops_for_host_age_keypair hostname prompt_for_master_secret="no":
   #!/usr/bin/env bash
   set -euo pipefail
+  echo "✅ Extracting target host Age keypair to orchestration machine tempfile..." >&2
   if [ "{{prompt_for_master_secret}}" = "yes" ]; then
     read -r -s -p "74-Char Master Key: " RAW_INPUT < /dev/tty
     echo "" >&2
@@ -214,12 +224,13 @@ _query_sops_for_host_age_keypair hostname prompt_for_master_secret="no":
     just _runtime_assert condition='[ "${#SOPS_AGE_KEY}" -eq 74 ]' exit_msg="Invalid key length."
   fi
   echo "🔐 Attempting to extract Age keypair for host '{{hostname}}'..." >&2
-  key_value=$(just _get_sops_secret secret_key="age_keypair_host_{{hostname}}" \
-    file_path="secrets/master_secrets.yaml")
+  key_value=$(just _get_sops_secret \
+    secret_to_get="age_keypair_host_{{hostname}}" \
+    secrets_file_path="secrets/master_secrets.yaml")
   if [ -n "${SOPS_AGE_KEY:-}" ]; then unset SOPS_AGE_KEY; echo "🧹 Master key purged." >&2; fi
   echo "${key_value}" > "{{host_keypair_tempfile_path}}"
   chmod 600 "{{host_keypair_tempfile_path}}"
-  echo "✅ Target host Age keypair successfully extracted to orchestration machine tempfile" >&2
+  echo "✅ Target host Age keypair successfully extracted." >&2
 
 [private]
 [doc("Extract plaintext ZFS passphrase to feed to Disko for user-facing hosts.")]
@@ -229,8 +240,8 @@ _extract_zfs_zroot_passphrase_for_user_facing_host hostname:
   if ! just _host_type_is hostname="{{hostname}}" expected_type="user-facing"; then exit 0; fi
   echo "🔑 Extracting plaintext ZFS passphrase for deployment..." >&2
   pass_value=$(just _get_sops_secret \
-    secret_key="{{hostname}}_host_zfs_zroot_encryption_passphrase" \
-    file_path="secrets/{{hostname}}_host_secrets.yaml")
+    secret_to_get="{{hostname}}_host_zfs_zroot_encryption_passphrase" \
+    secrets_file_path="secrets/{{hostname}}_host_secrets.yaml")
   echo -n "${pass_value}" > "{{host_zroot_passphrase_tempfile_path}}"
 
 [private]
@@ -252,8 +263,8 @@ _inject_zdata_key_to_zroot_mnt_for_user_facing_host hostname:
   if ! just _host_type_is hostname="{{hostname}}" expected_type="user-facing"; then exit 0; fi
   echo "🔑 Inject ZFS zdata encryption keystring to target host's zroot /mnt/persist/zfs-keys..."
   zdata_encryption_keystring=$(just _get_sops_secret \
-    secret_key="{{hostname}}_host_zfs_zdata_encryption_symkey" \
-    file_path="secrets/{{hostname}}_host_secrets.yaml")
+    secret_to_get="{{hostname}}_host_zfs_zdata_encryption_symkey" \
+    secrets_file_path="secrets/{{hostname}}_host_secrets.yaml")
   mkdir -p /mnt/persist/zfs-keys
   echo -n "${zdata_encryption_keystring}" > "/mnt/persist/zfs-keys/zdata_{{hostname}}.key"
   chmod 400 "/mnt/persist/zfs-keys/zdata_{{hostname}}.key"
@@ -405,8 +416,8 @@ _exec_zdata_zpool_create hostname disks host_ip="":
   enc_flags=""
   if just _host_type_is hostname="{{hostname}}" expected_type="user-facing"; then
     zdata_encryption_keystring=$(just _get_sops_secret \
-      secret_key="{{hostname}}_host_zfs_zdata_encryption_symkey" \
-      file_path="secrets/{{hostname}}_host_secrets.yaml")
+      secret_to_get="{{hostname}}_host_zfs_zdata_encryption_symkey" \
+      secrets_file_path="secrets/{{hostname}}_host_secrets.yaml")
     echo -n "${zdata_encryption_keystring}" > "{{host_zdata_keystring_tempfile_path}}"
     enc_flags="-O encryption=aes-256-gcm -O keyformat=hex -O keylocation=file://{{host_zdata_keystring_tempfile_path}}"
     if [ -n "{{host_ip}}" ]; then
