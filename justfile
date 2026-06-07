@@ -160,9 +160,12 @@ _host_type_is hostname expected_type:
 _deploy_internal hostname host_ip prompt_for_master_secret:
   #!/usr/bin/env bash
   set -euo pipefail
+  master_key=$(just _get_sops_master_secret_keystring \
+    prompt_for_master_secret="{{prompt_for_master_secret}}")
+  just _query_sops_for_host_age_keypair hostname="{{hostname}}" master_key="${master_key}"
   local_host="$(hostname)"
   if [ "${local_host}" = "nixos" ] || [ "${local_host}" = "{{hostname}}" ]; then
-    just _deploy_local hostname="{{hostname}}" prompt_for_master_secret="{{prompt_for_master_secret}}"
+    just _deploy_local hostname="{{hostname}}"
   else
     just _runtime_assert condition='[ -n "{{host_ip}}" ]' exit_msg="Remote deploy requires host_ip parameter."
     just _deploy_remote hostname="{{hostname}}" host_ip="{{host_ip}}"
@@ -170,10 +173,8 @@ _deploy_internal hostname host_ip prompt_for_master_secret:
 
 [private]
 [doc("Deploy NixOS on local host that is running the NixOS installer ISO.")]
-_deploy_local hostname prompt_for_master_secret:
+_deploy_local hostname:
   @echo "🚀 Initiating local deployment for {{hostname}}..."
-  @just _query_sops_for_host_age_keypair hostname="{{hostname}}" \
-    prompt_for_master_secret="{{prompt_for_master_secret}}"
   @just _run_build_sequence hostname="{{hostname}}"
   @echo "✅ Local deployment finished."
 
@@ -183,7 +184,6 @@ _deploy_remote hostname host_ip:
   #!/usr/bin/env bash
   set -euo pipefail
   echo "🚀 Initiating remote deployment to host {{hostname}} at {{host_ip}}..."
-  just _query_sops_for_host_age_keypair hostname="{{hostname}}" prompt_for_master_secret="no"
   echo "📦 Preparing remote temporary storage on remote host..."
   just _ssh_to_installer \
     host_ip="{{host_ip}}" \
@@ -208,26 +208,40 @@ _deploy_remote hostname host_ip:
 # ==========================================
 
 [private]
-[doc("Extract the target host Age keypair from the master SOPS vault.")]
-_query_sops_for_host_age_keypair hostname prompt_for_master_secret="no":
+[doc("Prompt for the SOPS master secret or verify its default file exists.")]
+_get_sops_master_secret_keystring prompt_for_master_secret:
   #!/usr/bin/env bash
   set -euo pipefail
-  echo "✅ Extracting target host Age keypair to orchestration machine tempfile..." >&2
   if [ "{{prompt_for_master_secret}}" = "yes" ]; then
     read -r -s -p "74-Char Master Key: " RAW_INPUT < /dev/tty
     echo "" >&2
     if [ "${RAW_INPUT:0:15}" = "AGE-SECRET-KEY-" ]; then
-      export SOPS_AGE_KEY="${RAW_INPUT}"
+      master_secret_keystring="${RAW_INPUT}"
     else
-      export SOPS_AGE_KEY="AGE-SECRET-KEY-${RAW_INPUT}"
+      master_secret_keystring="AGE-SECRET-KEY-${RAW_INPUT}"
     fi
-    just _runtime_assert condition='[ "${#SOPS_AGE_KEY}" -eq 74 ]' exit_msg="Invalid key length."
+    just _runtime_assert condition='[ "${#master_secret_keystring}" -eq 74 ]' exit_msg="Invalid key length."
+  else
+    keyfile="${HOME}/.config/sops/age/keys.txt"
+    just _runtime_assert condition="[ -f \"${keyfile}\" ]" exit_msg="Master keyfile not found at ${keyfile}"
+    master_secret_keystring=$(grep -m 1 "^AGE-SECRET-KEY-" "${keyfile}" || true)
+    just _runtime_assert condition='[ -n "${master_secret_keystring}" ]' exit_msg="No valid Age key found in ${keyfile}"
   fi
+  echo -n "${master_secret_keystring}"
+
+[private]
+[doc("Extract the target host Age keypair from the master SOPS vault.")]
+_query_sops_for_host_age_keypair hostname master_key:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  echo "✅ Extracting target host Age keypair to orchestration machine tempfile..." >&2
+  export SOPS_AGE_KEY="{{master_key}}"
   echo "🔐 Attempting to extract Age keypair for host '{{hostname}}'..." >&2
   key_value=$(just _get_sops_secret \
     secret_to_get="age_keypair_host_{{hostname}}" \
     secrets_file_path="secrets/master_secrets.yaml")
-  if [ -n "${SOPS_AGE_KEY:-}" ]; then unset SOPS_AGE_KEY; echo "🧹 Master key purged." >&2; fi
+  unset SOPS_AGE_KEY
+  echo "🧹 Master key purged." >&2
   echo "${key_value}" > "{{host_keypair_tempfile_path}}"
   chmod 600 "{{host_keypair_tempfile_path}}"
   echo "✅ Target host Age keypair successfully extracted." >&2
