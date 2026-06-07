@@ -39,7 +39,7 @@ host_zdata_keystring_tempfile_path := "/tmp/nix_hosts_zfs_zdata_keystring"
 [private]
 [doc("Show the list of public recipes with their doc() comments.")]
 default:
-  @just --list
+  @just --list --unsorted
 
 [doc("Deploy a host. Auto-detects local vs remote execution.\n  Ex: just deploy hostname=nas\n  Ex: just deploy hostname=nas host_ip=192.168.1.50")]
 deploy hostname host_ip="" prompt_for_master_secret="no": _require_root
