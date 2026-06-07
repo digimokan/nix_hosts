@@ -144,6 +144,17 @@ _scp_to_installer installer_host_ip local_path remote_path:
     "{{local_path}}" "nixos@{{installer_host_ip}}:{{remote_path}}"
 
 [private]
+[doc("Execute a command locally, or over SSH if an installer IP address is provided.")]
+_exec_cmd_local_or_ssh installer_host_ip cmd:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  if [ -n "{{installer_host_ip}}" ]; then
+    just _ssh_to_installer installer_host_ip="{{installer_host_ip}}" cmd="{{cmd}}"
+  else
+    bash -c "{{cmd}}"
+  fi
+
+[private]
 [doc("Silent boolean check for host type.")]
 _host_type_is hostname expected_type:
   #!/usr/bin/env bash
@@ -325,11 +336,7 @@ _deep_wipe_disk disk installer_host_ip="":
     silent_exec "sgdisk --zap-all \"{{disk}}\""
     silent_exec "partprobe \"{{disk}}\""
   '
-  if [ -n "{{installer_host_ip}}" ]; then
-    just _ssh_to_installer installer_host_ip="{{installer_host_ip}}" cmd="${wipe_script}"
-  else
-    bash -c "${wipe_script}"
-  fi
+  just _exec_cmd_local_or_ssh installer_host_ip="{{installer_host_ip}}" cmd="${wipe_script}"
   sleep 2
 
 [private]
@@ -368,11 +375,7 @@ _create_zfs_datasets hostname installer_host_ip="":
     cmd="if zfs list \"${ds_path}\" >/dev/null 2>&1; then \
       echo \"   - Dataset ${ds_path} already exists.\"; \
       else zfs create -o mountpoint=legacy \"${ds_path}\" && echo \"   - Created: ${ds_path}\"; fi"
-    if [ -n "{{installer_host_ip}}" ]; then
-      just _ssh_to_installer installer_host_ip="{{installer_host_ip}}" cmd="${cmd}"
-    else
-      bash -c "${cmd}"
-    fi
+    just _exec_cmd_local_or_ssh installer_host_ip="{{installer_host_ip}}" cmd="${cmd}"
   done
   echo "✅ ZFS dataset creation complete."
 
@@ -448,11 +451,7 @@ _exec_zdata_zpool_create hostname disks installer_host_ip="":
   create_cmd="zpool create -o ashift=12 ${compat_flag} -O compression=lz4 -O xattr=sa \
     -O acltype=posixacl -O atime=off ${enc_flags} -m none \"${pool_name}\" ${pool_mode} {{disks}} \
     && zpool export \"${pool_name}\""
-  if [ -n "{{installer_host_ip}}" ]; then
-    just _ssh_to_installer installer_host_ip="{{installer_host_ip}}" cmd="${create_cmd}"
-  else
-    bash -c "${create_cmd}"
-  fi
+  just _exec_cmd_local_or_ssh installer_host_ip="{{installer_host_ip}}" cmd="${create_cmd}"
   echo "✅ Pool ${pool_name} created on data disk(s)"
 
 # ==========================================
