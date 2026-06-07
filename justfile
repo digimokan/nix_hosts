@@ -41,21 +41,21 @@ host_zdata_keystring_tempfile_path := "/tmp/nix_hosts_zfs_zdata_keystring"
 default:
   @just --list --unsorted
 
-[doc("Deploy NixOS to a local or remote host.\n  Ex: just deploy hostname=nas\n  Ex: just deploy hostname=nas host_ip=192.168.1.50")]
-deploy hostname host_ip="" prompt_for_master_secret="no": _require_root
-  @just _deploy_internal hostname="{{hostname}}" host_ip="{{host_ip}}" \
+[doc("Deploy NixOS to local or remote host running NixOS installer.\n  Ex: just deploy hostname=nas\n  Ex: just deploy hostname=nas installer_host_ip=192.168.1.50")]
+deploy hostname installer_host_ip="" prompt_for_master_secret="no": _require_root
+  @just _deploy_internal hostname="{{hostname}}" installer_host_ip="{{installer_host_ip}}" \
     prompt_for_master_secret="{{prompt_for_master_secret}}" || { just _cleanup_temp_files; exit 1; }
   @just _cleanup_temp_files
 
 [doc("Wipe and format the hosts zdata pool on its data disks.\n  Ex: just format-data-disks hostname=tm1")]
-format-data-disks hostname host_ip="": _require_root
-  @just _format_data_disks_internal hostname="{{hostname}}" host_ip="{{host_ip}}" \
+format-data-disks hostname installer_host_ip="": _require_root
+  @just _format_data_disks_internal hostname="{{hostname}}" installer_host_ip="{{installer_host_ip}}" \
     || { just _cleanup_temp_files; exit 1; }
   @just _cleanup_temp_files
 
 [doc("Create all missing ZFS datasets on the host's zdata pool.\n  Ex: just create-datasets hostname=tm1")]
-create-datasets hostname host_ip="": _require_root
-  @just _create_zfs_datasets hostname="{{hostname}}" host_ip="{{host_ip}}"
+create-datasets hostname installer_host_ip="": _require_root
+  @just _create_zfs_datasets hostname="{{hostname}}" installer_host_ip="{{installer_host_ip}}"
 
 [doc("Edit a SOPS file and automatically rekey all secrets.\n  Ex: just edit-secret target_file=secrets/admin.yaml")]
 edit-secret target_file:
@@ -133,15 +133,15 @@ _rekey_all_sops_secrets_files:
 
 [private]
 [doc("Execute a command over SSH on the target installer environment.")]
-_ssh_to_installer host_ip cmd:
+_ssh_to_installer installer_host_ip cmd:
   @ssh -o ControlMaster=auto -o ControlPath=/tmp/deploy_ssh_%h_%p_%r -o ControlPersist=10m \
-    "nixos@{{host_ip}}" "set -euo pipefail; {{cmd}}"
+    "nixos@{{installer_host_ip}}" "set -euo pipefail; {{cmd}}"
 
 [private]
 [doc("Transfer a file over SCP to the target installer environment.")]
-_scp_to_installer host_ip local_path remote_path:
+_scp_to_installer installer_host_ip local_path remote_path:
   @scp -o ControlMaster=auto -o ControlPath=/tmp/deploy_ssh_%h_%p_%r -o ControlPersist=10m \
-    "{{local_path}}" "nixos@{{host_ip}}:{{remote_path}}"
+    "{{local_path}}" "nixos@{{installer_host_ip}}:{{remote_path}}"
 
 [private]
 [doc("Silent boolean check for host type.")]
@@ -157,7 +157,7 @@ _host_type_is hostname expected_type:
 
 [private]
 [doc("Select and run the appropriate install: local or remote.")]
-_deploy_internal hostname host_ip prompt_for_master_secret:
+_deploy_internal hostname installer_host_ip prompt_for_master_secret:
   #!/usr/bin/env bash
   set -euo pipefail
   master_key=$(just _get_sops_master_secret_keystring \
@@ -167,8 +167,10 @@ _deploy_internal hostname host_ip prompt_for_master_secret:
   if [ "${local_host}" = "nixos" ] || [ "${local_host}" = "{{hostname}}" ]; then
     just _deploy_local hostname="{{hostname}}"
   else
-    just _runtime_assert condition='[ -n "{{host_ip}}" ]' exit_msg="Remote deploy requires host_ip parameter."
-    just _deploy_remote hostname="{{hostname}}" host_ip="{{host_ip}}"
+    just _runtime_assert \
+      condition='[ -n "{{installer_host_ip}}" ]' \
+      exit_msg="Remote deploy requires installer_host_ip parameter."
+    just _deploy_remote hostname="{{hostname}}" installer_host_ip="{{installer_host_ip}}"
   fi
 
 [private]
@@ -180,25 +182,26 @@ _deploy_local hostname:
 
 [private]
 [doc("Deploy NixOS to remote host (via SSH) that is running the NixOS installer ISO.")]
-_deploy_remote hostname host_ip:
+_deploy_remote hostname installer_host_ip:
   #!/usr/bin/env bash
   set -euo pipefail
-  echo "🚀 Initiating remote deployment to host {{hostname}} at {{host_ip}}..."
+  echo "🚀 Initiating remote deployment to host {{hostname}} at {{installer_host_ip}}..."
   echo "📦 Preparing remote temporary storage on remote host..."
   just _ssh_to_installer \
-    host_ip="{{host_ip}}" \
+    installer_host_ip="{{installer_host_ip}}" \
     cmd="rm -rf /tmp/nix_hosts {{host_keypair_tempfile_path}}"
   echo "📦 Cloning repository on remote host..."
   just _ssh_to_installer \
-    host_ip="{{host_ip}}" \
+    installer_host_ip="{{installer_host_ip}}" \
     cmd="git clone --single-branch --depth=1 '{{repo_url}}' /tmp/nix_hosts"
   echo "💉 Transferring SOPS keypair to remote host temporary storage..."
   just _scp_to_installer \
-    host_ip="{{host_ip}}" \
+    installer_host_ip="{{installer_host_ip}}" \
     local_path="{{host_keypair_tempfile_path}}" \
     remote_path="{{host_keypair_tempfile_path}}"
   echo "⚙️  Executing build sequence on remote host over SSH..."
-  just _ssh_to_installer host_ip="{{host_ip}}" \
+  just _ssh_to_installer \
+    installer_host_ip="{{installer_host_ip}}" \
     cmd="cd /tmp/nix_hosts && {{nix_shell}} nixpkgs#just --command just _run_build_sequence \
     hostname=\"{{hostname}}\" && rm -f {{host_keypair_tempfile_path}}"
   echo "🔄 Remote deployment finished. Remote host must be manually rebooted into new OS."
@@ -301,7 +304,7 @@ _emplace_target_hostid hostname:
 
 [private]
 [doc("Deeply wipe all partitions and labels from a single block device.")]
-_deep_wipe_disk disk host_ip="":
+_deep_wipe_disk disk installer_host_ip="":
   #!/usr/bin/env bash
   set -euo pipefail
   echo "☢️  Nuking {{disk}}..."
@@ -322,8 +325,8 @@ _deep_wipe_disk disk host_ip="":
     silent_exec "sgdisk --zap-all \"{{disk}}\""
     silent_exec "partprobe \"{{disk}}\""
   '
-  if [ -n "{{host_ip}}" ]; then
-    just _ssh_to_installer host_ip="{{host_ip}}" cmd="${wipe_script}"
+  if [ -n "{{installer_host_ip}}" ]; then
+    just _ssh_to_installer installer_host_ip="{{installer_host_ip}}" cmd="${wipe_script}"
   else
     bash -c "${wipe_script}"
   fi
@@ -353,7 +356,7 @@ _wipe_zroot_os_disks hostname:
 
 [private]
 [doc("Parse the Nix JSON config to extract required baseDatasets and create them with legacy mountpoints.")]
-_create_zfs_datasets hostname host_ip="":
+_create_zfs_datasets hostname installer_host_ip="":
   #!/usr/bin/env bash
   set -euo pipefail
   echo "📂 Querying Nix config and creating required ZFS datasets on zdata disks..."
@@ -365,8 +368,8 @@ _create_zfs_datasets hostname host_ip="":
     cmd="if zfs list \"${ds_path}\" >/dev/null 2>&1; then \
       echo \"   - Dataset ${ds_path} already exists.\"; \
       else zfs create -o mountpoint=legacy \"${ds_path}\" && echo \"   - Created: ${ds_path}\"; fi"
-    if [ -n "{{host_ip}}" ]; then
-      just _ssh_to_installer host_ip="{{host_ip}}" cmd="${cmd}"
+    if [ -n "{{installer_host_ip}}" ]; then
+      just _ssh_to_installer installer_host_ip="{{installer_host_ip}}" cmd="${cmd}"
     else
       bash -c "${cmd}"
     fi
@@ -375,7 +378,7 @@ _create_zfs_datasets hostname host_ip="":
 
 [private]
 [doc("Verify disk topology visually before formatting.")]
-_verify_data_disk_topology hostname host_ip target_disks:
+_verify_data_disk_topology hostname installer_host_ip target_disks:
   #!/usr/bin/env bash
   set -euo pipefail
   echo -e "\n⚠️  TARGET TOPOLOGY VERIFICATION:"
@@ -391,33 +394,35 @@ _verify_data_disk_topology hostname host_ip target_disks:
   if [ "${local_host}" = "nixos" ] || [ "${local_host}" = "{{hostname}}" ]; then
     bash -c "${verify_script}"
   else
-    just _runtime_assert condition='[ -n "{{host_ip}}" ]' exit_msg="Remote format requires host_ip parameter."
-    just _ssh_to_installer host_ip="{{host_ip}}" cmd="${verify_script}"
+    just _runtime_assert \
+      condition='[ -n "{{installer_host_ip}}" ]' \
+      exit_msg="Remote format requires installer_host_ip parameter."
+    just _ssh_to_installer installer_host_ip="{{installer_host_ip}}" cmd="${verify_script}"
   fi
 
 [private]
 [doc("Internal routing logic for formatting explicitly defined data disks remotely or locally.")]
-_format_data_disks_internal hostname host_ip:
+_format_data_disks_internal hostname installer_host_ip:
   #!/usr/bin/env bash
   set -euo pipefail
   echo "🔍 Querying flake configuration for explicitly defined data disks..."
   nix_apply='x: builtins.concatStringsSep " " (builtins.concatMap (p: p.devices or []) x)'
   target_disks=$(just _query_nix_config hostname="{{hostname}}" \
     query="custom.system.zfs.storagePools" nix_apply_expr="${nix_apply}")
-  just _verify_data_disk_topology hostname="{{hostname}}" host_ip="{{host_ip}}" \
+  just _verify_data_disk_topology hostname="{{hostname}}" installer_host_ip="{{installer_host_ip}}" \
     target_disks="${target_disks}"
   echo -e "\n⚠️  WARNING: You are about to DESTROY ALL DATA on the target disks listed above."
   read -r -p "Type 'WIPE' in all caps to confirm destruction: " confirm_wipe
   just _runtime_assert condition='[ "${confirm_wipe}" = "WIPE" ]' exit_msg="Data format aborted by user."
   for disk in ${target_disks}; do
-    just _deep_wipe_disk disk="${disk}" host_ip="{{host_ip}}"
+    just _deep_wipe_disk disk="${disk}" installer_host_ip="{{installer_host_ip}}"
   done
-  just _exec_zdata_zpool_create hostname="{{hostname}}" disks="${target_disks}" host_ip="{{host_ip}}"
-  just _create_zfs_datasets hostname="{{hostname}}" host_ip="{{host_ip}}"
+  just _exec_zdata_zpool_create hostname="{{hostname}}" disks="${target_disks}" installer_host_ip="{{installer_host_ip}}"
+  just _create_zfs_datasets hostname="{{hostname}}" installer_host_ip="{{installer_host_ip}}"
 
 [private]
 [doc("Create a new ZFS pool utilizing properties extracted dynamically from Nix configuration.")]
-_exec_zdata_zpool_create hostname disks host_ip="":
+_exec_zdata_zpool_create hostname disks installer_host_ip="":
   #!/usr/bin/env bash
   set -euo pipefail
   disk_array=({{disks}})
@@ -434,8 +439,8 @@ _exec_zdata_zpool_create hostname disks host_ip="":
       secrets_file_path="secrets/{{hostname}}_host_secrets.yaml")
     echo -n "${zdata_encryption_keystring}" > "{{host_zdata_keystring_tempfile_path}}"
     enc_flags="-O encryption=aes-256-gcm -O keyformat=hex -O keylocation=file://{{host_zdata_keystring_tempfile_path}}"
-    if [ -n "{{host_ip}}" ]; then
-      just _scp_to_installer host_ip="{{host_ip}}" \
+    if [ -n "{{installer_host_ip}}" ]; then
+      just _scp_to_installer installer_host_ip="{{installer_host_ip}}" \
         local_path="{{host_zdata_keystring_tempfile_path}}" \
         remote_path="{{host_zdata_keystring_tempfile_path}}"
     fi
@@ -443,8 +448,8 @@ _exec_zdata_zpool_create hostname disks host_ip="":
   create_cmd="zpool create -o ashift=12 ${compat_flag} -O compression=lz4 -O xattr=sa \
     -O acltype=posixacl -O atime=off ${enc_flags} -m none \"${pool_name}\" ${pool_mode} {{disks}} \
     && zpool export \"${pool_name}\""
-  if [ -n "{{host_ip}}" ]; then
-    just _ssh_to_installer host_ip="{{host_ip}}" cmd="${create_cmd}"
+  if [ -n "{{installer_host_ip}}" ]; then
+    just _ssh_to_installer installer_host_ip="{{installer_host_ip}}" cmd="${create_cmd}"
   else
     bash -c "${create_cmd}"
   fi
