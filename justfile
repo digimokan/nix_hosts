@@ -155,6 +155,14 @@ _exec_cmd_local_or_ssh installer_host_ip cmd:
   fi
 
 [private]
+[doc("Silent boolean check to determine if running on the installer host.")]
+_is_running_on_installer_host hostname:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  local_host="$(hostname)"
+  if [ "${local_host}" = "nixos" ] || [ "${local_host}" = "{{hostname}}" ]; then exit 0; else exit 1; fi
+
+[private]
 [doc("Silent boolean check for host type.")]
 _host_type_is hostname expected_type:
   #!/usr/bin/env bash
@@ -174,8 +182,7 @@ _deploy_internal hostname installer_host_ip prompt_for_master_secret:
   master_key=$(just _get_sops_master_secret_keystring \
     prompt_for_master_secret="{{prompt_for_master_secret}}")
   just _query_sops_for_host_age_keypair hostname="{{hostname}}" master_key="${master_key}"
-  local_host="$(hostname)"
-  if [ "${local_host}" = "nixos" ] || [ "${local_host}" = "{{hostname}}" ]; then
+  if just _is_running_on_installer_host hostname="{{hostname}}"; then
     just _deploy_local hostname="{{hostname}}"
   else
     just _runtime_assert \
@@ -377,11 +384,11 @@ _create_zfs_datasets hostname installer_host_ip="":
       else zfs create -o mountpoint=legacy \"${ds_path}\" && echo \"   - Created: ${ds_path}\"; fi"
     just _exec_cmd_local_or_ssh installer_host_ip="{{installer_host_ip}}" cmd="${cmd}"
   done
-  echo "✅ ZFS dataset creation complete."
+  echo "✅ ZFS datasets creation complete."
 
 [private]
-[doc("Verify disk topology visually before formatting.")]
-_verify_data_disk_topology hostname installer_host_ip target_disks:
+[doc("Verify disk topology visually and prompt for confirmation before formatting.")]
+_confirm_data_disks_format hostname installer_host_ip target_disks:
   #!/usr/bin/env bash
   set -euo pipefail
   echo -e "\n⚠️  TARGET TOPOLOGY VERIFICATION:"
@@ -393,8 +400,7 @@ _verify_data_disk_topology hostname installer_host_ip target_disks:
       ls -l /dev/disk/by-id/ | grep "$(basename "$d")" || true
     done
   '
-  local_host="$(hostname)"
-  if [ "${local_host}" = "nixos" ] || [ "${local_host}" = "{{hostname}}" ]; then
+  if just _is_running_on_installer_host hostname="{{hostname}}"; then
     bash -c "${verify_script}"
   else
     just _runtime_assert \
@@ -402,6 +408,9 @@ _verify_data_disk_topology hostname installer_host_ip target_disks:
       exit_msg="Remote format requires installer_host_ip parameter."
     just _ssh_to_installer installer_host_ip="{{installer_host_ip}}" cmd="${verify_script}"
   fi
+  echo -e "\n⚠️  WARNING: You are about to DESTROY ALL DATA on the target disks listed above."
+  read -r -p "Type 'WIPE' in all caps to confirm destruction: " confirm_wipe
+  just _runtime_assert condition='[ "${confirm_wipe}" = "WIPE" ]' exit_msg="Data format aborted by user."
 
 [private]
 [doc("Internal routing logic for formatting explicitly defined data disks remotely or locally.")]
@@ -412,15 +421,15 @@ _format_data_disks_internal hostname installer_host_ip:
   nix_apply='x: builtins.concatStringsSep " " (builtins.concatMap (p: p.devices or []) x)'
   target_disks=$(just _query_nix_config hostname="{{hostname}}" \
     query="custom.system.zfs.storagePools" nix_apply_expr="${nix_apply}")
-  just _verify_data_disk_topology hostname="{{hostname}}" installer_host_ip="{{installer_host_ip}}" \
+  just _confirm_data_disks_format hostname="{{hostname}}" installer_host_ip="{{installer_host_ip}}" \
     target_disks="${target_disks}"
-  echo -e "\n⚠️  WARNING: You are about to DESTROY ALL DATA on the target disks listed above."
-  read -r -p "Type 'WIPE' in all caps to confirm destruction: " confirm_wipe
-  just _runtime_assert condition='[ "${confirm_wipe}" = "WIPE" ]' exit_msg="Data format aborted by user."
   for disk in ${target_disks}; do
     just _deep_wipe_disk disk="${disk}" installer_host_ip="{{installer_host_ip}}"
   done
-  just _exec_zdata_zpool_create hostname="{{hostname}}" disks="${target_disks}" installer_host_ip="{{installer_host_ip}}"
+  just _exec_zdata_zpool_create \
+    hostname="{{hostname}}" \
+    disks="${target_disks}" \
+    installer_host_ip="{{installer_host_ip}}"
   just _create_zfs_datasets hostname="{{hostname}}" installer_host_ip="{{installer_host_ip}}"
 
 [private]
