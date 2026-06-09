@@ -105,15 +105,23 @@ _query_nix_config hostname query nix_apply_expr="":
 
 [private]
 [doc("Extract a secret from SOPS. Asserts file exists and secret is not empty.")]
-_get_sops_secret secret_to_get secrets_file_path:
+_get_sops_secret secret_to_get secrets_file_path master_secret_keystring="":
   #!/usr/bin/env bash
   set -euo pipefail
-  just _runtime_assert \
-    condition='[ -f "{{secrets_file_path}}" ]' \
+  just _runtime_assert condition='[ -f "{{secrets_file_path}}" ]' \
     exit_msg="Could not find {{secrets_file_path}}"
-  secret_val=$({{sops_cmd}} -d --extract "[\"{{secret_to_get}}\"]" "{{secrets_file_path}}")
+  if [ -n "{{master_secret_keystring}}" ]; then
+    export SOPS_AGE_KEY="{{master_secret_keystring}}"
+  else
+    just _runtime_assert \
+      condition='[ -f "{{host_keypair_tempfile_path}}" ]' \
+      exit_msg="Host key tempfile missing at {{host_keypair_tempfile_path}}."
+    export SOPS_AGE_KEY_FILE="{{host_keypair_tempfile_path}}"
+  fi
+  secret_val=$({{sops_cmd}} -d --extract "[\"{{secret_to_get}}\"]" \
+    "{{secrets_file_path}}")
   just _runtime_assert \
-    condition="[ -n \"\${secret_val}\" ]" \
+    condition="[ -n \"${secret_val}\" ]" \
     exit_msg="Could not find {{secret_to_get}} in {{secrets_file_path}}"
   echo -n "${secret_val}"
 
@@ -255,14 +263,12 @@ _get_sops_master_secret_keystring prompt_for_master_secret:
 _query_sops_for_host_age_keypair hostname master_key:
   #!/usr/bin/env bash
   set -euo pipefail
-  echo "✅ Extracting target host Age keypair to orchestration machine tempfile..." >&2
-  export SOPS_AGE_KEY="{{master_key}}"
-  echo "🔐 Attempting to extract Age keypair for host '{{hostname}}'..." >&2
+  echo "🔐 Using master keystring to extract target Age keypair for host '{{hostname}}'..." >&2
   key_value=$(just _get_sops_secret \
     secret_to_get="age_keypair_host_{{hostname}}" \
-    secrets_file_path="secrets/master_secrets.yaml")
-  unset SOPS_AGE_KEY
-  echo "🧹 Master key purged." >&2
+    secrets_file_path="secrets/master_secrets.yaml" \
+    master_secret_keystring="{{master_key}}")
+  echo "📂 Emplacing target host Age keypair in orchestration machine tempfile..." >&2
   echo "${key_value}" > "{{host_keypair_tempfile_path}}"
   chmod 600 "{{host_keypair_tempfile_path}}"
   echo "✅ Target host Age keypair successfully extracted." >&2
