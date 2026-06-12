@@ -38,16 +38,16 @@ ssh_opts := "-o ControlMaster=auto -o ControlPath=/tmp/deploy_ssh_%h_%p_%r -o Co
 # PUBLIC RECIPES
 # ==========================================
 
-[private]
-[doc("Show the list of public recipes with their doc() comments.")]
-default:
+[default]
+[doc("Show this help menu.\n  Ex: just")]
+help:
   @just --list --unsorted
 
-[doc("Check the flake for evaluation errors.")]
+[doc("Check the flake for evaluation errors.\n  Ex: just check")]
 check:
   @nix flake check
 
-[doc("Update all flake inputs to their latest versions based on flake.nix.")]
+[doc("Update all flake inputs to their latest versions based on flake.nix.\n  Ex: just update hostname=nas")]
 update:
   @nix flake update
 
