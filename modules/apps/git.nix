@@ -43,7 +43,6 @@ in {
   config = lib.mkIf cfg.enable {
     programs.git = {
       enable = true;
-      package = pkgs.unstable.git;
       config = {
         user = {
           name = cfg.userName;

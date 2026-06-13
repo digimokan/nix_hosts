@@ -10,9 +10,6 @@
   description = "My constellation of NixOS hosts";
 
   inputs = {
-    # versioned stable branch packages: access this via pkgs.stable overlay.
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
-    # unstable branch packages: access this via pkgs.unstable overlay.
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
 
     disko.url = "github:nix-community/disko";
@@ -82,7 +79,6 @@
   */
   outputs = {
     self,
-    nixpkgs,
     nixpkgs-unstable,
     disko,
     sops-nix,
@@ -92,9 +88,6 @@
   } @inputs:
 
     let
-      # Build systems using the unstable branch.
-      # Individual modules and packages can still select the overlays
-      # for pkgs.stable and pkgs.unstable.
       mkSystem = hostName: nixpkgs-unstable.lib.nixosSystem {
         system = "x86_64-linux";
         specialArgs = { inherit inputs; };

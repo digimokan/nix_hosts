@@ -41,7 +41,7 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-    environment.systemPackages = [ pkgs.unstable.sops ];
+    environment.systemPackages = [ pkgs.sops ];
 
     sops.age.keyFile = "/var/lib/sops-nix/host_keypair.age";
 

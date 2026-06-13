@@ -41,7 +41,6 @@ in {
   config = lib.mkIf (builtins.length cfg.snapshottedDatasets > 0) {
     services.sanoid = {
       enable = true;
-      package = pkgs.unstable.sanoid;
       interval = "*-*-* *:00/15:00";
       datasets = lib.genAttrs cfg.snapshottedDatasets (dataset: {
         frequently = 16;

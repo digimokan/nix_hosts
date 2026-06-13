@@ -19,7 +19,6 @@
     ./impermanence.nix
     ./networking.nix
     ./nix-core.nix
-    ./nixpkgs.nix
     ./security.nix
     ./sops.nix
     ./timezone.nix
