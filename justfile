@@ -619,7 +619,7 @@ _execute_disko_format_to_zroot_mnt hostname:
 [doc("Run the standard nixos-install command against the mounted /mnt environment.")]
 _execute_nixos_install_to_zroot_mnt hostname:
   @echo "🧱 Installing NixOS to zroot OS disks at /mnt..."
-  @nixos-install --flake ".#{{hostname}}" --no-root-passwd
+  @nixos-install --flake ".#{{hostname}}" --root "/mnt" --no-root-passwd
   @echo "{{GREEN}}✅ NixOS installation complete.{{NORMAL}}"
 
 [private]
