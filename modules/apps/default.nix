@@ -15,6 +15,7 @@
 {
   imports = [
     ./git.nix
+    ./just.nix
     ./kde-plasma-wayland.nix
     ./nfs-server.nix
     ./pipewire.nix

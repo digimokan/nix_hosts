@@ -12,22 +12,18 @@
  */
 { config, lib, pkgs, options, ... }@allArgs:
 
-{
+let
 
-  config = {
-    custom.system.nixCore.enableUnifiedCli = true;
-    custom.system.nixCore.enableFlakes = true;
+  cfg = config.custom.apps.just;
 
-    custom.system.sops.enable = true;
+in {
 
-    custom.system.timezone = "US/Central";
+  options.custom.apps.just = {
+    enable = lib.mkEnableOption "Enable the Just task runner";
+  };
 
-    custom.system.tmpTmpfs.enable = true;
-
-    custom.system.zfs.dailyAutoScrubHour = "03";
-    custom.apps.sanoid.snapshottedDatasets = [ "zroot/var" ];
-
-    custom.apps.just.enable = true;
+  config = lib.mkIf cfg.enable {
+    environment.systemPackages = [ pkgs.just ];
   };
 
 }
