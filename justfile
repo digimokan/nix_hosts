@@ -132,7 +132,7 @@ _install_required_deps installer_host_ip:
 [private]
 [doc("Purge sensitive files. Used safely via logical OR short-circuits in public recipes.")]
 _cleanup_temp_files:
-  @echo "{{BOLD}}✧ Post-run cleanup: ensuring sensitive temporary files are purged...{{NORMAL}}"
+  @echo "{{BOLD}}✨ Post-run cleanup: ensuring sensitive temporary files are purged...{{NORMAL}}"
   @just _exec_silent_ignore_errs "rm -f {{host_keypair_tempfile_path}}"
   @just _exec_silent_ignore_errs "rm -f {{host_zroot_passphrase_tempfile_path}}"
   @just _exec_silent_ignore_errs "rm -f {{host_zdata_keystring_tempfile_path}}"
