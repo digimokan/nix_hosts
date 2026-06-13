@@ -132,7 +132,7 @@ _install_required_deps installer_host_ip:
 [private]
 [doc("Purge sensitive files. Used safely via logical OR short-circuits in public recipes.")]
 _cleanup_temp_files:
-  @echo "🧹 Ensuring sensitive temporary files are purged..."
+  @echo "{{BOLD}}✧ Post-run cleanup: ensuring sensitive temporary files are purged...{{NORMAL}}"
   @just _exec_silent_ignore_errs "rm -f {{host_keypair_tempfile_path}}"
   @just _exec_silent_ignore_errs "rm -f {{host_zroot_passphrase_tempfile_path}}"
   @just _exec_silent_ignore_errs "rm -f {{host_zdata_keystring_tempfile_path}}"
@@ -328,7 +328,8 @@ _get_sops_master_secret_keystring get_master_secret_cmd:
     echo "🔏 get_master_secret_cmd option selected, invoking cmd arg to get Master Key..." >&2
     master_secret_keystring=$(eval "{{get_master_secret_cmd}}")
   else
-    keyfile="${HOME}/.config/sops/age/keys.txt"
+    actual_home_dir=$(getent passwd "${SUDO_USER:-$USER}" | cut -d: -f6)
+    keyfile="${actual_home_dir}/.config/sops/age/keys.txt"
     echo "🗝️ No master secret option selected, using default keyfile at ${keyfile}..." >&2
     just _runtime_assert "[ -f \"${keyfile}\" ]" "Master keyfile not found at ${keyfile}"
     master_secret_keystring=$(grep -m 1 "^AGE-SECRET-KEY-" "${keyfile}" || true)
