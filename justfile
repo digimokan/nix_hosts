@@ -119,6 +119,17 @@ _exec_silent_ignore_errs cmd:
   @bash -c "{{cmd}}" >/dev/null 2>&1 || true
 
 [private]
+[doc("Install required dependencies on the remote installer host.")]
+_install_required_deps installer_host_ip:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  if [ -n "{{installer_host_ip}}" ]; then
+  echo "🔩 Installing required dependencies on remote installer ISO..."
+    just _ssh_cmd target="nixos@{{installer_host_ip}}" cmd="nix-env --install --attr nixos.just"
+    echo "{{GREEN}}✅ Dependencies installed.{{NORMAL}}"
+  fi
+
+[private]
 [doc("Purge sensitive files. Used safely via logical OR short-circuits in public recipes.")]
 _cleanup_temp_files:
   @echo "🧹 Ensuring sensitive temporary files are purged..."
@@ -271,6 +282,7 @@ _deploy_remote hostname installer_host_ip:
   #!/usr/bin/env bash
   set -euo pipefail
   echo "🚀 Initiating remote deployment to host {{hostname}} at {{installer_host_ip}}..."
+  just _install_required_deps installer_host_ip="{{installer_host_ip}}"
   echo "🗑️ Removing any existing repository on remote host..."
   just _exec_cmd_local_or_ssh \
     hostname="{{hostname}}" \
@@ -294,8 +306,7 @@ _deploy_remote hostname installer_host_ip:
   just _exec_cmd_local_or_ssh \
     hostname="{{hostname}}" \
     installer_host_ip="{{installer_host_ip}}" \
-    cmd="cd /tmp/nix_hosts && {{nix_shell}} nixpkgs#just --command just _run_build_sequence \
-         hostname=\"{{hostname}}\" && rm -f {{host_keypair_tempfile_path}}"
+    cmd="cd /tmp/nix_hosts && just _run_build_sequence hostname=\"{{hostname}}\""
   echo "{{BOLD}}{{GREEN}}🔄 Remote deployment finished. Reboot remote host into new OS.{{NORMAL}}"
 
 [private]
