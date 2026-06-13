@@ -69,20 +69,29 @@ list-generations hostname: _require_root
 
 [doc("Deploy NixOS to local or remote host running NixOS installer.\n  Ex: just deploy hostname=nas\n  Ex: just deploy hostname=nas get_master_secret_cmd='cat my_master_secret.txt'\n  Ex: just deploy hostname=nas installer_host_ip=192.168.1.50")]
 deploy hostname installer_host_ip="" get_master_secret_cmd="": _require_root
-  @just _deploy_internal hostname="{{hostname}}" installer_host_ip="{{installer_host_ip}}" \
-    get_master_secret_cmd="{{get_master_secret_cmd}}" || { just _cleanup_temp_files; exit 1; }
+  @just _deploy_internal \
+      hostname="{{hostname}}" \
+      installer_host_ip="{{installer_host_ip}}" \
+      get_master_secret_cmd="{{get_master_secret_cmd}}" \
+    || { just _cleanup_temp_files; exit 1; }
   @just _cleanup_temp_files
 
 [doc("Wipe and format the hosts zdata pool on its data disks.\n  Ex: just format-data-disks hostname=tm1")]
 format-data-disks hostname installer_host_ip="" get_master_secret_cmd="": _require_root
-  @just _format_data_disks_internal hostname="{{hostname}}" installer_host_ip="{{installer_host_ip}}" \
-    get_master_secret_cmd="{{get_master_secret_cmd}}" || { just _cleanup_temp_files; exit 1; }
+  @just _format_data_disks_internal \
+      hostname="{{hostname}}" \
+      installer_host_ip="{{installer_host_ip}}" \
+      get_master_secret_cmd="{{get_master_secret_cmd}}" \
+    || { just _cleanup_temp_files; exit 1; }
   @just _cleanup_temp_files
 
 [doc("Create all missing ZFS datasets on the host's zdata pool.\n  Ex: just create-datasets hostname=tm1")]
 create-datasets hostname installer_host_ip="" get_master_secret_cmd="": _require_root
-  @just _create_datasets_internal hostname="{{hostname}}" installer_host_ip="{{installer_host_ip}}" \
-    get_master_secret_cmd="{{get_master_secret_cmd}}" || { just _cleanup_temp_files; exit 1; }
+  @just _create_datasets_internal \
+      hostname="{{hostname}}" \
+      installer_host_ip="{{installer_host_ip}}" \
+      get_master_secret_cmd="{{get_master_secret_cmd}}" \
+    || { just _cleanup_temp_files; exit 1; }
   @just _cleanup_temp_files
 
 [doc("Edit a SOPS file and automatically rekey all secrets.\n  Ex: just edit-secret target_file=secrets/admin.yaml")]
