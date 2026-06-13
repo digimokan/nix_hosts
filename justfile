@@ -49,46 +49,46 @@ check:
   @nix flake check
   @echo "{{BOLD}}{{GREEN}}✅ Flake check completed successfully.{{NORMAL}}"
 
-[doc("Update all flake inputs to their latest versions based on flake.nix.\n  Ex: just update hostname=nas")]
+[doc("Update all flake inputs to their latest versions based on flake.nix.\n  Ex: just update nas")]
 update:
   @echo "📥 Initiating update of all flake.nix inputs..."
   @nix flake update
   @echo "{{BOLD}}{{GREEN}}✅ Flake inputs updated successfully. Commit any changes to git.{{NORMAL}}"
 
-[doc("Rebuild and switch NixOS configuration locally or remotely.\n  Ex: just rebuild hostname=nas")]
+[doc("Rebuild and switch NixOS configuration locally or remotely.\n  Ex: just rebuild nas")]
 rebuild hostname: _require_root
   @just _exec_nixos_rebuild_cmd "{{hostname}}" "switch"
 
-[doc("Rebuild and test NixOS configuration without making it the boot default.\n  Ex: just rebuild-test hostname=nas")]
+[doc("Rebuild and test NixOS configuration without making it the boot default.\n  Ex: just rebuild-test nas")]
 rebuild-test hostname: _require_root
   @just _exec_nixos_rebuild_cmd "{{hostname}}" "test"
 
-[doc("List the system generations for a given host.\n  Ex: just list-generations hostname=nas")]
+[doc("List the system generations for a given host.\n  Ex: just list-generations nas")]
 list-generations hostname: _require_root
   @just _exec_nixos_rebuild_cmd "{{hostname}}" "list-generations"
 
-[doc("Deploy NixOS to local or remote host running NixOS installer.\n  Ex: just deploy hostname=nas\n  Ex: just deploy hostname=nas get_master_secret_cmd='cat my_master_secret.txt'\n  Ex: just deploy hostname=nas installer_host_ip=192.168.1.50")]
+[doc("Deploy NixOS to local or remote host running NixOS installer.\n  Ex: just deploy nas\n  Ex: just deploy nas 'cat my_master_secret.txt'\n  Ex: just deploy nas 192.168.1.50")]
 deploy hostname installer_host_ip="" get_master_secret_cmd="": _require_root
   @just _deploy_internal \
     "{{hostname}}" "{{installer_host_ip}}" "{{get_master_secret_cmd}}" \
     || { just _cleanup_temp_files; exit 1; }
   @just _cleanup_temp_files
 
-[doc("Wipe and format the hosts zdata pool on its data disks.\n  Ex: just format-data-disks hostname=tm1")]
+[doc("Wipe and format the hosts zdata pool on its data disks.\n  Ex: just format-data-disks tm1")]
 format-data-disks hostname installer_host_ip="" get_master_secret_cmd="": _require_root
   @just _format_data_disks_internal \
     "{{hostname}}" "{{installer_host_ip}}" "{{get_master_secret_cmd}}" \
     || { just _cleanup_temp_files; exit 1; }
   @just _cleanup_temp_files
 
-[doc("Create all missing ZFS datasets on the host's zdata pool.\n  Ex: just create-datasets hostname=tm1")]
+[doc("Create all missing ZFS datasets on the host's zdata pool.\n  Ex: just create-datasets tm1")]
 create-datasets hostname installer_host_ip="" get_master_secret_cmd="": _require_root
   @just _create_datasets_internal \
     "{{hostname}}" "{{installer_host_ip}}" "{{get_master_secret_cmd}}" \
     || { just _cleanup_temp_files; exit 1; }
   @just _cleanup_temp_files
 
-[doc("Edit a SOPS file and automatically rekey all secrets.\n  Ex: just edit-secret target_file=secrets/admin.yaml")]
+[doc("Edit a SOPS file and automatically rekey all secrets.\n  Ex: just edit-secret secrets/admin.yaml")]
 edit-secret target_file:
   #!/usr/bin/env bash
   set -euo pipefail

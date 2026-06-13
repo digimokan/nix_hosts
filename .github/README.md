@@ -76,17 +76,17 @@ See documentation in [`.sops.yaml`](../.sops.yaml).
 
 3. On the orchestration host, deploy NixOS to the target machine over SSH:
 
-   Deploy, using default SOPS master secret keyfile at
-   `/home/user2/.config/sops/age/keys.txt`:
+   Deploy the `nas` machine to the installer-host IP address, using default SOPS
+   master secret keyfile at `/home/user2/.config/sops/age/keys.txt`:
 
    ```shell
-   $ just deploy hostname=nas installer_host_ip=192.168.1.50
+   $ just deploy nas 192.168.1.50
    ```
 
    Deploy, using SOPS master secret keyfile obtained from a command:
 
    ```shell
-   $ just deploy hostname=nas get_master_secret_cmd="cat /tmp/mysecret.txt" installer_host_ip=192.168.1.50
+   $ just deploy nas "cat /tmp/mysecret.txt" 192.168.1.50
    ```
 
 ### Install NixOS To Target Host From Installer Image
@@ -105,13 +105,13 @@ See documentation in [`.sops.yaml`](../.sops.yaml).
    `/home/nixos/.config/sops/age/keys.txt`:
 
    ```shell
-   $ just deploy hostname=nas
+   $ just deploy nas
    ```
 
    Deploy, using SOPS master secret keyfile obtained from a command:
 
    ```shell
-   $ just deploy hostname=nas get_master_secret_cmd="cat /tmp/mysecret.txt"
+   $ just deploy nas "cat /tmp/mysecret.txt"
    ```
 
 ### Provision Target Host Data Disks
@@ -129,7 +129,7 @@ On initial setup (with empty data disk(s)), provision the data disk(s) with
 the `zdata` zpool and datasets:
 
    ```shell
-   $ just format-data-disks hostname=nas get_master_secret_cmd="cat /tmp/mysecret.txt" installer_host_ip=192.168.1.50
+   $ just format-data-disks nas "cat /tmp/mysecret.txt" 192.168.1.50
    ```
 
 ## Deployed Usage
@@ -147,7 +147,7 @@ the `zdata` zpool and datasets:
 2. On the deployed host, create the missing datasets:
 
   ```shell
-  $ just create-datasets hostname=nas get_master_secret_cmd="cat /tmp/mysecret.txt"
+  $ just create-datasets nas "cat /tmp/mysecret.txt"
   ```
 
 ### Replace Old Or Failed Disk In Storage Pool
@@ -204,7 +204,7 @@ Perform these steps to start over with new data disks:
    datasets:
 
    ```shell
-   $ just format-data-disks hostname=nas get_master_secret_cmd="cat /tmp/mysecret.txt" installer_host_ip=192.168.1.50
+   $ just format-data-disks nas "cat /tmp/mysecret.txt" 192.168.1.50
    ```
 
 5. If more than two disks were emplaced in step 1, add each remaining pair
