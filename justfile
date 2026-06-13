@@ -45,11 +45,15 @@ help:
 
 [doc("Check the flake for evaluation errors.\n  Ex: just check")]
 check:
+  @echo "🚧 Initiating flake config check..."
   @nix flake check
+  @echo "{{BOLD}}{{GREEN}}🔄 Flake check completed successfully.{{NORMAL}}"
 
 [doc("Update all flake inputs to their latest versions based on flake.nix.\n  Ex: just update hostname=nas")]
 update:
+  @echo "📥 Initiating update of all flake.nix inputs..."
   @nix flake update
+  @echo "{{BOLD}}{{GREEN}}🔄 Flake inputs updated successfully. Commit any changes to git.{{NORMAL}}"
 
 [doc("Rebuild and switch NixOS configuration locally or remotely.\n  Ex: just rebuild hostname=nas")]
 rebuild hostname: _require_root
@@ -91,7 +95,9 @@ edit-secret target_file:
   just _runtime_assert condition='[ -f "{{target_file}}" ]' exit_msg="Target file not found."
   echo "📝 Opening {{target_file}} via SOPS..."
   {{sops_cmd}} "{{target_file}}"
+  echo "{{GREEN}}✅ Secret file editing complete.{{NORMAL}}"
   just _rekey_all_sops_secrets_files
+  echo "{{BOLD}}{{GREEN}}🔄 Secrets editing and rekeying complete. Commit any changes to Git.{{NORMAL}}"
 
 # ==========================================
 # PRIVATE RECIPES (Internal Logic)
@@ -157,14 +163,14 @@ _get_sops_secret secret_to_get secrets_file_path master_secret_keystring="":
 _rekey_all_sops_secrets_files:
   #!/usr/bin/env bash
   set -euo pipefail
-  echo "🔄 Rekeying all YAML files in secrets/ directory..."
+  echo "🏭 Rekeying all YAML files in secrets/ directory..."
   for secret_file in secrets/*.yaml; do
     if [ -f "${secret_file}" ]; then
       echo "   - Updating keys for ${secret_file}..."
       {{sops_cmd}} updatekeys -y "${secret_file}"
     fi
   done
-  @echo "✅ Secrets modification and rekey operations complete. Commit changes to Git."
+  echo "{{GREEN}}✅ Secrets rekeying operations complete.{{NORMAL}}"
 
 [private]
 [doc("Silent boolean check if executing locally (either on installer or post-deployment host).")]
@@ -242,7 +248,7 @@ _deploy_internal hostname installer_host_ip prompt_for_master_secret get_master_
   master_key=$(just _get_sops_master_secret_keystring \
     prompt_for_master_secret="{{prompt_for_master_secret}}" \
     get_master_secret_cmd="{{get_master_secret_cmd}}")
-  just _query_sops_for_host_age_keypair hostname="{{hostname}}" master_key="${master_key}"
+  just _extract_host_age_keypair_to_tmpfile hostname="{{hostname}}" master_key="${master_key}"
   if just _is_execution_local hostname="{{hostname}}"; then
     just _deploy_local hostname="{{hostname}}"
   else
@@ -257,7 +263,7 @@ _deploy_internal hostname installer_host_ip prompt_for_master_secret get_master_
 _deploy_local hostname:
   @echo "🚀 Initiating local deployment for {{hostname}}..."
   @just _run_build_sequence hostname="{{hostname}}"
-  @echo "✅ Local deployment finished."
+  @echo "{{BOLD}}{{GREEN}}🔄 Local deployment finished.{{NORMAL}}"
 
 [private]
 [doc("Deploy NixOS to remote host (via SSH) that is running the NixOS installer ISO.")]
@@ -265,42 +271,45 @@ _deploy_remote hostname installer_host_ip:
   #!/usr/bin/env bash
   set -euo pipefail
   echo "🚀 Initiating remote deployment to host {{hostname}} at {{installer_host_ip}}..."
-  echo "📦 Preparing remote temporary storage on remote host..."
+  echo "🗑️ Removing any existing repository on remote host..."
   just _exec_cmd_local_or_ssh \
     hostname="{{hostname}}" \
     installer_host_ip="{{installer_host_ip}}" \
     cmd="rm -rf /tmp/nix_hosts {{host_keypair_tempfile_path}}"
+  echo "{{GREEN}}✅ Repository removal complete.{{NORMAL}}"
   echo "📦 Cloning repository on remote host..."
   just _exec_cmd_local_or_ssh \
     hostname="{{hostname}}" \
     installer_host_ip="{{installer_host_ip}}" \
     cmd="git clone --single-branch --depth=1 '{{repo_url}}' /tmp/nix_hosts"
-  echo "💉 Transferring SOPS keypair to remote host temporary storage..."
+  echo "{{GREEN}}✅ Repository clone complete.{{NORMAL}}"
+  echo "📲 Transferring SOPS host keypair to remote host temporary storage..."
   just _scp_cmd_local_or_ssh \
     hostname="{{hostname}}" \
     installer_host_ip="{{installer_host_ip}}" \
     local_path="{{host_keypair_tempfile_path}}" \
     remote_path="{{host_keypair_tempfile_path}}"
-  echo "⚙️  Executing build sequence on remote host over SSH..."
+  echo "{{GREEN}}✅ Transfer of SOPS host keypair complete.{{NORMAL}}"
+  echo "⚙️ Executing build sequence on remote host over SSH..."
   just _exec_cmd_local_or_ssh \
     hostname="{{hostname}}" \
     installer_host_ip="{{installer_host_ip}}" \
     cmd="cd /tmp/nix_hosts && {{nix_shell}} nixpkgs#just --command just _run_build_sequence \
          hostname=\"{{hostname}}\" && rm -f {{host_keypair_tempfile_path}}"
-  echo "🔄 Remote deployment finished. Remote host must be manually rebooted into new OS."
+  echo "{{BOLD}}{{GREEN}}🔄 Remote deployment finished. Reboot remote host into new OS.{{NORMAL}}"
 
 [private]
 [doc("Execute a nixos-rebuild action locally or remotely via Tailscale.")]
 _exec_nixos_rebuild_cmd hostname action:
   #!/usr/bin/env bash
   set -euo pipefail
-  echo "🚀 Initiating NixOS rebuild (${action}) for {{hostname}}..."
+  echo "🏗️ Initiating NixOS rebuild (${action}) for {{hostname}}..."
   if [ "$(hostname)" = "{{hostname}}" ]; then
     nixos-rebuild {{action}} --flake ".#{{hostname}}"
   else
     nixos-rebuild {{action}} --flake ".#{{hostname}}" --target-host "root@{{hostname}}"
   fi
-  echo "✅ Rebuild action complete."
+  echo "{{BOLD}}{{GREEN}}🔄 Rebuild action complete.{{NORMAL}}"
 
 # ==========================================
 # SECRETS EXTRACTION & INJECTION
@@ -329,23 +338,22 @@ _get_sops_master_secret_keystring prompt_for_master_secret get_master_secret_cmd
     master_secret_keystring=$(grep -m 1 "^AGE-SECRET-KEY-" "${keyfile}" || true)
   fi
   just _runtime_assert condition='[ "${#master_secret_keystring}" -eq 74 ]' exit_msg="Invalid key length."
-  echo "✅ Master-Secret-Keystring successfully obtained." >&2
+  echo "{{GREEN}}✅ Master-Secret-Keystring successfully obtained (storing in RAM only).{{NORMAL}}" >&2
   echo -n "${master_secret_keystring}"
 
 [private]
-[doc("Extract the target host Age keypair from the master SOPS vault.")]
-_query_sops_for_host_age_keypair hostname master_key:
+[doc("Extract the target host Age keypair to a /tmp file, from the master SOPS vault.")]
+_extract_host_age_keypair_to_tmpfile hostname master_key:
   #!/usr/bin/env bash
   set -euo pipefail
-  echo "🔐 Using master keystring to extract target Age keypair for host '{{hostname}}'..." >&2
+  echo "🔐 Using SOPS master keystring to extract target Age keypair for host '{{hostname}}'..." >&2
   key_value=$(just _get_sops_secret \
     secret_to_get="age_keypair_host_{{hostname}}" \
     secrets_file_path="secrets/master_secrets.yaml" \
     master_secret_keystring="{{master_key}}")
-  echo "🗄️ Emplacing target host Age keypair in orchestration machine tempfile..." >&2
   echo "${key_value}" > "{{host_keypair_tempfile_path}}"
   chmod 600 "{{host_keypair_tempfile_path}}"
-  echo "✅ Target host Age keypair successfully extracted." >&2
+  echo "{{GREEN}}✅ Host Age keypair successfully extracted to ${host_keypair_tempfile_path}.{{NORMAL}}" >&2
 
 [private]
 [doc("Extract plaintext ZFS passphrase to feed to Disko for user-facing hosts.")]
@@ -353,22 +361,23 @@ _extract_zfs_zroot_passphrase_for_user_facing_host hostname:
   #!/usr/bin/env bash
   set -euo pipefail
   if ! just _host_type_is hostname="{{hostname}}" expected_type="user-facing"; then exit 0; fi
-  echo "🔑 Extracting plaintext ZFS passphrase for deployment..." >&2
+  echo "🔑 Using SOPS host keypair to extract plaintext ZFS zroot passphrase for host '{{hostname}}'..." >&2
   pass_value=$(just _get_sops_secret \
     secret_to_get="{{hostname}}_host_zfs_zroot_encryption_passphrase" \
     secrets_file_path="secrets/{{hostname}}_host_secrets.yaml")
   echo -n "${pass_value}" > "{{host_zroot_passphrase_tempfile_path}}"
+  echo "{{GREEN}}✅ Host ZFS zroot passphrase successfully extracted to {{host_zroot_passphrase_tempfile_path}}.{{NORMAL}}" >&2
 
 [private]
 [doc("Inject the SOPS host keypair into the newly mounted root filesystem.")]
 _inject_sops_host_keypair_to_zroot_mnt:
   #!/usr/bin/env bash
   set -euo pipefail
-  echo "💉 Injecting SOPS host keypair into the newly formatted volume (/mnt)..."
+  echo "💉 Injecting SOPS host keypair into the newly formatted host zroot at /mnt..."
   mkdir -p /mnt/var/lib/sops-nix
   cp "{{host_keypair_tempfile_path}}" /mnt/var/lib/sops-nix/host_keypair.age
   chmod 400 /mnt/var/lib/sops-nix/host_keypair.age
-  echo "✅ SOPS keypair injected successfully."
+  echo "{{GREEN}}✅ SOPS keypair injected successfully.{{NORMAL}}"
 
 [private]
 [doc("Inject ZFS zdata encryption keystring to enable auto-unlocking on boot for user-facing hosts.")]
@@ -376,25 +385,27 @@ _inject_zdata_key_to_zroot_mnt_for_user_facing_host hostname:
   #!/usr/bin/env bash
   set -euo pipefail
   if ! just _host_type_is hostname="{{hostname}}" expected_type="user-facing"; then exit 0; fi
-  echo "🔑 Inject ZFS zdata encryption keystring to target host's zroot /mnt/persist/zfs-keys..."
+  echo "🧩 Emplacing ZFS zdata encryption keystring to target host's zroot /mnt/persist/zfs-keys..."
   zdata_encryption_keystring=$(just _get_sops_secret \
     secret_to_get="{{hostname}}_host_zfs_zdata_encryption_symkey" \
     secrets_file_path="secrets/{{hostname}}_host_secrets.yaml")
   mkdir -p /mnt/persist/zfs-keys
   echo -n "${zdata_encryption_keystring}" > "/mnt/persist/zfs-keys/zdata_{{hostname}}.key"
   chmod 400 "/mnt/persist/zfs-keys/zdata_{{hostname}}.key"
-  echo "✅ Zdata encryption keystring injected successfully."
+  echo "{{GREEN}}✅ Zdata encryption keystring emplaced successfully.{{NORMAL}}"
 
 [private]
 [doc("Extract and emplace the networking.hostId to prevent ZFS import mismatch issues.")]
 _emplace_target_hostid hostname:
   #!/usr/bin/env bash
   set -euo pipefail
-  echo "🧬 Extracting target hostId to prevent ZFS import mismatch..."
+  echo "📜 Querying Nix config for target host ZFS hostId to NixOS installer..."
   target_hostid=$(just _query_nix_config hostname="{{hostname}}" query="networking.hostId")
+  echo "{{GREEN}}✅ Query complete: target host hostId is ${target_hostid}.{{NORMAL}}"
+  echo "🧬 Setting target host hostId on NixOS installer..."
   rm -f /etc/hostid
   zgenhostid "${target_hostid}"
-  echo "✅ Installer hostId temporarily assumed as ${target_hostid}."
+  echo "{{GREEN}}✅ Installer hostId set to ${target_hostid}.{{NORMAL}}"
 
 # ==========================================
 # DISK WIPING & ZFS MANAGEMENT
@@ -405,7 +416,6 @@ _emplace_target_hostid hostname:
 _deep_wipe_disk disk hostname installer_host_ip="":
   #!/usr/bin/env bash
   set -euo pipefail
-  echo "☢️  Nuking {{disk}}..."
   wipe_script='
     silent_exec() { bash -c "$1" >/dev/null 2>&1 || true; }
     for part in $(lsblk -plno NAME "{{disk}}" 2>/dev/null | sort -r); do
@@ -423,22 +433,25 @@ _deep_wipe_disk disk hostname installer_host_ip="":
     silent_exec "sgdisk --zap-all \"{{disk}}\""
     silent_exec "partprobe \"{{disk}}\""
   '
+  echo "☢️ Nuking {{disk}}..."
   just _exec_cmd_local_or_ssh \
     hostname="{{hostname}}" \
     installer_host_ip="{{installer_host_ip}}" \
     cmd="${wipe_script}"
   sleep 2
+  echo "{{GREEN}}✅ Nuke of disk {{disk}} complete.{{NORMAL}}"
 
 [private]
 [doc("Validate and wipe all OS disks associated with the target host in the Disko config.")]
 _wipe_zroot_os_disks hostname:
   #!/usr/bin/env bash
   set -euo pipefail
-  echo "Wiping zroot OS disks..."
+  echo "🪄 Querying Nix config for required OS zroot disks..."
   nix_apply='x: builtins.concatStringsSep " " (builtins.map (d: d.device) (builtins.attrValues x))'
   target_disks=$(just _query_nix_config hostname="{{hostname}}" query="disko.devices.disk" \
     nix_apply_expr="${nix_apply}")
-  echo "🧹 Tearing down active OS mounts and volumes..."
+  echo "{{GREEN}}✅ Query complete: zroot OS disks obtained successfully.{{NORMAL}}"
+  echo "🧹 Tearing down non-disk-specific active OS mounts and volumes..."
   just _exec_silent_ignore_errs cmd="swapoff -a"
   just _exec_silent_ignore_errs cmd="umount -R /mnt"
   just _exec_silent_ignore_errs cmd="zfs unmount -a"
@@ -446,49 +459,53 @@ _wipe_zroot_os_disks hostname:
   just _exec_silent_ignore_errs cmd="dmsetup remove_all -f"
   just _exec_silent_ignore_errs cmd="vgchange -an"
   just _exec_silent_ignore_errs cmd="mdadm --stop --scan"
+  echo "{{GREEN}}✅ Disk mounts and volumes tear-down complete.{{NORMAL}}"
   for disk in ${target_disks}; do
     just _deep_wipe_disk disk="${disk}" hostname="{{hostname}}"
   done
-  echo "✅ Wipe of zroot OS disks complete."
 
 [private]
 [doc("Internal routing logic for creating datasets remotely or locally.")]
 _create_datasets_internal hostname installer_host_ip prompt_for_master_secret get_master_secret_cmd:
   #!/usr/bin/env bash
   set -euo pipefail
+  echo "🗄️ Initiating creation of datasets on zdata data disks..."
   master_key=$(just _get_sops_master_secret_keystring \
     prompt_for_master_secret="{{prompt_for_master_secret}}" \
     get_master_secret_cmd="{{get_master_secret_cmd}}")
-  just _query_sops_for_host_age_keypair hostname="{{hostname}}" master_key="${master_key}"
+  just _extract_host_age_keypair_to_tmpfile hostname="{{hostname}}" master_key="${master_key}"
   just _create_zfs_datasets hostname="{{hostname}}" installer_host_ip="{{installer_host_ip}}"
+  echo "{{BOLD}}{{GREEN}}🔄 Creation of datasets on zdata data disks complete.{{NORMAL}}"
 
 [private]
 [doc("Parse the Nix JSON config to extract required baseDatasets and create them with legacy mountpoints.")]
 _create_zfs_datasets hostname installer_host_ip="":
   #!/usr/bin/env bash
   set -euo pipefail
-  echo "📂 Querying Nix config and creating required ZFS datasets on zdata disks..."
+  echo "📐 Querying Nix config for required ZFS datasets on zdata disks..."
   json_data=$({{nix_eval}} --json \
     ".#nixosConfigurations.{{hostname}}.config.custom.system.zfs.storagePools")
   ds_paths=$(echo "${json_data}" | {{jq_cmd}} -r \
     '.[] as $pool | $pool.datasets[] as $ds | ($pool.poolName + "/" + $ds.baseDataset)')
+  echo "{{GREEN}}✅ Query complete: zdata dataset paths obtained successfully.{{NORMAL}}"
   for ds_path in ${ds_paths}; do
     cmd="if zfs list \"${ds_path}\" >/dev/null 2>&1; then \
       echo \"   - Dataset ${ds_path} already exists.\"; \
       else zfs create -o mountpoint=legacy \"${ds_path}\" && echo \"   - Created: ${ds_path}\"; fi"
+    echo "🎛️ Verifying dataset ${ds_path} exists, or creating it as required."
     just _exec_cmd_local_or_ssh \
       hostname="{{hostname}}" \
       installer_host_ip="{{installer_host_ip}}" \
       cmd="${cmd}"
+    echo "{{GREEN}}✅ ZFS dataset ${ds_path} verified or created successfully.{{NORMAL}}"
   done
-  echo "✅ ZFS datasets creation complete."
 
 [private]
 [doc("Verify disk topology visually and prompt for confirmation before formatting.")]
 _confirm_data_disks_format hostname installer_host_ip target_disks:
   #!/usr/bin/env bash
   set -euo pipefail
-  echo -e "\n⚠️  TARGET TOPOLOGY VERIFICATION:"
+  echo -e "\nℹ️ TARGET TOPOLOGY VERIFICATION:"
   verify_script='
     echo "--- All Disks on System ---"
     lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT
@@ -501,7 +518,7 @@ _confirm_data_disks_format hostname installer_host_ip target_disks:
     hostname="{{hostname}}" \
     installer_host_ip="{{installer_host_ip}}" \
     cmd="${verify_script}"
-  echo -e "\n⚠️  WARNING: You are about to DESTROY ALL DATA on the target disks listed above."
+  echo -e "\n⚠️ WARNING: You are about to DESTROY ALL DATA on the target disks listed above."
   read -r -p "Type 'WIPE' in all caps to confirm destruction: " confirm_wipe
   just _runtime_assert condition='[ "${confirm_wipe}" = "WIPE" ]' exit_msg="Data format aborted by user."
 
@@ -510,14 +527,16 @@ _confirm_data_disks_format hostname installer_host_ip target_disks:
 _format_data_disks_internal hostname installer_host_ip prompt_for_master_secret get_master_secret_cmd:
   #!/usr/bin/env bash
   set -euo pipefail
+  echo "💾 Initiating wipe and format of zdata data disks..."
   master_key=$(just _get_sops_master_secret_keystring \
     prompt_for_master_secret="{{prompt_for_master_secret}}" \
     get_master_secret_cmd="{{get_master_secret_cmd}}")
-  just _query_sops_for_host_age_keypair hostname="{{hostname}}" master_key="${master_key}"
-  echo "🔍 Querying flake configuration for explicitly defined data disks..."
+  just _extract_host_age_keypair_to_tmpfile hostname="{{hostname}}" master_key="${master_key}"
+  echo "🕵️ Querying flake configuration for explicitly defined zdata data disks..."
   nix_apply='x: builtins.concatStringsSep " " (builtins.concatMap (p: p.devices or []) x)'
   target_disks=$(just _query_nix_config hostname="{{hostname}}" \
     query="custom.system.zfs.storagePools" nix_apply_expr="${nix_apply}")
+  echo "{{GREEN}}✅ Query complete: zdata data disk paths obtained successfully.{{NORMAL}}"
   just _confirm_data_disks_format hostname="{{hostname}}" installer_host_ip="{{installer_host_ip}}" \
     target_disks="${target_disks}"
   for disk in ${target_disks}; do
@@ -526,6 +545,7 @@ _format_data_disks_internal hostname installer_host_ip prompt_for_master_secret 
   just _exec_zdata_zpool_create disks="${target_disks}" hostname="{{hostname}}" \
     installer_host_ip="{{installer_host_ip}}"
   just _create_zfs_datasets hostname="{{hostname}}" installer_host_ip="{{installer_host_ip}}"
+  echo "{{BOLD}}{{GREEN}}✅ Wipe and format of zdata data disks complete.{{NORMAL}}"
 
 [private]
 [doc("Create a new ZFS pool utilizing properties extracted dynamically from Nix configuration.")]
@@ -541,25 +561,30 @@ _exec_zdata_zpool_create disks hostname installer_host_ip="":
   compat_flag="-o compatibility=${compat_val}"
   enc_flags=""
   if just _host_type_is hostname="{{hostname}}" expected_type="user-facing"; then
+    echo "🔗 Using SOPS host keypair to extract zdata encryption keystring for host '{{hostname}}'..." >&2
     zdata_encryption_keystring=$(just _get_sops_secret \
       secret_to_get="{{hostname}}_host_zfs_zdata_encryption_symkey" \
       secrets_file_path="secrets/{{hostname}}_host_secrets.yaml")
     echo -n "${zdata_encryption_keystring}" > "{{host_zdata_keystring_tempfile_path}}"
-    enc_flags="-O encryption=aes-256-gcm -O keyformat=hex -O keylocation=file://{{host_zdata_keystring_tempfile_path}}"
+    enc_flags="-O encryption=aes-256-gcm -O keyformat=hex -O keylocation=file://{{host_zdata_keystring_tempfile_path}}" >&2
+    echo "{{GREEN}}✅ Zdata encryption keystring successfully extracted to local {{host_zdata_keystring_tempfile_path}}.{{NORMAL}}" >&2
+    echo "🏛️ Emplacing zdata encryption keystring in tmp path on host, where zpool create will find it..."
     just _scp_cmd_local_or_ssh \
       hostname="{{hostname}}" \
       installer_host_ip="{{installer_host_ip}}" \
       local_path="{{host_zdata_keystring_tempfile_path}}" \
       remote_path="{{host_zdata_keystring_tempfile_path}}"
+    echo "{{GREEN}}✅ Zdata encryption keystring emplaced successfully to target host {{host_zdata_keystring_tempfile_path}}.{{NORMAL}}" >&2
   fi
   create_cmd="zpool create -o ashift=12 ${compat_flag} -O compression=lz4 -O xattr=sa \
     -O acltype=posixacl -O atime=off ${enc_flags} -m none \"${pool_name}\" ${pool_mode} {{disks}} \
     && zpool export \"${pool_name}\""
+  echo "🛠️ Creating zpool ${pool_name} on zdata disks..." >&2
   just _exec_cmd_local_or_ssh \
     hostname="{{hostname}}" \
     installer_host_ip="{{installer_host_ip}}" \
     cmd="${create_cmd}"
-  echo "✅ Pool ${pool_name} created on data disk(s)"
+  echo "{{GREEN}}✅ Pool ${pool_name} created on data disk(s){{NORMAL}}" >&2
 
 # ==========================================
 # DISKO & NIXOS INSTALLATION
@@ -571,19 +596,20 @@ _execute_disko_format_to_zroot_mnt hostname:
   @echo "⚙️  Formatting zroot OS disks via Disko..."
   @just _extract_zfs_zroot_passphrase_for_user_facing_host hostname="{{hostname}}"
   @{{nix_run}} "github:nix-community/disko" -- --mode format --flake ".#{{hostname}}"
+  @echo "{{GREEN}}✅ Disko formatting complete.{{NORMAL}}"
   @echo "⏳ Waiting for USB enclosure block devices to settle..."
   @udevadm settle
-  @echo "✅ Disko formatting complete."
-  @echo "⚙️  Mounting zroot OS disks to /mnt via Disko..."
+  @echo "{{GREEN}}✅ Block devices settling complete.{{NORMAL}}"
+  @echo "⚙️ Mounting zroot OS disks to /mnt via Disko..."
   @{{nix_run}} "github:nix-community/disko" -- --mode mount --flake ".#{{hostname}}"
-  @echo "✅ Disko mounting complete."
+  @echo "{{GREEN}}✅ Disko mounting complete.{{NORMAL}}"
 
 [private]
 [doc("Run the standard nixos-install command against the mounted /mnt environment.")]
 _execute_nixos_install_to_zroot_mnt hostname:
-  @echo "🚀 Installing NixOS to zroot OS disks at /mnt..."
+  @echo "🧱 Installing NixOS to zroot OS disks at /mnt..."
   @nixos-install --flake ".#{{hostname}}" --no-root-passwd
-  @echo "✅ NixOS installation complete."
+  @echo "{{GREEN}}✅ NixOS installation complete.{{NORMAL}}"
 
 [private]
 [doc("The complete sequence of internal orchestration commands required to deploy a NixOS host.")]
@@ -594,5 +620,4 @@ _run_build_sequence hostname:
   @just _inject_sops_host_keypair_to_zroot_mnt
   @just _inject_zdata_key_to_zroot_mnt_for_user_facing_host hostname="{{hostname}}"
   @just _execute_nixos_install_to_zroot_mnt hostname="{{hostname}}"
-  @echo "✅ Build sequence for {{hostname}} complete."
 

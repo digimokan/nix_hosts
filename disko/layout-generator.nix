@@ -105,8 +105,8 @@ in {
       } // lib.optionalAttrs enableEncryption {
         encryption = "aes-256-gcm";
         keyformat = "passphrase";
-        # expect the run.sh script to put passphrase in a file at this location
-        keylocation = "file:///tmp/zfs_passphrase";
+        # must match justfile global var: host_zroot_passphrase_tempfile_path
+        keylocation = "file:///tmp/nix_hosts_zfs_zroot_passphrase";
       };
 
       # revert keylocation to standard prompt, so user can boot normally
