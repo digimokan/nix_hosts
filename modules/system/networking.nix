@@ -37,6 +37,11 @@ in {
       type = lib.types.str;
       description = "The NetworkManager group name. Only exported if NetworkManager is enabled.";
     };
+
+    persistConfigDir = lib.mkOption {
+      type = lib.types.str;
+      description = "The directory containing state to persist. Only exported if NetworkManager is enabled.";
+    };
   };
 
   config = lib.mkMerge [
@@ -51,6 +56,7 @@ in {
 
     (lib.mkIf cfg.useNetworkManager {
       custom.system.networking.netMgrGroup = "networkmanager";
+      custom.system.networking.persistConfigDir = "/etc/NetworkManager";
     })
   ];
 

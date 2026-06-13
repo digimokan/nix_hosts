@@ -25,6 +25,13 @@
     custom.system.tmpTmpfs.enable = true;
 
     custom.system.zfs.dailyAutoScrubHour = "03";
+
+    custom.system.impermanence = {
+      persistDirs = [ "/etc/ssh" ];
+      persistFiles = [ "/etc/machine-id" ];
+      persistZrootDatasets = [ "/nix" "/var" "/persist" ];
+    };
+
     custom.apps.sanoid.snapshottedDatasets = [ "zroot/var" ];
 
     custom.apps.just.enable = true;

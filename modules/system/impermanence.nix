@@ -12,7 +12,32 @@
  */
 { config, lib, pkgs, options, ... }@allArgs:
 
-{
+let
+
+  cfg = config.custom.system.impermanence;
+  zrootMounts = lib.mapAttrsToList (name: ds: ds.mountpoint) config.disko.devices.zpool.zroot.datasets;
+  missingExplicit = lib.subtractLists cfg.persistZrootDatasets zrootMounts;
+  missingDefined = lib.subtractLists zrootMounts cfg.persistZrootDatasets;
+
+in {
+
+  options.custom.system.impermanence = {
+    persistDirs = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [];
+      description = "List of directories to bind-mount to the /persist ZFS dataset.";
+    };
+    persistFiles = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [];
+      description = "List of files to bind-mount to the /persist ZFS dataset.";
+    };
+    persistZrootDatasets = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [];
+      description = "Ledger of (natively peristent) ZFS mountpoints on the zroot pool.";
+    };
+  };
 
   config = {
     # /persist: SSH key and machine-id are needed for boot
@@ -23,17 +48,44 @@
     environment.persistence."/persist" = {
       # keep bind-mounted dirs from appearing as visible drives in file managers
       hideMounts = true;
-      directories = [
-        # preserve SSH host keys
-        "/etc/ssh"
-        # preserve known WiFi/Network state if used
-        "/etc/NetworkManager"
-      ];
-      files = [
-        # preserve systemd journal linking
-        "/etc/machine-id"
-      ];
+      directories = cfg.persistDirs;
+      files = cfg.persistFiles;
     };
+
+    assertions = let
+      diskoMounts = lib.mapAttrsToList (name: ds: ds.mountpoint)
+        config.disko.devices.zpool.zroot.datasets;
+      diskoMountsNotInLedger =
+        lib.subtractLists cfg.persistZrootDatasets diskoMounts;
+      ledgerMountsNotInDisko =
+        lib.subtractLists diskoMounts cfg.persistZrootDatasets;
+    in [
+      {
+        assertion = builtins.length diskoMountsNotInLedger == 0;
+        message = (
+          "Persistence clash: Disko defines zroot datasets mounted at "
+          + "[ ${builtins.concatStringsSep " " diskoMountsNotInLedger} ] "
+          + "that are NOT explicitly listed in "
+          + "custom.system.impermanence.persistZrootDatasets."
+        );
+      }
+      {
+        assertion = builtins.length ledgerMountsNotInDisko == 0;
+        message = (
+          "Persistence clash: custom.system.impermanence.persistZrootDatasets "
+          + "lists [ ${builtins.concatStringsSep " " ledgerMountsNotInDisko} ] "
+          + "which are NOT defined as zroot datasets in Disko."
+        );
+      }
+      {
+        assertion = lib.all (p: !(lib.elem p cfg.persistZrootDatasets))
+          (cfg.persistDirs ++ cfg.persistFiles);
+        message = (
+          "Persistence clash: A path cannot be both a native zroot dataset "
+          + "and a bind-mounted persist dir/file."
+        );
+      }
+    ];
   };
 
 }
