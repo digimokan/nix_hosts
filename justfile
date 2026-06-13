@@ -334,7 +334,7 @@ _get_sops_master_secret_keystring get_master_secret_cmd:
     just _runtime_assert "[ -f \"${keyfile}\" ]" "Master keyfile not found at ${keyfile}"
     master_secret_keystring=$(grep -m 1 "^AGE-SECRET-KEY-" "${keyfile}" || true)
   fi
-  just _runtime_assert '[ "${#master_secret_keystring}" -eq 74 ]' "Invalid key length."
+  just _runtime_assert "[ \"${#master_secret_keystring}\" -eq 74 ]" "Invalid key length."
   echo "{{GREEN}}✔ Master-Secret-Keystring successfully obtained (storing in RAM only).{{NORMAL}}" >&2
   echo -n "${master_secret_keystring}"
 
