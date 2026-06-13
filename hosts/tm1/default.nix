@@ -21,7 +21,7 @@ let
 in {
 
   imports = [
-    ./disko-config.nix
+    ./os-disk-config.nix
     ../all-hosts.nix
   ];
 
