@@ -15,9 +15,6 @@
 let
 
   cfg = config.custom.system.impermanence;
-  zrootMounts = lib.mapAttrsToList (name: ds: ds.mountpoint) config.disko.devices.zpool.zroot.datasets;
-  missingExplicit = lib.subtractLists cfg.persistZrootDatasets zrootMounts;
-  missingDefined = lib.subtractLists zrootMounts cfg.persistZrootDatasets;
 
 in {
 
@@ -53,8 +50,9 @@ in {
     };
 
     assertions = let
-      diskoMounts = lib.mapAttrsToList (name: ds: ds.mountpoint)
-        config.disko.devices.zpool.zroot.datasets;
+      diskoMounts = builtins.filter (m: m != null) (lib.mapAttrsToList
+        (name: ds: ds.mountpoint)
+        config.disko.devices.zpool.zroot.datasets);
       diskoMountsNotInLedger =
         lib.subtractLists cfg.persistZrootDatasets diskoMounts;
       ledgerMountsNotInDisko =
