@@ -36,6 +36,7 @@ in {
 
   imports = [
     ./os-disk-config.nix
+    ./sops-secrets.nix
     ../all-hosts.nix
   ];
 
@@ -47,16 +48,6 @@ in {
   };
 
   config = {
-    custom.system.sops.hostSecrets = [
-      {
-        sopsFilePath = ../../secrets/server_host_secrets.yaml;
-        secrets = {
-          server_host_root_password.neededForUsers = true;
-          server_host_tailscale_auth_key = {};
-        };
-      }
-    ];
-
     custom.system.nixCore.initialStateVersion = "24.05";
 
     custom.infrastructure.hostType = "server";
