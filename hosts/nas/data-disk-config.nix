@@ -9,7 +9,6 @@
 */
 {
   custom.system.zfs.dataDisks = [
-    "/dev/disk/by-id/wwn-0x5000cca2faf22259"
     "/dev/disk/by-id/wwn-0x5000cca418c6f46f"
   ];
 }
