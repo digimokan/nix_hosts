@@ -63,21 +63,26 @@ rebuild-test hostname: _require_root
 list-generations hostname: _require_root
   @just _exec_nixos_rebuild_cmd hostname="{{hostname}}" action="list-generations"
 
-[doc("Deploy NixOS to local or remote host running NixOS installer.\n  Ex: just deploy hostname=nas\n  Ex: just deploy hostname=nas installer_host_ip=192.168.1.50")]
-deploy hostname installer_host_ip="" prompt_for_master_secret="no": _require_root
+[doc("Deploy NixOS to local or remote host running NixOS installer.\n  Ex: just deploy hostname=nas\n  Ex: just deploy hostname=nas get_master_secret_cmd='cat my_master_secret.txt'\n  Ex: just deploy hostname=nas installer_host_ip=192.168.1.50")]
+deploy hostname installer_host_ip="" prompt_for_master_secret="no" get_master_secret_cmd="": _require_root
   @just _deploy_internal hostname="{{hostname}}" installer_host_ip="{{installer_host_ip}}" \
-    prompt_for_master_secret="{{prompt_for_master_secret}}" || { just _cleanup_temp_files; exit 1; }
+    prompt_for_master_secret="{{prompt_for_master_secret}}" \
+    get_master_secret_cmd="{{get_master_secret_cmd}}" || { just _cleanup_temp_files; exit 1; }
   @just _cleanup_temp_files
 
 [doc("Wipe and format the hosts zdata pool on its data disks.\n  Ex: just format-data-disks hostname=tm1")]
-format-data-disks hostname installer_host_ip="": _require_root
+format-data-disks hostname installer_host_ip="" prompt_for_master_secret="no" get_master_secret_cmd="": _require_root
   @just _format_data_disks_internal hostname="{{hostname}}" installer_host_ip="{{installer_host_ip}}" \
-    || { just _cleanup_temp_files; exit 1; }
+    prompt_for_master_secret="{{prompt_for_master_secret}}" \
+    get_master_secret_cmd="{{get_master_secret_cmd}}" || { just _cleanup_temp_files; exit 1; }
   @just _cleanup_temp_files
 
 [doc("Create all missing ZFS datasets on the host's zdata pool.\n  Ex: just create-datasets hostname=tm1")]
-create-datasets hostname installer_host_ip="": _require_root
-  @just _create_zfs_datasets hostname="{{hostname}}" installer_host_ip="{{installer_host_ip}}"
+create-datasets hostname installer_host_ip="" prompt_for_master_secret="no" get_master_secret_cmd="": _require_root
+  @just _create_datasets_internal hostname="{{hostname}}" installer_host_ip="{{installer_host_ip}}" \
+    prompt_for_master_secret="{{prompt_for_master_secret}}" \
+    get_master_secret_cmd="{{get_master_secret_cmd}}" || { just _cleanup_temp_files; exit 1; }
+  @just _cleanup_temp_files
 
 [doc("Edit a SOPS file and automatically rekey all secrets.\n  Ex: just edit-secret target_file=secrets/admin.yaml")]
 edit-secret target_file:
@@ -231,11 +236,12 @@ _host_type_is hostname expected_type:
 
 [private]
 [doc("Select and run the appropriate install: local or remote.")]
-_deploy_internal hostname installer_host_ip prompt_for_master_secret:
+_deploy_internal hostname installer_host_ip prompt_for_master_secret get_master_secret_cmd:
   #!/usr/bin/env bash
   set -euo pipefail
   master_key=$(just _get_sops_master_secret_keystring \
-    prompt_for_master_secret="{{prompt_for_master_secret}}")
+    prompt_for_master_secret="{{prompt_for_master_secret}}" \
+    get_master_secret_cmd="{{get_master_secret_cmd}}")
   just _query_sops_for_host_age_keypair hostname="{{hostname}}" master_key="${master_key}"
   if just _is_execution_local hostname="{{hostname}}"; then
     just _deploy_local hostname="{{hostname}}"
@@ -301,29 +307,29 @@ _exec_nixos_rebuild_cmd hostname action:
 # ==========================================
 
 [private]
-[doc("Prompt for the SOPS master secret or verify its default file exists.")]
-_get_sops_master_secret_keystring prompt_for_master_secret:
+[doc("Retrieve master secret from prompt, command, or default file.")]
+_get_sops_master_secret_keystring prompt_for_master_secret get_master_secret_cmd:
   #!/usr/bin/env bash
   set -euo pipefail
   if [ "{{prompt_for_master_secret}}" = "yes" ]; then
-    read -r -s -p "74-Char Master Key: " RAW_INPUT < /dev/tty
+    read -r -s -p "⚿ prompt_for_master_secret option selected, enter 74-Char Master Key: " RAW_INPUT < /dev/tty
     echo "" >&2
     if [ "${RAW_INPUT:0:15}" = "AGE-SECRET-KEY-" ]; then
       master_secret_keystring="${RAW_INPUT}"
     else
       master_secret_keystring="AGE-SECRET-KEY-${RAW_INPUT}"
     fi
-    just _runtime_assert condition='[ "${#master_secret_keystring}" -eq 74 ]' exit_msg="Invalid key length."
+  elif [ -n "{{get_master_secret_cmd}}" ]; then
+    echo "🔏 get_master_secret_cmd option selected, invoking cmd arg to get Master Key..." >&2
+    master_secret_keystring=$(eval "{{get_master_secret_cmd}}")
   else
     keyfile="${HOME}/.config/sops/age/keys.txt"
-    just _runtime_assert \
-      condition="[ -f \"${keyfile}\" ]" \
-      exit_msg="Master keyfile not found at ${keyfile}"
+    echo "🗝️ No master secret option selected, using default keyfile at ${keyfile}..." >&2
+    just _runtime_assert condition="[ -f \"${keyfile}\" ]" exit_msg="Master keyfile not found at ${keyfile}"
     master_secret_keystring=$(grep -m 1 "^AGE-SECRET-KEY-" "${keyfile}" || true)
-    just _runtime_assert \
-      condition='[ -n "${master_secret_keystring}" ]' \
-      exit_msg="No valid Age key found in ${keyfile}"
   fi
+  just _runtime_assert condition='[ "${#master_secret_keystring}" -eq 74 ]' exit_msg="Invalid key length."
+  echo "✅ Master-Secret-Keystring successfully obtained." >&2
   echo -n "${master_secret_keystring}"
 
 [private]
@@ -446,6 +452,17 @@ _wipe_zroot_os_disks hostname:
   echo "✅ Wipe of zroot OS disks complete."
 
 [private]
+[doc("Internal routing logic for creating datasets remotely or locally.")]
+_create_datasets_internal hostname installer_host_ip prompt_for_master_secret get_master_secret_cmd:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  master_key=$(just _get_sops_master_secret_keystring \
+    prompt_for_master_secret="{{prompt_for_master_secret}}" \
+    get_master_secret_cmd="{{get_master_secret_cmd}}")
+  just _query_sops_for_host_age_keypair hostname="{{hostname}}" master_key="${master_key}"
+  just _create_zfs_datasets hostname="{{hostname}}" installer_host_ip="{{installer_host_ip}}"
+
+[private]
 [doc("Parse the Nix JSON config to extract required baseDatasets and create them with legacy mountpoints.")]
 _create_zfs_datasets hostname installer_host_ip="":
   #!/usr/bin/env bash
@@ -490,9 +507,13 @@ _confirm_data_disks_format hostname installer_host_ip target_disks:
 
 [private]
 [doc("Internal routing logic for formatting explicitly defined data disks remotely or locally.")]
-_format_data_disks_internal hostname installer_host_ip:
+_format_data_disks_internal hostname installer_host_ip prompt_for_master_secret get_master_secret_cmd:
   #!/usr/bin/env bash
   set -euo pipefail
+  master_key=$(just _get_sops_master_secret_keystring \
+    prompt_for_master_secret="{{prompt_for_master_secret}}" \
+    get_master_secret_cmd="{{get_master_secret_cmd}}")
+  just _query_sops_for_host_age_keypair hostname="{{hostname}}" master_key="${master_key}"
   echo "🔍 Querying flake configuration for explicitly defined data disks..."
   nix_apply='x: builtins.concatStringsSep " " (builtins.concatMap (p: p.devices or []) x)'
   target_disks=$(just _query_nix_config hostname="{{hostname}}" \
