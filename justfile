@@ -292,6 +292,8 @@ _deploy_local hostname:
   @echo "🚀 Initiating local deployment for {{hostname}}..."
   @just _run_build_sequence "{{hostname}}"
   @echo "{{BOLD}}{{GREEN}}✅ Local deployment finished.{{NORMAL}}"
+  @echo "{{BOLD}}{{GREEN}}✅ Run \"just format-data-disks\", as required.{{NORMAL}}"
+  @echo "{{BOLD}}{{GREEN}}✅ Then reboot into new OS.{{NORMAL}}"
 
 [private]
 [doc("Deploy NixOS to remote host (via SSH) that is running the NixOS installer ISO.")]
@@ -324,7 +326,9 @@ _deploy_remote hostname installer_host_ip:
     "{{hostname}}" \
     "{{installer_host_ip}}" \
     "cd /tmp/nix_hosts && sudo /home/nixos/.nix-profile/bin/just _run_build_sequence \"{{hostname}}\""
-  echo "{{BOLD}}{{GREEN}}✅ Remote deployment finished. Reboot remote host into new OS.{{NORMAL}}"
+  echo "{{BOLD}}{{GREEN}}✅ Remote deployment finished.{{NORMAL}}"
+  echo "{{BOLD}}{{GREEN}}✅ Run remote \"just format-data-disks\", as required.{{NORMAL}}"
+  echo "{{BOLD}}{{GREEN}}✅ Then reboot remote host into new OS.{{NORMAL}}"
 
 [private]
 [doc("Execute a nixos-rebuild action locally or remotely via Tailscale.")]
