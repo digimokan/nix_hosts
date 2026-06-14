@@ -307,7 +307,7 @@ _deploy_remote hostname installer_host_ip:
   just _exec_cmd_local_or_ssh \
     "{{hostname}}" \
     "{{installer_host_ip}}" \
-    "cd /tmp/nix_hosts && just _run_build_sequence hostname=\"{{hostname}}\""
+    "cd /tmp/nix_hosts && just _run_build_sequence \"{{hostname}}\""
   echo "{{BOLD}}{{GREEN}}✅ Remote deployment finished. Reboot remote host into new OS.{{NORMAL}}"
 
 [private]
