@@ -347,7 +347,7 @@ _extract_host_age_keypair_to_tmpfile hostname master_key:
   key_value=$(just _get_sops_secret "age_keypair_host_{{hostname}}" "secrets/master_secrets.yaml" "{{master_key}}")
   echo "${key_value}" > "{{host_keypair_tempfile_path}}"
   chmod 600 "{{host_keypair_tempfile_path}}"
-  echo "{{GREEN}}✔ Host Age keypair successfully extracted to ${host_keypair_tempfile_path}.{{NORMAL}}" >&2
+  echo "{{GREEN}}✔ Host Age keypair successfully extracted to {{host_keypair_tempfile_path}}.{{NORMAL}}" >&2
 
 [private]
 [doc("Extract plaintext ZFS passphrase to feed to Disko for user-facing hosts.")]
