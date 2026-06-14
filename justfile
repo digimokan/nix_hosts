@@ -210,11 +210,11 @@ _exec_cmd_local_or_ssh hostname installer_host_ip cmd:
   #!/usr/bin/env bash
   set -euo pipefail
   if [ -n "{{installer_host_ip}}" ]; then
-    just _ssh_cmd_wrapper "nixos@{{installer_host_ip}}" {{quote(cmd)}}
+    just _ssh_cmd "nixos@{{installer_host_ip}}" {{quote(cmd)}}
   elif $(just _is_execution_local "{{hostname}}"); then
     bash -c {{quote(cmd)}}
   else
-    just _ssh_cmd_wrapper "root@{{hostname}}" {{quote(cmd)}}
+    just _ssh_cmd "root@{{hostname}}" {{quote(cmd)}}
   fi
 
 [private]
