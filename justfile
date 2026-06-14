@@ -510,7 +510,7 @@ _confirm_data_disks_format hostname installer_host_ip target_disks:
   just _exec_cmd_local_or_ssh "{{hostname}}" "{{installer_host_ip}}" "${verify_script}"
   echo -e "\n⚠️ WARNING: You are about to DESTROY ALL DATA on the target disks listed above."
   read -r -p "Type 'WIPE' in all caps to confirm destruction: " confirm_wipe
-  just _runtime_assert '[ "${confirm_wipe}" = "WIPE" ]' "Data format aborted by user."
+  just _runtime_assert "[ \"${confirm_wipe}\" = \"WIPE\" ]" "Data format aborted by user."
 
 [private]
 [doc("Internal routing logic for formatting explicitly defined data disks remotely or locally.")]
