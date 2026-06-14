@@ -111,7 +111,7 @@ _require_root:
 [private]
 [doc("Evaluate a bash conditional and exit loudly with a custom message if it fails.")]
 _runtime_assert condition exit_msg:
-  @if ! eval {{condition}}; then echo "Error: {{exit_msg}}" >&2; exit 1; fi
+  @if ! {{condition}}; then echo "Error: {{exit_msg}}" >&2; exit 1; fi
 
 [private]
 [doc("Execute a command silently, ignoring any errors or output.")]
