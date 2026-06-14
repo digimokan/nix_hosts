@@ -10,7 +10,7 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 # GLOBAL VARIABLES
 # ==========================================
 
-repo_url := shell("git config --get remote.origin.url || echo 'https://github.com/digimokan/nix_hosts.git'")
+repo_url := "https://github.com/digimokan/nix_hosts.git"
 
 nix_eval  := "nix --extra-experimental-features 'nix-command flakes' eval"
 nix_shell := "nix --extra-experimental-features 'nix-command flakes' shell"
