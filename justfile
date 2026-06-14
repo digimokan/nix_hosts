@@ -188,7 +188,11 @@ _is_execution_local hostname:
   #!/usr/bin/env bash
   set -euo pipefail
   local_host="$(hostname)"
-  if [ "${local_host}" = "nixos" ] || [ "${local_host}" = "{{hostname}}" ]; then exit 0; else exit 1; fi
+  if [ "${local_host}" = "nixos" ] || [ "${local_host}" = "{{hostname}}" ]; then
+    echo "true"
+  else
+    echo "false"
+  fi
 
 [private]
 [doc("Base SSH command to run.")]
@@ -207,7 +211,7 @@ _exec_cmd_local_or_ssh hostname installer_host_ip cmd:
   set -euo pipefail
   if [ -n "{{installer_host_ip}}" ]; then
     just _ssh_cmd "nixos@{{installer_host_ip}}" "{{cmd}}"
-  elif just _is_execution_local "{{hostname}}"; then
+  elif $(just _is_execution_local "{{hostname}}"); then
     bash -c "{{cmd}}"
   else
     just _ssh_cmd "root@{{hostname}}" "{{cmd}}"
@@ -220,7 +224,7 @@ _scp_cmd_local_or_ssh hostname installer_host_ip local_path remote_path:
   set -euo pipefail
   if [ -n "{{installer_host_ip}}" ]; then
     just _scp_cmd "nixos@{{installer_host_ip}}" "{{local_path}}" "{{remote_path}}"
-  elif just _is_execution_local "{{hostname}}"; then
+  elif $(just _is_execution_local "{{hostname}}"); then
     if [ "{{local_path}}" != "{{remote_path}}" ]; then
       cp "{{local_path}}" "{{remote_path}}"
     fi
@@ -242,7 +246,11 @@ _host_type_is hostname expected_type:
   #!/usr/bin/env bash
   set -euo pipefail
   host_type=$(just _query_nix_config "{{hostname}}" "custom.infrastructure.hostType")
-  if [ "${host_type}" = "{{expected_type}}" ]; then exit 0; else exit 1; fi
+  if [ "${host_type}" = "{{expected_type}}" ]; then
+    echo "true"
+  else
+    echo "false"
+  fi
 
 # ==========================================
 # ORCHESTRATION ROUTING & DEPLOYMENT
@@ -255,7 +263,7 @@ _deploy_internal hostname installer_host_ip get_master_secret_cmd:
   set -euo pipefail
   master_key=$(just _get_sops_master_secret_keystring "{{get_master_secret_cmd}}")
   just _extract_host_age_keypair_to_tmpfile "{{hostname}}" "${master_key}"
-  if just _is_execution_local "{{hostname}}"; then
+  if $(just _is_execution_local "{{hostname}}"); then
     just _deploy_local "{{hostname}}"
   else
     just _runtime_assert '[ -n "{{installer_host_ip}}" ]' "Remote deploy requires installer_host_ip parameter."
@@ -354,7 +362,7 @@ _extract_host_age_keypair_to_tmpfile hostname master_key:
 _extract_zfs_zroot_passphrase_for_user_facing_host hostname:
   #!/usr/bin/env bash
   set -euo pipefail
-  if ! just _host_type_is "{{hostname}}" "user-facing"; then exit 0; fi
+  if ! $(just _host_type_is "{{hostname}}" "user-facing"); then exit 0; fi
   echo "🔑 Using SOPS host keypair to extract plaintext ZFS zroot passphrase for host '{{hostname}}'..." >&2
   pass_value=$(just _get_sops_secret \
     "{{hostname}}_host_zfs_zroot_encryption_passphrase" \
@@ -378,7 +386,7 @@ _inject_sops_host_keypair_to_zroot_mnt:
 _inject_zdata_key_to_zroot_mnt_for_user_facing_host hostname:
   #!/usr/bin/env bash
   set -euo pipefail
-  if ! just _host_type_is "{{hostname}}" "user-facing"; then exit 0; fi
+  if ! $(just _host_type_is "{{hostname}}" "user-facing"); then exit 0; fi
   echo "🧩 Emplacing ZFS zdata encryption keystring to target host's zroot /mnt/persist/zfs-keys..."
   zdata_encryption_keystring=$(just _get_sops_secret \
     "{{hostname}}_host_zfs_zdata_encryption_symkey" \
@@ -536,7 +544,7 @@ _exec_zdata_zpool_create disks hostname installer_host_ip="":
   compat_val=$(just _query_nix_config "{{hostname}}" "disko.devices.zpool.zroot.options.compatibility")
   compat_flag="-o compatibility=${compat_val}"
   enc_flags=""
-  if just _host_type_is "{{hostname}}" "user-facing"; then
+  if $(just _host_type_is "{{hostname}}" "user-facing"); then
     echo "🔗 Using SOPS host keypair to extract zdata encryption keystring for host '{{hostname}}'..." >&2
     zdata_encryption_keystring=$(just _get_sops_secret \
       "{{hostname}}_host_zfs_zdata_encryption_symkey" \
