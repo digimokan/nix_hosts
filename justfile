@@ -142,8 +142,8 @@ _cleanup_temp_files:
 _query_nix_config hostname query nix_apply_expr="":
   #!/usr/bin/env bash
   set -euo pipefail
-  apply_arg=$([ -n '{{nix_apply_expr}}' ] && echo "--apply '{{nix_apply_expr}}'" || echo "")
-  result=$(eval "{{nix_eval}} --raw \".#nixosConfigurations.{{hostname}}.config.{{query}}\" ${apply_arg}")
+  expr='{{nix_apply_expr}}'
+  result=$(eval "{{nix_eval}} --raw \".#nixosConfigurations.{{hostname}}.config.{{query}}\" ${expr:+--apply '${expr}'}")
   just _runtime_assert "[ -n \"${result}\" ]" "Nix query {{query}} returned empty/null."
   echo -n "${result}"
 
