@@ -136,6 +136,7 @@ _cleanup_temp_files:
   @just _exec_silent_ignore_errs "rm -f {{host_keypair_tempfile_path}}"
   @just _exec_silent_ignore_errs "rm -f {{host_zroot_passphrase_tempfile_path}}"
   @just _exec_silent_ignore_errs "rm -f {{host_zdata_keystring_tempfile_path}}"
+  @just _exec_silent_ignore_errs "rm -f /tmp/deploy_ssh_*"
 
 [private]
 [doc("Query Nix config. Asserts value exists.")]
@@ -195,14 +196,29 @@ _is_execution_local hostname:
   fi
 
 [private]
+[doc("Get extra SSH options to use if connecting to the ephemeral NixOS installer.")]
+_ssh_get_installer_extra_opts user_at_host:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  if [[ "{{user_at_host}}" == nixos@* ]]; then
+    echo "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null";
+  fi
+
+[private]
 [doc("Base SSH command to run.")]
-_ssh_cmd target_at_host cmd:
-  @ssh {{ssh_opts}} "{{target_at_host}}" "set -euo pipefail; {{cmd}}"
+_ssh_cmd user_at_host cmd:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  extra_opts="$(just _ssh_get_installer_extra_opts "{{user_at_host}}")"
+  ssh {{ssh_opts}} ${extra_opts} "{{user_at_host}}" {{quote(cmd)}}
 
 [private]
 [doc("Base SCP command to run.")]
-_scp_cmd target_at_host local_path remote_path:
-  @scp {{ssh_opts}} "{{local_path}}" "{{target_at_host}}:{{remote_path}}"
+_scp_cmd user_at_host local_path remote_path:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  extra_opts="$(just _ssh_get_installer_extra_opts "{{user_at_host}}")"
+  scp {{ssh_opts}} ${extra_opts} "{{local_path}}" "{{user_at_host}}:{{remote_path}}"
 
 [private]
 [doc("Execute a command locally, or over SSH via installer IP or Tailscale.")]
