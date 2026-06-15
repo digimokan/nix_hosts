@@ -489,13 +489,11 @@ _query_nix_config_for_zdata_datasets hostname:
   echo "{{GREEN}}✔ Query complete: zdata dataset paths obtained successfully.{{NORMAL}}" >&2
 
 [private]
-[doc("Create zdata datasets, with legacy mountpoints.")]
-_create_datasets_internal hostname get_master_secret_cmd:
+[doc("Query the Nix config and create required ZFS datasets on zdata disks.")]
+_create_zdata_datasets hostname:
   #!/usr/bin/env bash
   set -euo pipefail
   echo "🗄️ Initiating creation of datasets on zdata data disks..."
-  master_key=$(just _get_sops_master_secret_keystring "{{get_master_secret_cmd}}")
-  just _extract_host_age_keypair_to_tmpfile "{{hostname}}" "${master_key}"
   ds_paths="$(just _query_nix_config_for_zdata_datasets "{{hostname}}")"
   for ds_path in ${ds_paths}; do
     echo "🎛️ Verifying dataset ${ds_path} exists, or creating it as required."
@@ -507,6 +505,15 @@ _create_datasets_internal hostname get_master_secret_cmd:
     fi
   done
   echo "{{BOLD}}{{GREEN}}✅ Creation of datasets on zdata data disks complete.{{NORMAL}}"
+
+[private]
+[doc("Create zdata datasets, with legacy mountpoints.")]
+_create_datasets_internal hostname get_master_secret_cmd:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  master_key=$(just _get_sops_master_secret_keystring "{{get_master_secret_cmd}}")
+  just _extract_host_age_keypair_to_tmpfile "{{hostname}}" "${master_key}"
+  just _create_zdata_datasets "{{hostname}}"
 
 [private]
 [doc("Verify disk topology visually and prompt for confirmation before formatting.")]
@@ -541,8 +548,8 @@ _format_data_disks_internal hostname get_master_secret_cmd:
     just _deep_wipe_disk "${disk}"
   done
   just _create_zdata_zpool "{{hostname}}" "${target_disks}"
-  just _create_zfs_datasets "{{hostname}}"
   echo "{{BOLD}}{{GREEN}}✅ Wipe and format of zdata data disks complete.{{NORMAL}}"
+  just _create_zdata_datasets "{{hostname}}"
 
 [private]
 [doc("Determine the ZFS pool mode (e.g. 'mirror') based on disk count.")]
