@@ -477,19 +477,26 @@ _wipe_zroot_os_disks hostname:
   done
 
 [private]
-[doc("Parse the Nix JSON config to extract required baseDatasets and create them with legacy mountpoints.")]
+[doc("Query Nix config and parse JSON to extract ZFS dataset paths.")]
+_query_nix_config_for_zdata_datasets hostname:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  echo "📐 Querying Nix config for required ZFS datasets on zdata disks..." >&2
+  json_data=$({{nix_eval}} --json \
+    ".#nixosConfigurations.{{hostname}}.config.custom.system.zfs.storagePools")
+  echo "${json_data}" | {{jq_cmd}} -r \
+    '.[] as $pool | $pool.datasets[] as $ds | ($pool.poolName + "/" + $ds.baseDataset)'
+  echo "{{GREEN}}✔ Query complete: zdata dataset paths obtained successfully.{{NORMAL}}" >&2
+
+[private]
+[doc("Create zdata datasets, with legacy mountpoints.")]
 _create_datasets_internal hostname get_master_secret_cmd:
   #!/usr/bin/env bash
   set -euo pipefail
   echo "🗄️ Initiating creation of datasets on zdata data disks..."
   master_key=$(just _get_sops_master_secret_keystring "{{get_master_secret_cmd}}")
   just _extract_host_age_keypair_to_tmpfile "{{hostname}}" "${master_key}"
-  echo "📐 Querying Nix config for required ZFS datasets on zdata disks..."
-  json_data=$({{nix_eval}} --json \
-    ".#nixosConfigurations.{{hostname}}.config.custom.system.zfs.storagePools")
-  ds_paths=$(echo "${json_data}" | {{jq_cmd}} -r \
-    '.[] as $pool | $pool.datasets[] as $ds | ($pool.poolName + "/" + $ds.baseDataset)')
-  echo "{{GREEN}}✔ Query complete: zdata dataset paths obtained successfully.{{NORMAL}}"
+  ds_paths="$(just _query_nix_config_for_zdata_datasets "{{hostname}}")"
   for ds_path in ${ds_paths}; do
     echo "🎛️ Verifying dataset ${ds_path} exists, or creating it as required."
     if zfs list "${ds_path}" >/dev/null 2>&1; then
@@ -538,29 +545,48 @@ _format_data_disks_internal hostname get_master_secret_cmd:
   echo "{{BOLD}}{{GREEN}}✅ Wipe and format of zdata data disks complete.{{NORMAL}}"
 
 [private]
-[doc("Create a new zdata data disks zpool.")]
-_create_zdata_zpool disks hostname installer_host_ip="":
+[doc("Determine the ZFS pool mode (e.g. 'mirror') based on disk count.")]
+_get_zpool_mode disks:
   #!/usr/bin/env bash
   set -euo pipefail
   disk_array=({{disks}})
-  pool_name="zdata_{{hostname}}"
-  pool_mode=""
-  if [ "${#disk_array[@]}" -ge 2 ]; then pool_mode="mirror"; fi
-  compat_val=$(just _query_nix_config "{{hostname}}" "disko.devices.zpool.zroot.options.compatibility")
-  compat_flag="-o compatibility=${compat_val}"
-  enc_flags=""
+  if [ "${#disk_array[@]}" -ge 2 ]; then echo "mirror"; fi
+
+[private]
+[doc("Retrieve user-facing host zdata zpool encryption flags.")]
+_get_zpool_encryption_flags hostname:
+  #!/usr/bin/env bash
+  set -euo pipefail
   if $(just _host_type_is "{{hostname}}" "user-facing"); then
     echo "🔗 Using SOPS host keypair to extract zdata encryption keystring for host '{{hostname}}'..." >&2
     zdata_encryption_keystring=$(just _get_sops_secret \
       "{{hostname}}_host_zfs_zdata_encryption_symkey" \
       "secrets/{{hostname}}_host_secrets.yaml")
     echo -n "${zdata_encryption_keystring}" > "{{host_zdata_keystring_tempfile_path}}"
-    enc_flags="-O encryption=aes-256-gcm -O keyformat=hex -O keylocation=file://{{host_zdata_keystring_tempfile_path}}" >&2
+    echo "-O encryption=aes-256-gcm -O keyformat=hex -O keylocation=file://{{host_zdata_keystring_tempfile_path}}"
     echo "{{GREEN}}✔ Zdata encryption keystring successfully extracted to local {{host_zdata_keystring_tempfile_path}}.{{NORMAL}}" >&2
   fi
+
+[private]
+[doc("Determine the zpool ZFS-compatibility-flag, common for all hosts.")]
+_get_zpool_zfs_compat_flag hostname:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  compat_val=$(just _query_nix_config "{{hostname}}" "disko.devices.zpool.zroot.options.compatibility")
+  echo "-o compatibility=${compat_val}"
+
+[private]
+[doc("Create a new zdata data disks zpool.")]
+_create_zdata_zpool disks hostname installer_host_ip="":
+  #!/usr/bin/env bash
+  set -euo pipefail
+  pool_name="zdata_{{hostname}}"
+  pool_mode="$(just _get_zpool_mode "{{disks}}")"
+  pool_compat_flag="$(just _get_zpool_zfs_compat_flag "{{hostname}}")"
+  pool_enc_flags="$(just _get_zpool_encryption_flags "{{hostname}}")"
   echo "🛠️ Creating zpool ${pool_name} on zdata disks..." >&2
-  zpool create -o ashift=12 ${compat_flag} -O compression=lz4 -O xattr=sa \
-               -O acltype=posixacl -O atime=off ${enc_flags} -m none \
+  zpool create -o ashift=12 ${pool_compat_flag} -O compression=lz4 -O xattr=sa \
+               -O acltype=posixacl -O atime=off ${pool_enc_flags} -m none \
                "${pool_name}" ${pool_mode} {{disks}}
   zpool export "${pool_name}"
   echo "{{GREEN}}✔ Pool ${pool_name} created on data disk(s){{NORMAL}}" >&2
