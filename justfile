@@ -75,16 +75,14 @@ deploy hostname installer_host_ip="" get_master_secret_cmd="": _require_root
   @just _cleanup_temp_files
 
 [doc("Wipe and format the hosts zdata pool on its data disks.\n  Ex: just format-data-disks tm1")]
-format-data-disks hostname installer_host_ip="" get_master_secret_cmd="": _require_root
-  @just _format_data_disks_internal \
-    "{{hostname}}" "{{installer_host_ip}}" "{{get_master_secret_cmd}}" \
+format-data-disks hostname get_master_secret_cmd="": _require_root
+  @just _format_data_disks_internal "{{hostname}}" "{{get_master_secret_cmd}}" \
     || { just _cleanup_temp_files; exit 1; }
   @just _cleanup_temp_files
 
 [doc("Create all missing ZFS datasets on the host's zdata pool.\n  Ex: just create-datasets tm1")]
-create-datasets hostname installer_host_ip="" get_master_secret_cmd="": _require_root
-  @just _create_datasets_internal \
-    "{{hostname}}" "{{installer_host_ip}}" "{{get_master_secret_cmd}}" \
+create-datasets hostname get_master_secret_cmd="": _require_root
+  @just _create_datasets_internal "{{hostname}}" "{{get_master_secret_cmd}}" \
     || { just _cleanup_temp_files; exit 1; }
   @just _cleanup_temp_files
 
@@ -434,28 +432,25 @@ _emplace_target_hostid hostname:
 
 [private]
 [doc("Deeply wipe all partitions and labels from a single block device.")]
-_deep_wipe_disk disk hostname installer_host_ip="":
+_deep_wipe_disk disk:
   #!/usr/bin/env bash
   set -euo pipefail
-  wipe_script='
-    silent_exec() { bash -c "$1" >/dev/null 2>&1 || true; }
-    for part in $(lsblk -plno NAME "{{disk}}" 2>/dev/null | sort -r); do
-      if [ "$part" != "{{disk}}" ]; then
-        echo "   - Erasing signatures on $part..."
-        silent_exec "mdadm --zero-superblock --force \"$part\""
-        silent_exec "zpool labelclear -f \"$part\""
-        silent_exec "wipefs -a -f \"$part\""
-      fi
-    done
-    silent_exec "blkdiscard -f \"{{disk}}\""
-    silent_exec "mdadm --zero-superblock --force \"{{disk}}\""
-    silent_exec "zpool labelclear -f \"{{disk}}\""
-    silent_exec "wipefs -a -f \"{{disk}}\""
-    silent_exec "sgdisk --zap-all \"{{disk}}\""
-    silent_exec "partprobe \"{{disk}}\""
-  '
-  echo "☢️ Nuking {{disk}}..."
-  just _exec_cmd_local_or_ssh "{{hostname}}" "{{installer_host_ip}}" "${wipe_script}"
+  echo "☢️  Nuking {{disk}}..."
+  silent_exec() { "$@" >/dev/null 2>&1 || true; }
+  for part in $(lsblk -plno NAME "{{disk}}" 2>/dev/null | sort -r); do
+    if [ "$part" != "{{disk}}" ]; then
+      echo "   - Erasing signatures on $part..."
+      silent_exec mdadm --zero-superblock --force "$part"
+      silent_exec zpool labelclear -f "$part"
+      silent_exec wipefs -a -f "$part"
+    fi
+  done
+  silent_exec blkdiscard -f "{{disk}}"
+  silent_exec mdadm --zero-superblock --force "{{disk}}"
+  silent_exec zpool labelclear -f "{{disk}}"
+  silent_exec wipefs -a -f "{{disk}}"
+  silent_exec sgdisk --zap-all "{{disk}}"
+  silent_exec partprobe "{{disk}}"
   sleep 2
   echo "{{GREEN}}✔ Nuke of disk {{disk}} complete.{{NORMAL}}"
 
@@ -482,21 +477,13 @@ _wipe_zroot_os_disks hostname:
   done
 
 [private]
-[doc("Internal routing logic for creating datasets remotely or locally.")]
-_create_datasets_internal hostname installer_host_ip get_master_secret_cmd:
+[doc("Parse the Nix JSON config to extract required baseDatasets and create them with legacy mountpoints.")]
+_create_datasets_internal hostname get_master_secret_cmd:
   #!/usr/bin/env bash
   set -euo pipefail
   echo "🗄️ Initiating creation of datasets on zdata data disks..."
   master_key=$(just _get_sops_master_secret_keystring "{{get_master_secret_cmd}}")
   just _extract_host_age_keypair_to_tmpfile "{{hostname}}" "${master_key}"
-  just _create_zfs_datasets "{{hostname}}" "{{installer_host_ip}}"
-  echo "{{BOLD}}{{GREEN}}✅ Creation of datasets on zdata data disks complete.{{NORMAL}}"
-
-[private]
-[doc("Parse the Nix JSON config to extract required baseDatasets and create them with legacy mountpoints.")]
-_create_zfs_datasets hostname installer_host_ip="":
-  #!/usr/bin/env bash
-  set -euo pipefail
   echo "📐 Querying Nix config for required ZFS datasets on zdata disks..."
   json_data=$({{nix_eval}} --json \
     ".#nixosConfigurations.{{hostname}}.config.custom.system.zfs.storagePools")
@@ -504,36 +491,35 @@ _create_zfs_datasets hostname installer_host_ip="":
     '.[] as $pool | $pool.datasets[] as $ds | ($pool.poolName + "/" + $ds.baseDataset)')
   echo "{{GREEN}}✔ Query complete: zdata dataset paths obtained successfully.{{NORMAL}}"
   for ds_path in ${ds_paths}; do
-    cmd="if zfs list \"${ds_path}\" >/dev/null 2>&1; then \
-      echo \"   - Dataset ${ds_path} already exists.\"; \
-      else zfs create -o mountpoint=legacy \"${ds_path}\" && echo \"   - Created: ${ds_path}\"; fi"
     echo "🎛️ Verifying dataset ${ds_path} exists, or creating it as required."
-    just _exec_cmd_local_or_ssh "{{hostname}}" "{{installer_host_ip}}" "${cmd}"
-    echo "{{GREEN}}✔ ZFS dataset ${ds_path} verified or created successfully.{{NORMAL}}"
+    if zfs list "${ds_path}" >/dev/null 2>&1; then
+      echo "{{GREEN}}Dataset ${ds_path} already exists.{{NORMAL}}"
+    else
+      zfs create -o mountpoint=legacy "${ds_path}"
+      echo "{{GREEN}}Created: ${ds_path}{{NORMAL}}"
+    fi
   done
+  echo "{{BOLD}}{{GREEN}}✅ Creation of datasets on zdata data disks complete.{{NORMAL}}"
 
 [private]
 [doc("Verify disk topology visually and prompt for confirmation before formatting.")]
-_confirm_data_disks_format hostname installer_host_ip target_disks:
+_confirm_data_disks_format target_disks:
   #!/usr/bin/env bash
   set -euo pipefail
   echo -e "\nℹ️ TARGET TOPOLOGY VERIFICATION:"
-  verify_script='
-    echo "--- All Disks on System ---"
-    lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT
-    echo -e "\n--- Target Disks for zdata Pool ---"
-    for d in {{target_disks}}; do
-      ls -l /dev/disk/by-id/ | grep "$(basename "$d")" || true
-    done
-  '
-  just _exec_cmd_local_or_ssh "{{hostname}}" "{{installer_host_ip}}" "${verify_script}"
+  echo "--- All Disks on System ---"
+  lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT
+  echo -e "\n--- Target Disks for zdata Pool ---"
+  for d in {{target_disks}}; do
+    ls -l /dev/disk/by-id/ | grep "$(basename "$d")" || true
+  done
   echo -e "\n⚠️ WARNING: You are about to DESTROY ALL DATA on the target disks listed above."
   read -r -p "Type 'WIPE' in all caps to confirm destruction: " confirm_wipe
   just _runtime_assert "[ \"${confirm_wipe}\" = \"WIPE\" ]" "Data format aborted by user."
 
 [private]
-[doc("Internal routing logic for formatting explicitly defined data disks remotely or locally.")]
-_format_data_disks_internal hostname installer_host_ip get_master_secret_cmd:
+[doc("Format explicitly defined data disks locally.")]
+_format_data_disks_internal hostname get_master_secret_cmd:
   #!/usr/bin/env bash
   set -euo pipefail
   echo "💾 Initiating wipe and format of zdata data disks..."
@@ -543,17 +529,17 @@ _format_data_disks_internal hostname installer_host_ip get_master_secret_cmd:
   nix_apply='x: builtins.concatStringsSep " " (builtins.concatMap (p: p.devices or []) x)'
   target_disks=$(just _query_nix_config "{{hostname}}" "custom.system.zfs.storagePools" "${nix_apply}")
   echo "{{GREEN}}✔ Query complete: zdata data disk paths obtained successfully.{{NORMAL}}"
-  just _confirm_data_disks_format "{{hostname}}" "{{installer_host_ip}}" "${target_disks}"
+  just _confirm_data_disks_format "${target_disks}"
   for disk in ${target_disks}; do
-    just _deep_wipe_disk "${disk}" "{{hostname}}" "{{installer_host_ip}}"
+    just _deep_wipe_disk "${disk}"
   done
-  just _exec_zdata_zpool_create "${target_disks}" "{{hostname}}" "{{installer_host_ip}}"
-  just _create_zfs_datasets "{{hostname}}" "{{installer_host_ip}}"
+  just _create_zdata_zpool "{{hostname}}" "${target_disks}"
+  just _create_zfs_datasets "{{hostname}}"
   echo "{{BOLD}}{{GREEN}}✅ Wipe and format of zdata data disks complete.{{NORMAL}}"
 
 [private]
-[doc("Create a new ZFS pool utilizing properties extracted dynamically from Nix configuration.")]
-_exec_zdata_zpool_create disks hostname installer_host_ip="":
+[doc("Create a new zdata data disks zpool.")]
+_create_zdata_zpool disks hostname installer_host_ip="":
   #!/usr/bin/env bash
   set -euo pipefail
   disk_array=({{disks}})
@@ -571,19 +557,12 @@ _exec_zdata_zpool_create disks hostname installer_host_ip="":
     echo -n "${zdata_encryption_keystring}" > "{{host_zdata_keystring_tempfile_path}}"
     enc_flags="-O encryption=aes-256-gcm -O keyformat=hex -O keylocation=file://{{host_zdata_keystring_tempfile_path}}" >&2
     echo "{{GREEN}}✔ Zdata encryption keystring successfully extracted to local {{host_zdata_keystring_tempfile_path}}.{{NORMAL}}" >&2
-    echo "🏛️ Emplacing zdata encryption keystring in tmp path on host, where zpool create will find it..."
-    just _scp_cmd_local_or_ssh \
-      "{{hostname}}" \
-      "{{installer_host_ip}}" \
-      "{{host_zdata_keystring_tempfile_path}}" \
-      "{{host_zdata_keystring_tempfile_path}}"
-    echo "{{GREEN}}✔ Zdata encryption keystring emplaced successfully to target host {{host_zdata_keystring_tempfile_path}}.{{NORMAL}}" >&2
   fi
-  create_cmd="zpool create -o ashift=12 ${compat_flag} -O compression=lz4 -O xattr=sa \
-    -O acltype=posixacl -O atime=off ${enc_flags} -m none \"${pool_name}\" ${pool_mode} {{disks}} \
-    && zpool export \"${pool_name}\""
   echo "🛠️ Creating zpool ${pool_name} on zdata disks..." >&2
-  just _exec_cmd_local_or_ssh "{{hostname}}" "{{installer_host_ip}}" "${create_cmd}"
+  zpool create -o ashift=12 ${compat_flag} -O compression=lz4 -O xattr=sa \
+               -O acltype=posixacl -O atime=off ${enc_flags} -m none \
+               "${pool_name}" ${pool_mode} {{disks}}
+  zpool export "${pool_name}"
   echo "{{GREEN}}✔ Pool ${pool_name} created on data disk(s){{NORMAL}}" >&2
 
 # ==========================================
