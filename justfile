@@ -473,7 +473,7 @@ _wipe_zroot_os_disks hostname:
   just _exec_silent_ignore_errs "mdadm --stop --scan"
   echo "{{GREEN}}✔ Disk mounts and volumes tear-down complete.{{NORMAL}}"
   for disk in ${target_disks}; do
-    just _deep_wipe_disk "${disk}" "{{hostname}}"
+    just _deep_wipe_disk "${disk}"
   done
 
 [private]
