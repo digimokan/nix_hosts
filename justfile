@@ -75,15 +75,13 @@ deploy hostname installer_host_ip="" get_master_secret_cmd="": _require_root
   @just _cleanup_temp_files
 
 [doc("Wipe and format the hosts zdata pool on its data disks.\n  Ex: just format-data-disks tm1")]
-format-data-disks hostname get_master_secret_cmd="": _require_root
-  @just _format_data_disks_internal "{{hostname}}" "{{get_master_secret_cmd}}" \
-    || { just _cleanup_temp_files; exit 1; }
+format-data-disks hostname: _require_root
+  @just _format_data_disks_internal "{{hostname}}" || { just _cleanup_temp_files; exit 1; }
   @just _cleanup_temp_files
 
 [doc("Create all missing ZFS datasets on the host's zdata pool.\n  Ex: just create-datasets tm1")]
-create-datasets hostname get_master_secret_cmd="": _require_root
-  @just _create_datasets_internal "{{hostname}}" "{{get_master_secret_cmd}}" \
-    || { just _cleanup_temp_files; exit 1; }
+create-datasets hostname: _require_root
+  @just _create_datasets_internal "{{hostname}}"  || { just _cleanup_temp_files; exit 1; }
   @just _cleanup_temp_files
 
 [doc("Edit a SOPS file and automatically rekey all secrets.\n  Ex: just edit-secret secrets/admin.yaml")]
@@ -508,11 +506,9 @@ _create_zdata_datasets hostname:
 
 [private]
 [doc("Create zdata datasets, with legacy mountpoints.")]
-_create_datasets_internal hostname get_master_secret_cmd:
+_create_datasets_internal hostname:
   #!/usr/bin/env bash
   set -euo pipefail
-  master_key=$(just _get_sops_master_secret_keystring "{{get_master_secret_cmd}}")
-  just _extract_host_age_keypair_to_tmpfile "{{hostname}}" "${master_key}"
   just _create_zdata_datasets "{{hostname}}"
 
 [private]
@@ -533,12 +529,10 @@ _confirm_data_disks_format target_disks:
 
 [private]
 [doc("Format explicitly defined data disks locally.")]
-_format_data_disks_internal hostname get_master_secret_cmd:
+_format_data_disks_internal hostname:
   #!/usr/bin/env bash
   set -euo pipefail
   echo "💾 Initiating wipe and format of zdata data disks..."
-  master_key=$(just _get_sops_master_secret_keystring "{{get_master_secret_cmd}}")
-  just _extract_host_age_keypair_to_tmpfile "{{hostname}}" "${master_key}"
   echo "🕵️ Querying flake configuration for explicitly defined zdata data disks..."
   nix_apply='x: builtins.concatStringsSep " " (builtins.concatMap (p: p.devices or []) x)'
   target_disks=$(just _query_nix_config "{{hostname}}" "custom.system.zfs.storagePools" "${nix_apply}")
