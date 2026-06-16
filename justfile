@@ -29,6 +29,8 @@ jq_cmd := if shell("command -v jq >/dev/null 2>&1 && echo yes || echo no") == "y
 }
 
 host_keypair_tempfile_path := "/tmp/nix_hosts_host_keypair.age"
+host_keypair_native_dir := "/var/lib/sops-nix"
+host_keypair_native_path := host_keypair_native_dir / "host_keypair.age"
 host_zroot_passphrase_tempfile_path := "/tmp/nix_hosts_zfs_zroot_passphrase"
 host_zdata_keystring_tempfile_path := "/tmp/nix_hosts_zfs_zdata_keystring"
 
@@ -148,15 +150,16 @@ _query_nix_config hostname query nix_apply_expr="":
 _get_sops_secret secret_to_get secrets_file_path master_secret_keystring="":
   #!/usr/bin/env bash
   set -euo pipefail
-  just _runtime_assert '[ -f "{{secrets_file_path}}" ]' "Could not find {{secrets_file_path}}"
-  if [ -n "{{master_secret_keystring}}" ]; then
-    export SOPS_AGE_KEY="{{master_secret_keystring}}"
-  else
-    just _runtime_assert \
-      '[ -f "{{host_keypair_tempfile_path}}" ]' \
-      "Host key tempfile missing at {{host_keypair_tempfile_path}}."
+  if [ -n "${master_secret_keystring}" ]; then
+    export SOPS_AGE_KEY="${master_secret_keystring}"
+  elif [ -f "{{host_keypair_tempfile_path}}" ]; then
     export SOPS_AGE_KEY_FILE="{{host_keypair_tempfile_path}}"
+  elif [ -f "{{host_keypair_native_path}}" ]; then
+    export SOPS_AGE_KEY_FILE="{{host_keypair_native_path}}"
+  else
+    just _runtime_assert false "Error: Could not locate a valid SOPS age key for decryption."
   fi
+  just _runtime_assert '[ -f "{{secrets_file_path}}" ]' "Could not find {{secrets_file_path}}"
   secret_val=$({{sops_cmd}} -d --extract "[\"{{secret_to_get}}\"]" \
     "{{secrets_file_path}}")
   just _runtime_assert \
@@ -391,9 +394,9 @@ _inject_sops_host_keypair_to_zroot_mnt:
   #!/usr/bin/env bash
   set -euo pipefail
   echo "💉 Injecting SOPS host keypair into the newly formatted host zroot at /mnt..."
-  mkdir -p /mnt/var/lib/sops-nix
-  cp "{{host_keypair_tempfile_path}}" /mnt/var/lib/sops-nix/host_keypair.age
-  chmod 400 /mnt/var/lib/sops-nix/host_keypair.age
+  mkdir -p "/mnt{{host_keypair_native_dir}}"
+  cp "{{host_keypair_tempfile_path}}" "/mnt{{host_keypair_native_path}}"
+  chmod 400 "/mnt{{host_keypair_native_path}}"
   echo "{{GREEN}}✔ SOPS keypair injected successfully.{{NORMAL}}"
 
 [private]
