@@ -1,46 +1,38 @@
 /**
   params:
     lib: Nixpkgs library utility functions (like lib.mkIf)
-    enableEncryption: enable zfs native encryption for all zroot datasets
-    diskIds: A list of strings representing the physical device paths.
-      * To obtain the Disk ID, run 'ls -l /dev/disk/by-id/':
-          - SATA SSDs:      use ID prefixed with 'wwn-'
-          - USB Enclosures: use ID prefixed with 'wwn-'
-          - NVME SSDs:      use ID prefixed with 'nvme-eui.'
-          - USB Sticks:     use ID prefixed with 'usb-'
+    zpoolSchema: see storagePools.type in zfs.nix
   output (attribute set):
     An attribute set of disk(s) and filesystem(s) parsable by disko. Includes
       - Partitions suitable for GRUB bootloader.
       - Support for UEFI BIOS or Legacy BIOS.
       - A single-disk zpool, or two-disk mirror zpool.
       - The zpool 'zroot' mounted on root.
-*/
-{ lib }:
-{ enableEncryption }:
-diskIds:
+ */
+{ lib }: zpoolSchema:
 
 let
-  diskCount = builtins.length diskIds;
+
+  diskCount = builtins.length zpoolSchema.disks;
   isMirror = diskCount == 2;
+  disk1Id = builtins.elemAt zpoolSchema.disks 0;
+  disk2Id = if isMirror then builtins.elemAt zpoolSchema.disks 1 else null;
 
-  # extract paths from the parameter list
-  disk1Id = builtins.elemAt diskIds 0;
-  disk2Id = if isMirror then builtins.elemAt diskIds 1 else null;
-
-  # helper function: Generates the identical GPT partition structures for each drive
   mkDisk = name: device: {
     type = "disk";
     inherit device;
     content = {
       type = "gpt";
       partitions = {
+        # BIOS boot partition (for fallback/legacy)
         boot = {
           size = "1M";
-          type = "EF02"; # BIOS boot partition (for fallback/legacy)
+          type = "EF02";
         };
+        # EFI System Partition
         ESP = {
           size = "1G";
-          type = "EF00"; # EFI System Partition
+          type = "EF00";
           content = {
             type = "filesystem";
             format = "vfat";
@@ -51,27 +43,44 @@ let
             mountOptions = [ "defaults" "nofail" "x-systemd.device-timeout=5s" ];
           };
         };
+        # ZFS partition
         zfs = {
           size = "100%";
           content = {
             type = "zfs";
-            pool = "zroot";
+            pool = zpoolSchema.poolName;
           };
         };
       };
     };
   };
 
+  flattenForDisko = parentPath: datasets:
+    builtins.concatLists (builtins.map (ds:
+      let
+        fullPath = if parentPath == "" then ds.name else "${parentPath}/${ds.name}";
+        current = lib.nameValuePair fullPath {
+          type = "zfs_fs";
+          mountpoint = ds.mountPoint;
+          options = {
+            compression = ds.compression;
+            recordsize = ds.recordsize;
+            exec = ds.exec;
+            setuid = ds.setuid;
+          };
+        };
+      in
+        [ current ] ++ (flattenForDisko fullPath ds.children)
+    ) datasets);
+
 in {
+
   disko.devices = {
+
     # tmpfs RAM disk for the root filesystem, for use with impermanence
     nodev."/" = {
       fsType = "tmpfs";
-      mountOptions = [
-        "defaults"
-        "size=4G"
-        "mode=755"
-      ];
+      mountOptions = [ "defaults" "size=4G" "mode=755" ];
     };
 
     # generate the primary disk, and conditionally append the secondary disk
@@ -81,57 +90,34 @@ in {
       secondary = mkDisk "secondary" disk2Id;
     };
 
-    zpool.zroot = {
+    zpool."${zpoolSchema.poolName}" = {
       type = "zpool";
       mode = if isMirror then "mirror" else "";
       # best practice: top-level pool dataset is unmounted
       mountpoint = null;
-
       # pool-level options
       options = {
-        ashift = "12";
-        # Lock feature set to specific OpenZFS version to suppress upgrade warns.
-        # This can be updated to zfs version on the latest minimal installer.
-        # Warning: after updating, reinstalling OS zpools on all hosts should
-        # be done, else rollbacks may not work.
-        compatibility = "openzfs-2.2-linux";
+        ashift = builtins.toString zpoolSchema.poolAshift;
+        compatibility = zpoolSchema.poolCompatibility;
       };
-
       rootFsOptions = {
-        compression = "lz4";
-        acltype = "posixacl";
-        xattr = "sa";
-        atime = "off";
-      } // lib.optionalAttrs enableEncryption {
+        acltype = zpoolSchema.rootFsAclType;
+        xattr = zpoolSchema.rootFsXattr;
+        atime = zpoolSchema.rootFsAtime;
+        compression = zpoolSchema.rootFsCompression;
+      } // lib.optionalAttrs (zpoolSchema.rootFsEncryptionMethod == "passphrase") {
         encryption = "aes-256-gcm";
         keyformat = "passphrase";
         # must match justfile global var: host_zroot_passphrase_tempfile_path
         keylocation = "file:///tmp/nix_hosts_zfs_zroot_passphrase";
       };
-
       # revert keylocation to standard prompt, so user can boot normally
-      postCreateHook = lib.mkIf enableEncryption "zfs set keylocation=prompt zroot";
-
-      datasets = {
-        "nix" = {
-          type = "zfs_fs";
-          mountpoint = "/nix";
-          # apply highly-efficient zstd compression specifically to the Nix store
-          options = {
-            compression = "zstd";
-          };
-        };
-        "var" = {
-          type = "zfs_fs";
-          mountpoint = "/var";
-        };
-        # impermanence: persist data from "/" (e.g. /etc/xxxx) into this dataset
-        "persist" = {
-          type = "zfs_fs";
-          mountpoint = "/persist";
-        };
-      };
+      postCreateHook = lib.mkIf (zpoolSchema.rootFsEncryptionMethod == "passphrase")
+        "zfs set keylocation=prompt ${zpoolSchema.poolName}";
+      datasets = builtins.listToAttrs (flattenForDisko "" zpoolSchema.datasets);
     };
+
   };
+
 }
 

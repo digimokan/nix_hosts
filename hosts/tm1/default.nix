@@ -17,11 +17,12 @@ let
   sec = config.sops.secrets;
   infra = config.custom.infrastructure;
   tscale = config.custom.apps.tailscale;
+  zrootPool = import ./zroot-zpool.nix allArgs;
+  zdataPool = import ./zdata-zpool.nix allArgs;
 
 in {
 
   imports = [
-    ./os-disk-config.nix
     ./sops-secrets.nix
     ../all-hosts.nix
   ];
@@ -41,22 +42,8 @@ in {
     custom.system.networking.trustedIpLinkInterfaces = tscale.ipLinkInterfaces;
     custom.system.networking.useNetworkManager = true;
 
-    custom.system.zfs.storagePools = [
-      {
-        poolName = "zdata_tm1";
-        datasets = [
-          {
-            baseDataset = "home";
-            mountPoint = "/home";
-            childDatasets = [ "testuser1" ];
-          }
-        ];
-      }
-    ];
-
-    custom.system.impermanence.persistDirs = [
-      config.custom.system.networking.persistConfigDir
-    ];
+    custom.system.zfs.zrootPoolSchema = zrootPool;
+    custom.system.zfs.storagePoolSchemas = [ zdataPool ];
 
     custom.apps.tailscale.enable = true;
     custom.apps.tailscale.enableSshServer = true;

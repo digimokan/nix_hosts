@@ -478,16 +478,30 @@ _wipe_zroot_os_disks hostname:
   done
 
 [private]
-[doc("Query Nix config and parse JSON to extract ZFS dataset paths.")]
+[doc("Query Nix config and parse JSON to extract ZFS dataset paths and properties.")]
 _query_nix_config_for_zdata_datasets hostname:
   #!/usr/bin/env bash
   set -euo pipefail
   echo "📐 Querying Nix config for required ZFS datasets on zdata disks..." >&2
   json_data=$({{nix_eval}} --json \
-    ".#nixosConfigurations.{{hostname}}.config.custom.system.zfs.storagePools")
-  echo "${json_data}" | {{jq_cmd}} -r \
-    '.[] as $pool | $pool.datasets[] as $ds | ($pool.poolName + "/" + $ds.baseDataset)'
-  echo "{{GREEN}}✔ Query complete: zdata dataset paths obtained successfully.{{NORMAL}}" >&2
+    ".#nixosConfigurations.{{hostname}}.config.custom.system.zfs.storagePoolSchemas")
+  echo "${json_data}" | {{jq_cmd}} -r '
+    .[] as $pool |
+    def walk_datasets(parent_path):
+      .[] |
+      (parent_path + "/" + .name) as $path |
+      (
+        (if .mountPoint != null then "-o mountpoint=legacy " else "" end) +
+        "-o compression=" + .compression + " " +
+        "-o recordsize=" + .recordsize + " " +
+        "-o exec=" + .exec + " " +
+        "-o setuid=" + .setuid
+      ) as $opts |
+      "\($path)|\($opts)",
+      (if (.children | length) > 0 then (.children | walk_datasets($path)) else empty end);
+    $pool.datasets | walk_datasets($pool.poolName)
+  '
+  echo "{{GREEN}}✔ Query complete: zdata dataset paths and properties obtained successfully.{{NORMAL}}" >&2
 
 [private]
 [doc("Query the Nix config and create required ZFS datasets on zdata disks.")]
@@ -495,16 +509,16 @@ _create_zdata_datasets hostname:
   #!/usr/bin/env bash
   set -euo pipefail
   echo "🗄️ Initiating creation of datasets on zdata data disks..."
-  ds_paths="$(just _query_nix_config_for_zdata_datasets "{{hostname}}")"
-  for ds_path in ${ds_paths}; do
+  dataset_lines="$(just _query_nix_config_for_zdata_datasets "{{hostname}}")"
+  while IFS='|' read -r ds_path ds_opts; do
     echo "🎛️ Verifying dataset ${ds_path} exists, or creating it as required."
     if zfs list "${ds_path}" >/dev/null 2>&1; then
       echo "{{GREEN}}Dataset ${ds_path} already exists.{{NORMAL}}"
     else
-      zfs create -o mountpoint=legacy "${ds_path}"
+      zfs create ${ds_opts} "${ds_path}"
       echo "{{GREEN}}Created: ${ds_path}{{NORMAL}}"
     fi
-  done
+  done <<< "${dataset_lines}"
   echo "{{BOLD}}{{GREEN}}✅ Creation of datasets on zdata data disks complete.{{NORMAL}}"
 
 [private]
@@ -537,8 +551,8 @@ _format_data_disks_internal hostname:
   set -euo pipefail
   echo "💾 Initiating wipe and format of zdata data disks..."
   echo "🕵️ Querying flake configuration for explicitly defined zdata data disks..."
-  nix_apply='x: builtins.concatStringsSep " " (builtins.concatMap (p: p.devices or []) x)'
-  target_disks=$(just _query_nix_config "{{hostname}}" "custom.system.zfs.storagePools" "${nix_apply}")
+  nix_apply='x: builtins.concatStringsSep " " (builtins.concatMap (p: p.disks or []) x)'
+  target_disks=$(just _query_nix_config "{{hostname}}" "custom.system.zfs.storagePoolSchemas" "${nix_apply}")
   echo "{{GREEN}}✔ Query complete: zdata data disk paths obtained successfully.{{NORMAL}}"
   just _confirm_data_disks_format "${target_disks}"
   for disk in ${target_disks}; do
@@ -572,25 +586,30 @@ _get_zpool_encryption_flags hostname:
   fi
 
 [private]
-[doc("Determine the zpool ZFS-compatibility-flag, common for all hosts.")]
-_get_zpool_zfs_compat_flag hostname:
+[doc("Query Nix config to extract all zdata pool and root dataset properties.")]
+_query_nix_config_for_zdata_pool_props hostname:
   #!/usr/bin/env bash
   set -euo pipefail
-  compat_val=$(just _query_nix_config "{{hostname}}" "disko.devices.zpool.zroot.options.compatibility")
-  echo "-o compatibility=${compat_val}"
+  json_data=$(just _query_nix_config "{{hostname}}" "custom.system.zfs.storagePoolSchemas")
+  echo "${json_data}" | {{jq_cmd}} -r '
+    .[] |
+    "-o ashift=\(.poolAshift) -o compatibility=\(.poolCompatibility) \
+    -O acltype=\(.rootFsAclType) -O xattr=\(.rootFsXattr) -O atime=\(.rootFsAtime) \
+    -O compression=\(.rootFsCompression) -O recordsize=\(.rootFsRecordsize) \
+    -O exec=\(.rootFsExec) -O setuid=\(.rootFsSetuid)"
+  '
 
 [private]
 [doc("Create a new zdata data disks zpool.")]
-_create_zdata_zpool disks hostname installer_host_ip="":
+_create_zdata_zpool hostname disks:
   #!/usr/bin/env bash
   set -euo pipefail
   pool_name="zdata_{{hostname}}"
   pool_mode="$(just _get_zpool_mode "{{disks}}")"
-  pool_compat_flag="$(just _get_zpool_zfs_compat_flag "{{hostname}}")"
+  pool_props="$(just _query_nix_config_for_zdata_pool_props "{{hostname}}")"
   pool_enc_flags="$(just _get_zpool_encryption_flags "{{hostname}}")"
   echo "🛠️ Creating zpool ${pool_name} on zdata disks..." >&2
-  zpool create -o ashift=12 ${pool_compat_flag} -O compression=lz4 -O xattr=sa \
-               -O acltype=posixacl -O atime=off ${pool_enc_flags} -m none \
+  zpool create ${pool_props} ${pool_enc_flags} -m none \
                "${pool_name}" ${pool_mode} {{disks}}
   zpool export "${pool_name}"
   echo "{{GREEN}}✔ Pool ${pool_name} created on data disk(s){{NORMAL}}" >&2

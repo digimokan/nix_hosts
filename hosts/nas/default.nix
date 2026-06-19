@@ -18,24 +18,13 @@ let
   infra = config.custom.infrastructure;
   tscale = config.custom.apps.tailscale;
   nasCfg = config.custom.hosts.nas;
-
-  # storagePoolName = "zdata";
-
-  storagePoolName = "zdata_nas";
-  storagePoolBaseDataset = "data";
-  storagePoolBaseMountDir = "/data";
-  storagePoolChildDirs = [
-    "Movies"
-    "Pictures"
-    "Shows"
-    "HomeVideos"
-    "Software"
-  ];
+  zrootPool = import ./zroot-zpool.nix allArgs;
+  zdataPool = import ./zdata-zpool.nix allArgs;
+  zdataBaseDataset = builtins.head zdataPool.datasets;
 
 in {
 
   imports = [
-    ./os-disk-config.nix
     ./sops-secrets.nix
     ../all-hosts.nix
   ];
@@ -49,42 +38,27 @@ in {
 
   config = {
     custom.system.nixCore.initialStateVersion = "24.05";
-
     custom.infrastructure.hostType = "server";
-
     custom.system.cpuMicrocode = "amd";
-
     custom.system.grub.enableMode = "efi";
     custom.system.grub.efiModeRemovableDisks = true;
-
     custom.system.networking.primaryDnsServerIpAddr = infra.lan.routerIpAddr;
     custom.system.networking.trustedIpLinkInterfaces = tscale.ipLinkInterfaces;
 
-    custom.system.zfs.storagePools = [
-      {
-        poolName = storagePoolName;
-        datasets = [
-          {
-            baseDataset = storagePoolBaseDataset;
-            mountPoint = storagePoolBaseMountDir;
-            childDatasets = storagePoolChildDirs;
-          }
-        ];
-      }
-    ];
+    custom.system.zfs.zrootPoolSchema = zrootPool;
+    custom.system.zfs.storagePoolSchemas = [ zdataPool ];
 
     custom.apps.tailscale.enable = true;
     custom.apps.tailscale.enableSshServer = true;
     custom.apps.tailscale.authKeyPath = sec.server_host_tailscale_auth_key.path;
-
     custom.apps.git.enable = true;
     custom.apps.git.userName = "digimokan";
 
-    custom.hosts.nas.nfsChildExportDirs = storagePoolChildDirs;
+    custom.hosts.nas.nfsChildExportDirs = builtins.map (c: c.name) zdataBaseDataset.children;
 
     custom.apps.nfsServer.enableVersion = "v4";
     custom.apps.nfsServer.sharesToExport = {
-      "${storagePoolBaseMountDir}" = {
+      "${zdataBaseDataset.mountPoint}" = {
         allowedClients = tscale.defaultTailnetCidr;
         childDirs = nasCfg.nfsChildExportDirs;
       };
