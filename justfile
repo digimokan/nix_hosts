@@ -150,8 +150,8 @@ _query_nix_config hostname query nix_apply_expr="":
 _get_sops_secret secret_to_get secrets_file_path master_secret_keystring="":
   #!/usr/bin/env bash
   set -euo pipefail
-  if [ -n "${master_secret_keystring}" ]; then
-    export SOPS_AGE_KEY="${master_secret_keystring}"
+  if [ -n "{{master_secret_keystring}}" ]; then
+    export SOPS_AGE_KEY="{{master_secret_keystring}}"
   elif [ -f "{{host_keypair_tempfile_path}}" ]; then
     export SOPS_AGE_KEY_FILE="{{host_keypair_tempfile_path}}"
   elif [ -f "{{host_keypair_native_path}}" ]; then
