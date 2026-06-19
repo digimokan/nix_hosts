@@ -182,7 +182,7 @@ in {
             lib.nameValuePair mnt.mountPoint {
               device = mnt.fullName;
               fsType = "zfs";
-              options = [ "zfsutil" ];
+              options = [ "zfsutil" "nofail" ];
             }
           ) allMounts)
       ) cfg.storagePoolSchemas);
