@@ -333,7 +333,7 @@ _deploy_remote hostname installer_host_ip:
 _exec_nixos_rebuild_cmd hostname action:
   #!/usr/bin/env bash
   set -euo pipefail
-  echo "🏗️ Initiating NixOS rebuild (${action}) for {{hostname}}..."
+  echo "🏗️ Initiating NixOS rebuild ({{action}}) for {{hostname}}..."
   if [ "$(hostname)" = "{{hostname}}" ]; then
     nixos-rebuild {{action}} --flake ".#{{hostname}}"
   else
