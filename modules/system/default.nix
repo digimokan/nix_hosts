@@ -17,6 +17,7 @@
     ./cpu-microcode.nix
     ./grub.nix
     ./impermanence.nix
+    ./linux-firmware.nix
     ./networking.nix
     ./nix-core.nix
     ./security.nix
@@ -24,6 +25,7 @@
     ./timezone.nix
     ./tmp-tmpfs.nix
     ./wayland.nix
+    ./wifi-chipset.nix
     ./zfs.nix
   ];
 }
