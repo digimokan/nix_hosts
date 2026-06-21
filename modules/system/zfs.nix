@@ -52,6 +52,7 @@ in {
         rootFsAtime = lib.mkOption { type = atimeType; default = cfg.rootFsAtime; };
         rootFsEncryptionMethod = lib.mkOption { type = encMethodType; default = cfg.rootFsEncryptionMethod; };
         rootFsEncryptionSopsSecretName = lib.mkOption { type = lib.types.nullOr lib.types.str; default = cfg.rootFsEncryptionSopsSecretName; };
+        rootFsEncryptionTempfilePath = lib.mkOption { type = lib.types.str; default = cfg.rootFsEncryptionTempfilePath; };
         rootFsCompression = lib.mkOption { type = lib.types.str; default = cfg.datasetCompression; };
         rootFsRecordsize = lib.mkOption { type = lib.types.str; default = cfg.datasetRecordsize; };
         rootFsExec = lib.mkOption { type = onOffType; default = cfg.datasetExec; };
@@ -114,6 +115,11 @@ in {
       type = lib.types.nullOr lib.types.str;
       default = null;
       description = "The explicit SOPS secret name containing the encryption key/passphrase.";
+    };
+    rootFsEncryptionTempfilePath = lib.mkOption {
+      type = lib.types.str;
+      default = "/tmp/nix_hosts_zfs_zroot_passphrase";
+      description = "Absolute path on target host where orchestrator temporarily stores the ZFS passphrase for Disko.";
     };
 
     datasetCompression = lib.mkOption {

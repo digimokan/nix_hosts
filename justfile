@@ -31,7 +31,6 @@ jq_cmd := if shell("command -v jq >/dev/null 2>&1 && echo yes || echo no") == "y
 host_keypair_tempfile_path := "/tmp/nix_hosts_host_keypair.age"
 host_keypair_native_dir := "/var/lib/sops-nix"
 host_keypair_native_path := host_keypair_native_dir / "host_keypair.age"
-host_zroot_passphrase_tempfile_path := "/tmp/nix_hosts_zfs_zroot_passphrase"
 host_zdata_keystring_tempfile_path := "/tmp/nix_hosts_zfs_zdata_keystring"
 
 ssh_opts := "-o ControlMaster=auto -o ControlPath=/tmp/deploy_ssh_%h_%p_%r -o ControlPersist=10m"
@@ -131,8 +130,8 @@ _install_required_deps installer_host_ip:
 [doc("Purge sensitive files. Used safely via logical OR short-circuits in public recipes.")]
 _cleanup_temp_files:
   @just _exec_silent_ignore_errs "rm -f {{host_keypair_tempfile_path}}"
-  @just _exec_silent_ignore_errs "rm -f {{host_zroot_passphrase_tempfile_path}}"
   @just _exec_silent_ignore_errs "rm -f {{host_zdata_keystring_tempfile_path}}"
+  @just _exec_silent_ignore_errs "rm -f /tmp/nix_hosts_*"
   @just _exec_silent_ignore_errs "rm -f /tmp/deploy_ssh_*"
 
 [private]
@@ -381,12 +380,17 @@ _extract_zfs_zroot_passphrase_for_user_facing_host hostname:
   #!/usr/bin/env bash
   set -euo pipefail
   if ! $(just _host_type_is "{{hostname}}" "user-facing"); then exit 0; fi
-  echo "🔑 Using SOPS host keypair to extract plaintext ZFS zroot passphrase for host '{{hostname}}'..." >&2
+  echo "📇 Querying Nix config for location of zroot passphrase tempfile path on target host..." >&2
+  passphrase_tempfile_path=$(just _query_nix_config \
+    "{{hostname}}" \
+    "custom.system.zfs.zrootPoolSchema.rootFsEncryptionTempfilePath")
+  echo "{{GREEN}}✔ Query complete: zroot passphrase tempfile path is ${passphrase_tempfile_path}.{{NORMAL}}" >&2
+  echo "🔑 Using SOPS host keypair to extract host plaintext ZFS zroot passphrase to '${passphrase_tempfile_path}'..." >&2
   pass_value=$(just _get_sops_secret \
     "{{hostname}}_host_zfs_zroot_encryption_passphrase" \
     "secrets/{{hostname}}_host_secrets.yaml")
-  echo -n "${pass_value}" > "{{host_zroot_passphrase_tempfile_path}}"
-  echo "{{GREEN}}✔ Host ZFS zroot passphrase successfully extracted to {{host_zroot_passphrase_tempfile_path}}.{{NORMAL}}" >&2
+  echo -n "${pass_value}" > "${passphrase_tempfile_path}"
+  echo "{{GREEN}}✔ Host ZFS zroot passphrase successfully extracted to ${passphrase_tempfile_path}.{{NORMAL}}" >&2
 
 [private]
 [doc("Inject the SOPS host keypair into the newly mounted root filesystem.")]

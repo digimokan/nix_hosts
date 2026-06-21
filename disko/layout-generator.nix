@@ -108,8 +108,7 @@ in {
       } // lib.optionalAttrs (zpoolSchema.rootFsEncryptionMethod == "passphrase") {
         encryption = "aes-256-gcm";
         keyformat = "passphrase";
-        # must match justfile global var: host_zroot_passphrase_tempfile_path
-        keylocation = "file:///tmp/nix_hosts_zfs_zroot_passphrase";
+        keylocation = "file://${zpoolSchema.rootFsEncryptionTempfilePath}";
       };
       # revert keylocation to standard prompt, so user can boot normally
       postCreateHook = lib.mkIf (zpoolSchema.rootFsEncryptionMethod == "passphrase")
