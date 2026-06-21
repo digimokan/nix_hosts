@@ -36,7 +36,7 @@ in {
             (firmwareCfg.installPolicy == "builtins-and-proprietary" ||
              firmwareCfg.installPolicy == "builtins-and-proprietary-with-restricted-licenses");
           message = (
-            "Wi-Fi chipset 'realtek_rtw89' requires proprietary firmware. "
+            "Wi-Fi chipset '${cfg}' requires proprietary firmware. "
             + "Set custom.system.linuxFirmware.installPolicy to "
             + "'builtins-and-proprietary' or 'builtins-and-proprietary-with-restricted-licenses'."
           );
