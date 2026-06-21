@@ -19,15 +19,13 @@ let
 
 in {
 
-  options.custom.system.wifiChipset = {
-    backend = lib.mkOption {
-      type = lib.types.enum [
-        "disabled"
-        "realtek_rtw89"
-      ];
-      default = "disabled";
-      description = "The Wi-Fi chipset in the machine to enable and use.";
-    };
+  options.custom.system.wifiChipset = lib.mkOption {
+    type = lib.types.enum [
+      "disabled"
+      "realtek_rtw89"
+    ];
+    default = "disabled";
+    description = "The Wi-Fi chipset in the machine to enable and use.";
   };
 
   config = lib.mkMerge [
