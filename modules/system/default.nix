@@ -14,6 +14,7 @@
 
 {
   imports = [
+    ./bluetooth-chipset.nix
     ./cpu-microcode.nix
     ./grub.nix
     ./impermanence.nix
