@@ -46,8 +46,8 @@ in {
 
     (lib.mkIf (cfg == "disabled") {
       boot.extraModprobeConfig = ''
-        install cfg80211 /bin/false
-        install mac80211 /bin/false
+        install cfg80211 ${pkgs.coreutils}/bin/true
+        install mac80211 ${pkgs.coreutils}/bin/true
       '';
     })
   ];

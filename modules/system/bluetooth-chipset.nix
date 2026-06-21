@@ -46,8 +46,8 @@ in {
 
     (lib.mkIf (cfg == "disabled") {
       boot.extraModprobeConfig = ''
-        install bluetooth /bin/false
-        install btusb /bin/false
+        install bluetooth ${pkgs.coreutils}/bin/true
+        install btusb ${pkgs.coreutils}/bin/true
       '';
     })
 
