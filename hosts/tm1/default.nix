@@ -63,8 +63,10 @@ in {
     custom.apps.pipewire.enable = true;
 
     custom.users.root.hashedPasswordFile = sec.flan_user_facing_host_root_password.path;
+
     custom.users.admin.hashedPasswordFile = sec.flan_user_facing_host_admin_password.path;
     custom.users.admin.extraGroups = [ config.custom.system.networking.netMgrGroup ];
+
     custom.users.testuser1.hashedPasswordFile = sec.tm1_flan_user_facing_host_testuser1_password.path;
     custom.users.testuser1.extraGroups = [ config.custom.system.networking.netMgrGroup ];
   };

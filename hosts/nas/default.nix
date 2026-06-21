@@ -38,10 +38,14 @@ in {
 
   config = {
     custom.system.nixCore.initialStateVersion = "24.05";
+
     custom.infrastructure.hostType = "server";
+
     custom.system.cpuMicrocode = "amd";
+
     custom.system.grub.enableMode = "efi";
     custom.system.grub.efiModeRemovableDisks = true;
+
     custom.system.networking.primaryDnsServerIpAddr = infra.lan.routerIpAddr;
     custom.system.networking.trustedIpLinkInterfaces = tscale.ipLinkInterfaces;
 
@@ -51,6 +55,7 @@ in {
     custom.apps.tailscale.enable = true;
     custom.apps.tailscale.enableSshServer = true;
     custom.apps.tailscale.authKeyPath = sec.server_host_tailscale_auth_key.path;
+
     custom.apps.git.enable = true;
     custom.apps.git.userName = "digimokan";
 
@@ -63,6 +68,8 @@ in {
         childDirs = nasCfg.nfsChildExportDirs;
       };
     };
+
+    custom.system.impermanence.persistDirs = [ "/root/nix_hosts" ];
 
     custom.users.root.hashedPasswordFile = sec.server_host_root_password.path;
   };
