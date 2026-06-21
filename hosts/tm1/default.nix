@@ -45,6 +45,8 @@ in {
     custom.system.zfs.zrootPoolSchema = zrootPool;
     custom.system.zfs.storagePoolSchemas = [ zdataPool ];
 
+    custom.system.videoChipset = "intel";
+
     custom.apps.tailscale.enable = true;
     custom.apps.tailscale.enableSshServer = true;
     custom.apps.tailscale.authKeyPath = sec.user_facing_host_tailscale_auth_key.path;

@@ -25,6 +25,7 @@
     ./sops.nix
     ./timezone.nix
     ./tmp-tmpfs.nix
+    ./video-chipset.nix
     ./wayland.nix
     ./wifi-chipset.nix
     ./zfs.nix
