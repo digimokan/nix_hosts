@@ -31,7 +31,6 @@ jq_cmd := if shell("command -v jq >/dev/null 2>&1 && echo yes || echo no") == "y
 host_keypair_tempfile_path := "/tmp/nix_hosts_host_keypair.age"
 host_keypair_native_dir := "/var/lib/sops-nix"
 host_keypair_native_path := host_keypair_native_dir / "host_keypair.age"
-host_zdata_keystring_tempfile_path := "/tmp/nix_hosts_zfs_zdata_keystring"
 
 ssh_opts := "-o ControlMaster=auto -o ControlPath=/tmp/deploy_ssh_%h_%p_%r -o ControlPersist=10m"
 
@@ -130,7 +129,6 @@ _install_required_deps installer_host_ip:
 [doc("Purge sensitive files. Used safely via logical OR short-circuits in public recipes.")]
 _cleanup_temp_files:
   @just _exec_silent_ignore_errs "rm -f {{host_keypair_tempfile_path}}"
-  @just _exec_silent_ignore_errs "rm -f {{host_zdata_keystring_tempfile_path}}"
   @just _exec_silent_ignore_errs "rm -f /tmp/nix_hosts_*"
   @just _exec_silent_ignore_errs "rm -f /tmp/deploy_ssh_*"
 
@@ -246,24 +244,25 @@ _scp_cmd_local_or_ssh hostname installer_host_ip local_path remote_path:
   fi
 
 [private]
-[doc("Silent boolean check to determine if running on the installer host.")]
-_is_running_on_installer_host hostname:
+[doc("Silent boolean check if zroot uses passphrase encryption.")]
+_is_zroot_encrypted_with_passphrase hostname:
   #!/usr/bin/env bash
   set -euo pipefail
-  local_host="$(hostname)"
-  if [ "${local_host}" = "nixos" ] || [ "${local_host}" = "{{hostname}}" ]; then exit 0; else exit 1; fi
+  method=$(just _query_nix_config "{{hostname}}" "custom.system.zfs.zrootPoolSchema.rootFsEncryptionMethod")
+  if [ "${method}" = "passphrase" ]; then echo "true"; else echo "false"; fi
 
 [private]
-[doc("Silent boolean check for host type.")]
-_host_type_is hostname expected_type:
+[doc("Query Nix config for list of target host encrypted zdata zpools.")]
+_query_encrypted_zdata_schemas hostname:
   #!/usr/bin/env bash
   set -euo pipefail
-  host_type=$(just _query_nix_config "{{hostname}}" "custom.infrastructure.hostType")
-  if [ "${host_type}" = "{{expected_type}}" ]; then
-    echo "true"
-  else
-    echo "false"
-  fi
+  echo "🚜 Querying Nix config for list of target host encrypted zdata zpools..." >&2
+  zdata_schemas=$(just _query_nix_config \
+    "{{hostname}}" \
+    "custom.system.zfs.storagePoolSchemas")
+  encrypted_zdata_pools=$(echo "${zdata_schemas}" | {{jq_cmd}} -r 'map(select(.rootFsEncryptionMethod == "keyfile"))')
+  echo "{{GREEN}}✔ Query complete: keystring-encrypted zdata pool list is '${encrypted_zdata_pools}'.{{NORMAL}}" >&2
+  echo "${encrypted_zdata_pools}"
 
 # ==========================================
 # ORCHESTRATION ROUTING & DEPLOYMENT
@@ -375,19 +374,24 @@ _extract_host_age_keypair_to_tmpfile hostname master_key:
   echo "{{GREEN}}✔ Host Age keypair successfully extracted to {{host_keypair_tempfile_path}}.{{NORMAL}}" >&2
 
 [private]
-[doc("Extract plaintext ZFS passphrase to feed to Disko for user-facing hosts.")]
-_extract_zfs_zroot_passphrase_for_user_facing_host hostname:
+[doc("Extract plaintext encryption passphrase to feed to Disko, if zroot is encypted.")]
+_extract_zfs_zroot_passphrase hostname:
   #!/usr/bin/env bash
   set -euo pipefail
-  if ! $(just _host_type_is "{{hostname}}" "user-facing"); then exit 0; fi
+  if ! $(just _is_zroot_encrypted_with_passphrase "{{hostname}}"); then exit 0; fi
   echo "📇 Querying Nix config for location of zroot passphrase tempfile path on target host..." >&2
   passphrase_tempfile_path=$(just _query_nix_config \
     "{{hostname}}" \
     "custom.system.zfs.zrootPoolSchema.rootFsEncryptionTempfilePath")
   echo "{{GREEN}}✔ Query complete: zroot passphrase tempfile path is ${passphrase_tempfile_path}.{{NORMAL}}" >&2
+  echo "🔠 Querying Nix config for location of zroot passphrase secret name..." >&2
+  passphrase_secret_name=$(just _query_nix_config \
+    "{{hostname}}" \
+    "custom.system.zfs.zrootPoolSchema.rootFsEncryptionSopsSecretName")
+  echo "{{GREEN}}✔ Query complete: zroot passphrase secret name is ${passphrase_secret_name}.{{NORMAL}}" >&2
   echo "🔑 Using SOPS host keypair to extract host plaintext ZFS zroot passphrase to '${passphrase_tempfile_path}'..." >&2
   pass_value=$(just _get_sops_secret \
-    "{{hostname}}_host_zfs_zroot_encryption_passphrase" \
+    "${passphrase_secret_name}" \
     "secrets/{{hostname}}_host_secrets.yaml")
   echo -n "${pass_value}" > "${passphrase_tempfile_path}"
   echo "{{GREEN}}✔ Host ZFS zroot passphrase successfully extracted to ${passphrase_tempfile_path}.{{NORMAL}}" >&2
@@ -404,19 +408,27 @@ _inject_sops_host_keypair_to_zroot_mnt:
   echo "{{GREEN}}✔ SOPS keypair injected successfully.{{NORMAL}}"
 
 [private]
-[doc("Inject ZFS zdata encryption keystring to enable auto-unlocking on boot for user-facing hosts.")]
-_inject_zdata_key_to_zroot_mnt_for_user_facing_host hostname:
+[doc("Inject ZFS zdata encryption keystrings to enable auto-unlocking on boot.")]
+_inject_zdata_keys_to_zroot_mnt hostname:
   #!/usr/bin/env bash
   set -euo pipefail
-  if ! $(just _host_type_is "{{hostname}}" "user-facing"); then exit 0; fi
-  echo "🧩 Emplacing ZFS zdata encryption keystring to target host's zroot /mnt/persist/zfs-keys..."
-  zdata_encryption_keystring=$(just _get_sops_secret \
-    "{{hostname}}_host_zfs_zdata_encryption_symkey" \
-    "secrets/{{hostname}}_host_secrets.yaml")
-  mkdir -p /mnt/persist/zfs-keys
-  echo -n "${zdata_encryption_keystring}" > "/mnt/persist/zfs-keys/zdata_{{hostname}}.key"
-  chmod 400 "/mnt/persist/zfs-keys/zdata_{{hostname}}.key"
-  echo "{{GREEN}}✔ Zdata encryption keystring emplaced successfully.{{NORMAL}}"
+  encrypted_zdata_pools=$(just _query_encrypted_zdata_schemas "{{hostname}}")
+  encrypted_pool_count=$(echo "${encrypted_zdata_pools}" | {{jq_cmd}} -r 'length')
+  if [ "${encrypted_pool_count}" -eq 0 ]; then exit 0; fi
+  host_zdata_keys_dir="/mnt/persist/zfs-keys"
+  mkdir -p "${host_zdata_keys_dir}"
+  echo "${encrypted_zdata_pools}" | {{jq_cmd}} -c '.[]' | while read -r pool; do
+    pool_name=$(echo "${pool}" | {{jq_cmd}} -r '.poolName')
+    echo "🧩 Querying Nix config for target host pool ${pool_name} zdata encryption keystring..."
+    pool_enc_secret_name=$(echo "${pool}" | {{jq_cmd}} -r '.rootFsEncryptionSopsSecretName')
+    keystring_val=$(just _get_sops_secret "${pool_enc_secret_name}" "secrets/{{hostname}}_host_secrets.yaml")
+    echo "{{GREEN}}✔ Query complete: encryption keystring for ${pool_name} obtained successfully.{{NORMAL}}"
+    host_zdata_keystring_path="${host_zdata_keys_dir}/${pool_name}.key"
+    echo "🔗 Emplacing zdata encryption keystring for pool '${pool_name}' in ${host_zdata_keystring_path}..."
+    echo -n "${keystring_val}" > "${host_zdata_keystring_path}"
+    chmod 400 "${host_zdata_keystring_path}"
+    echo "{{GREEN}}✔ Zdata zpool ${pool_name} encryption keystring emplaced successfully.{{NORMAL}}"
+  done
 
 [private]
 [doc("Extract and emplace the networking.hostId to prevent ZFS import mismatch issues.")]
@@ -515,6 +527,7 @@ _create_zdata_datasets hostname:
   echo "🗄️ Initiating creation of datasets on zdata data disks..."
   dataset_lines="$(just _query_nix_config_for_zdata_datasets "{{hostname}}")"
   while IFS='|' read -r ds_path ds_opts; do
+    if [ -z "${ds_path:-}" ]; then continue; fi
     echo "🎛️ Verifying dataset ${ds_path} exists, or creating it as required."
     if zfs list "${ds_path}" >/dev/null 2>&1; then
       echo "{{GREEN}}Dataset ${ds_path} already exists.{{NORMAL}}"
@@ -555,14 +568,17 @@ _format_data_disks_internal hostname:
   set -euo pipefail
   echo "💾 Initiating wipe and format of zdata data disks..."
   echo "🕵️ Querying flake configuration for explicitly defined zdata data disks..."
-  nix_apply='x: builtins.concatStringsSep " " (builtins.concatMap (p: p.disks or []) x)'
-  target_disks=$(just _query_nix_config "{{hostname}}" "custom.system.zfs.storagePoolSchemas" "${nix_apply}")
+  zdata_schemas=$(just _query_nix_config "{{hostname}}" "custom.system.zfs.storagePoolSchemas")
+  target_disks=$(echo "${zdata_schemas}" | {{jq_cmd}} -r '.[].disks[]' | tr '\n' ' ')
   echo "{{GREEN}}✔ Query complete: zdata data disk paths obtained successfully.{{NORMAL}}"
   just _confirm_data_disks_format "${target_disks}"
   for disk in ${target_disks}; do
     just _deep_wipe_disk "${disk}"
   done
-  just _create_zdata_zpool "{{hostname}}" "${target_disks}"
+  pool_names=$(echo "${zdata_schemas}" | {{jq_cmd}} -r '.[].poolName')
+  for pool in ${pool_names}; do
+    just _create_zdata_zpool "{{hostname}}" "${pool}"
+  done
   echo "{{BOLD}}{{GREEN}}✅ Wipe and format of zdata data disks complete.{{NORMAL}}"
   just _create_zdata_datasets "{{hostname}}"
 
@@ -575,48 +591,52 @@ _get_zpool_mode disks:
   if [ "${#disk_array[@]}" -ge 2 ]; then echo "mirror"; fi
 
 [private]
-[doc("Retrieve user-facing host zdata zpool encryption flags.")]
-_get_zpool_encryption_flags hostname:
+[doc("Retrieve host zdata zpool encryption flags.")]
+_get_zpool_encryption_flags hostname pool_name:
   #!/usr/bin/env bash
   set -euo pipefail
-  if $(just _host_type_is "{{hostname}}" "user-facing"); then
-    echo "🔗 Using SOPS host keypair to extract zdata encryption keystring for host '{{hostname}}'..." >&2
-    zdata_encryption_keystring=$(just _get_sops_secret \
-      "{{hostname}}_host_zfs_zdata_encryption_symkey" \
-      "secrets/{{hostname}}_host_secrets.yaml")
-    echo -n "${zdata_encryption_keystring}" > "{{host_zdata_keystring_tempfile_path}}"
-    echo "-O encryption=aes-256-gcm -O keyformat=hex -O keylocation=file://{{host_zdata_keystring_tempfile_path}}"
-    echo "{{GREEN}}✔ Zdata encryption keystring successfully extracted to local {{host_zdata_keystring_tempfile_path}}.{{NORMAL}}" >&2
+  encrypted_zdata_pools=$(just _query_encrypted_zdata_schemas "{{hostname}}")
+  is_encrypted=$(echo "${encrypted_zdata_pools}" | {{jq_cmd}} -r 'any(.[]; .poolName == "{{pool_name}}")')
+  if [ "${is_encrypted}" = "true" ]; then
+    echo "⛓️ Using SOPS host keypair to extract zdata encryption keystring for pool '{{pool_name}}'..." >&2
+    secret_name=$(echo "${encrypted_zdata_pools}" | {{jq_cmd}} -r \
+      '.[] | select(.poolName == "{{pool_name}}") | .rootFsEncryptionSopsSecretName')
+    zdata_encryption_keystring=$(just _get_sops_secret "${secret_name}" "secrets/{{hostname}}_host_secrets.yaml")
+    tempfile_path="/tmp/nix_hosts_zfs_{{pool_name}}_keystring"
+    echo -n "${zdata_encryption_keystring}" > "${tempfile_path}"
+    echo "-O encryption=aes-256-gcm -O keyformat=hex -O keylocation=file://${tempfile_path}"
+    echo "{{GREEN}}✔ Zdata encryption keystring successfully extracted to local ${tempfile_path}.{{NORMAL}}" >&2
   fi
 
 [private]
 [doc("Query Nix config to extract all zdata pool and root dataset properties.")]
-_query_nix_config_for_zdata_pool_props hostname:
+_query_nix_config_for_zdata_pool_props hostname pool_name:
   #!/usr/bin/env bash
   set -euo pipefail
-  json_data=$(just _query_nix_config "{{hostname}}" "custom.system.zfs.storagePoolSchemas")
-  echo "${json_data}" | {{jq_cmd}} -r '
-    .[] |
-    "-o ashift=\(.poolAshift) -o compatibility=\(.poolCompatibility) \
-    -O acltype=\(.rootFsAclType) -O xattr=\(.rootFsXattr) -O atime=\(.rootFsAtime) \
-    -O compression=\(.rootFsCompression) -O recordsize=\(.rootFsRecordsize) \
-    -O exec=\(.rootFsExec) -O setuid=\(.rootFsSetuid)"
+  zdata_schemas=$(just _query_nix_config "{{hostname}}" "custom.system.zfs.storagePoolSchemas")
+  echo "${zdata_schemas}" | {{jq_cmd}} -r '
+    .[] | select(.poolName == "{{pool_name}}") |
+    "-o ashift=\(.poolAshift) -o compatibility=\(.poolCompatibility) " +
+    "-O acltype=\(.rootFsAclType) -O xattr=\(.rootFsXattr) " +
+    "-O atime=\(.rootFsAtime) -O compression=\(.rootFsCompression) " +
+    "-O recordsize=\(.rootFsRecordsize) -O exec=\(.rootFsExec) " +
+    "-O setuid=\(.rootFsSetuid)"
   '
 
 [private]
 [doc("Create a new zdata data disks zpool.")]
-_create_zdata_zpool hostname disks:
+_create_zdata_zpool hostname pool_name:
   #!/usr/bin/env bash
   set -euo pipefail
-  pool_name="zdata_{{hostname}}"
-  pool_mode="$(just _get_zpool_mode "{{disks}}")"
-  pool_props="$(just _query_nix_config_for_zdata_pool_props "{{hostname}}")"
-  pool_enc_flags="$(just _get_zpool_encryption_flags "{{hostname}}")"
-  echo "🛠️ Creating zpool ${pool_name} on zdata disks..." >&2
-  zpool create ${pool_props} ${pool_enc_flags} -m none \
-               "${pool_name}" ${pool_mode} {{disks}}
-  zpool export "${pool_name}"
-  echo "{{GREEN}}✔ Pool ${pool_name} created on data disk(s){{NORMAL}}" >&2
+  zdata_schemas=$(just _query_nix_config "{{hostname}}" "custom.system.zfs.storagePoolSchemas")
+  disks=$(echo "${zdata_schemas}" | {{jq_cmd}} -r '.[] | select(.poolName == "{{pool_name}}") | .disks | join(" ")')
+  pool_mode=$(just _get_zpool_mode "${disks}")
+  pool_props=$(just _query_nix_config_for_zdata_pool_props "{{hostname}}" "{{pool_name}}")
+  pool_enc_flags=$(just _get_zpool_encryption_flags "{{hostname}}" "{{pool_name}}")
+  echo "🛠️ Creating zpool {{pool_name}} on zdata disks..." >&2
+  zpool create ${pool_props} ${pool_enc_flags} -m none "{{pool_name}}" ${pool_mode} ${disks}
+  zpool export "{{pool_name}}"
+  echo "{{GREEN}}✔ Pool {{pool_name}} created on data disk(s){{NORMAL}}" >&2
 
 # ==========================================
 # DISKO & NIXOS INSTALLATION
@@ -626,7 +646,7 @@ _create_zdata_zpool hostname disks:
 [doc("Invoke Disko to partition, format, and mount the OS drives.")]
 _execute_disko_format_to_zroot_mnt hostname:
   @echo "⚙️  Formatting zroot OS disks via Disko..."
-  @just _extract_zfs_zroot_passphrase_for_user_facing_host "{{hostname}}"
+  @just _extract_zfs_zroot_passphrase "{{hostname}}"
   @{{nix_run}} "github:nix-community/disko" -- --mode format --flake ".#{{hostname}}"
   @echo "{{GREEN}}✔ Disko formatting complete.{{NORMAL}}"
   @echo "⏳ Waiting for USB enclosure block devices to settle..."
@@ -650,6 +670,6 @@ _run_build_sequence hostname:
   @just _wipe_zroot_os_disks "{{hostname}}"
   @just _execute_disko_format_to_zroot_mnt "{{hostname}}"
   @just _inject_sops_host_keypair_to_zroot_mnt
-  @just _inject_zdata_key_to_zroot_mnt_for_user_facing_host "{{hostname}}"
+  @just _inject_zdata_keys_to_zroot_mnt "{{hostname}}"
   @just _execute_nixos_install_to_zroot_mnt "{{hostname}}"
 
