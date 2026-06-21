@@ -32,7 +32,7 @@ in {
     {
       assertions = [
         {
-          assertion = cfg.backend == "realtek_rtw89" ->
+          assertion = cfg == "realtek_rtw89" ->
             (firmwareCfg.installPolicy == "builtins-and-proprietary" ||
              firmwareCfg.installPolicy == "builtins-and-proprietary-with-restricted-licenses");
           message = (
@@ -44,7 +44,7 @@ in {
       ];
     }
 
-    (lib.mkIf (cfg.backend == "disabled") {
+    (lib.mkIf (cfg == "disabled") {
       boot.extraModprobeConfig = ''
         install cfg80211 /bin/false
         install mac80211 /bin/false
