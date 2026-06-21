@@ -46,7 +46,7 @@ in {
     custom.system.networking.trustedIpLinkInterfaces = tscale.ipLinkInterfaces;
 
     custom.system.linuxFirmware.installPolicy = "builtins-and-proprietary";
-    custom.system.linuxFirmware.wifiChipset = "realtek_rtw89";
+    custom.system.wifiChipset = "realtek_rtw89";
 
     custom.system.zfs.zrootPoolSchema = zrootPool;
     custom.system.zfs.storagePoolSchemas = [ zdataPool ];
