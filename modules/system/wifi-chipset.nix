@@ -34,11 +34,13 @@ in {
     {
       assertions = [
         {
-          assertion = cfg.backend != "disabled" -> firmwareCfg.installPolicy != "kernel-builtins";
+          assertion = cfg.backend == "realtek_rtw89" ->
+            (firmwareCfg.installPolicy == "builtins-and-proprietary" ||
+             firmwareCfg.installPolicy == "builtins-and-proprietary-with-restricted-licenses");
           message = (
-              "Wi-Fi chipset '${cfg.backend}' requires proprietary firmware. "
-              + "Set custom.system.linuxFirmware.installPolicy to "
-              + "'builtins-and-proprietary' or 'builtins-and-proprietary-with-restricted-licenses'."
+            "Wi-Fi chipset 'realtek_rtw89' requires proprietary firmware. "
+            + "Set custom.system.linuxFirmware.installPolicy to "
+            + "'builtins-and-proprietary' or 'builtins-and-proprietary-with-restricted-licenses'."
           );
         }
       ];
