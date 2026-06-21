@@ -45,7 +45,10 @@ in {
     }
 
     (lib.mkIf (cfg.backend == "disabled") {
-      boot.blacklistedKernelModules = [ "cfg80211" "mac80211" ];
+      boot.extraModprobeConfig = ''
+        install cfg80211 /bin/false
+        install mac80211 /bin/false
+      '';
     })
   ];
 
