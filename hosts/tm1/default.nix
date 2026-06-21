@@ -45,6 +45,7 @@ in {
     custom.system.zfs.zrootPoolSchema = zrootPool;
     custom.system.zfs.storagePoolSchemas = [ zdataPool ];
 
+    custom.system.linuxFirmware = "builtins-and-proprietary";
     custom.system.videoChipset = "intel";
 
     custom.apps.tailscale.enable = true;
