@@ -50,6 +50,11 @@ in {
 
     (lib.mkIf (cfg == "disabled") {
       boot.kernelParams = [ "nomodeset" ];
+      boot.extraModprobeConfig = ''
+        install amdgpu ${pkgs.coreutils}/bin/true
+        install i915 ${pkgs.coreutils}/bin/true
+        install nouveau ${pkgs.coreutils}/bin/true
+      '';
     })
 
     (lib.mkIf (cfg == "amdgpu") {
