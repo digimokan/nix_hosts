@@ -45,9 +45,6 @@ in {
     custom.system.networking.primaryDnsServerIpAddr = infra.lan.routerIpAddr;
     custom.system.networking.trustedIpLinkInterfaces = tscale.ipLinkInterfaces;
 
-    custom.system.linuxFirmware.installPolicy = "builtins-and-proprietary";
-    custom.system.wifiChipset = "realtek_rtw89";
-
     custom.system.zfs.zrootPoolSchema = zrootPool;
     custom.system.zfs.storagePoolSchemas = [ zdataPool ];
 
