@@ -659,7 +659,7 @@ _create_zdata_zpool hostname pool_name:
   pool_props=$(just _query_nix_config_for_zdata_pool_props "{{hostname}}" "{{pool_name}}")
   pool_enc_flags=$(just _get_zpool_encryption_flags "{{hostname}}" "{{pool_name}}")
   echo "🛠️ Creating zpool {{pool_name}} on zdata disks..." >&2
-  zpool create ${pool_props} ${pool_enc_flags} -m none "{{pool_name}}" ${pool_mode} ${disks}
+  zpool create -f ${pool_props} ${pool_enc_flags} -m none "{{pool_name}}" ${pool_mode} ${disks}
   echo "{{GREEN}}✔ Pool {{pool_name}} created on data disk(s){{NORMAL}}" >&2
 
 # ==========================================
