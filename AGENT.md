@@ -22,8 +22,8 @@ I despise lazy copy-pasting, "magic" variables, and sloppy shell wrappers.
   separate drive or drives (always SSD(s)), on dedicated ZFS pool
   (e.g., `zdata_<hostname>`).
 * **ZFS Datasets & Systemd:** We use explicit `fileSystems` mounting in NixOS
-  for base datasets (e.g., `/home` or `/data`) using `mountpoint=legacy` and
-  `zfsutil` to ensure strict systemd boot ordering. Child datasets under those
+  for base datasets (e.g., `/home` or `/data`) using `mountpoint=legacy`
+  to ensure strict systemd boot ordering. Child datasets under those
   bases are handled natively by ZFS.
 
 ## 2. Security & Secrets (SOPS-Nix)
