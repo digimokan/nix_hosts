@@ -562,14 +562,13 @@ _create_datasets_internal hostname:
 _confirm_data_disks_format target_disks:
   #!/usr/bin/env bash
   set -euo pipefail
-  echo -e "\nℹ️ TARGET TOPOLOGY VERIFICATION:"
-  echo "--- All Disks on System ---"
+  echo -e "\nℹ️ List Of All Disks On System:"
   lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT
-  echo -e "\n--- Target Disks for zdata Pool ---"
+  echo -e "\n⚡ zdata Pool Target Disks For Wipe:"
   for d in {{target_disks}}; do
-    ls -l /dev/disk/by-id/ | grep "$(basename "$d")" || true
+    ls -l /dev/disk/by-id/ | grep " $(basename "${d}") ->" || true
   done
-  echo -e "\n⚠️ WARNING: You are about to DESTROY ALL DATA on the target disks listed above."
+  echo -e "\n⚠️ WARNING: You are about to DESTROY ALL DATA on the 'Target Disks' listed above."
   read -r -p "Type 'WIPE' in all caps to confirm destruction: " confirm_wipe
   just _runtime_assert "[ \"${confirm_wipe}\" = \"WIPE\" ]" "Data format aborted by user."
 
