@@ -538,6 +538,7 @@ _create_zdata_datasets hostname:
     echo "{{BOLD}}{{GREEN}}✔ No zdata datasets defined for host '{{hostname}}'. Skipping creation.{{NORMAL}}"
     exit 0
   fi
+  created_any="false"
   while IFS='|' read -r ds_path ds_opts; do
     if [ -z "${ds_path:-}" ]; then continue; fi
     echo "🎛️ Verifying dataset ${ds_path} exists, or creating it as required."
@@ -546,9 +547,15 @@ _create_zdata_datasets hostname:
     else
       zfs create ${ds_opts} "${ds_path}"
       echo "{{GREEN}}Created: ${ds_path}{{NORMAL}}"
+      created_any="true"
     fi
   done <<< "${dataset_lines}"
-  echo "{{BOLD}}{{GREEN}}✅ Creation of datasets on zdata data disks complete.{{NORMAL}}"
+  echo "{{BOLD}}{{GREEN}}✅ Creation/Verification of datasets on zdata data disks complete.{{NORMAL}}"
+  if [ "${created_any}" = "true" ]; then
+    echo "" >&2
+    echo "{{BOLD}}{{YELLOW}}👉 NOTE: New datasets were created.{{NORMAL}}" >&2
+    echo "{{BOLD}}{{YELLOW}}👉 ACTION: Run 'just rebuild {{hostname}}' (or reboot) to mount them.{{NORMAL}}" >&2
+  fi
 
 [private]
 [doc("Create zdata datasets, with legacy mountpoints.")]
