@@ -595,10 +595,13 @@ _format_data_disks_internal hostname:
   target_disks=$(echo "${zdata_schemas}" | {{jq_cmd}} -r '.[].disks[]' | tr '\n' ' ')
   echo "{{GREEN}}✔ Query complete: zdata data disk paths obtained successfully.{{NORMAL}}"
   just _confirm_data_disks_format "${target_disks}"
+  pool_names=$(echo "${zdata_schemas}" | {{jq_cmd}} -r '.[].poolName')
+  for pool in ${pool_names}; do
+    zpool destroy -f "${pool}" >/dev/null 2>&1 || true
+  done
   for disk in ${target_disks}; do
     just _deep_wipe_disk "${disk}"
   done
-  pool_names=$(echo "${zdata_schemas}" | {{jq_cmd}} -r '.[].poolName')
   for pool in ${pool_names}; do
     just _create_zdata_zpool "{{hostname}}" "${pool}"
   done
