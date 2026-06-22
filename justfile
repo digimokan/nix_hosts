@@ -143,6 +143,15 @@ _query_nix_config hostname query nix_apply_expr="":
   echo -n "${result}"
 
 [private]
+[doc("Query Nix config and output as JSON. Assert value exists.")]
+_query_nix_config_json hostname query:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  result=$({{nix_eval}} --json ".#nixosConfigurations.{{hostname}}.config.{{query}}")
+  just _runtime_assert "[ -n \"${result}\" ]" "Nix JSON query {{query}} returned empty/null."
+  echo -n "${result}"
+
+[private]
 [doc("Extract a secret from SOPS. Asserts file exists and secret is not empty.")]
 _get_sops_secret secret_to_get secrets_file_path master_secret_keystring="":
   #!/usr/bin/env bash
@@ -257,7 +266,7 @@ _query_encrypted_zdata_schemas hostname:
   #!/usr/bin/env bash
   set -euo pipefail
   echo "🚜 Querying Nix config for list of target host encrypted zdata zpools..." >&2
-  zdata_schemas=$(just _query_nix_config \
+  zdata_schemas=$(just _query_nix_config_json \
     "{{hostname}}" \
     "custom.system.zfs.storagePoolSchemas")
   encrypted_zdata_pools=$(echo "${zdata_schemas}" | {{jq_cmd}} -r 'map(select(.rootFsEncryptionMethod == "keyfile"))')
@@ -499,9 +508,8 @@ _query_nix_config_for_zdata_datasets hostname:
   #!/usr/bin/env bash
   set -euo pipefail
   echo "📐 Querying Nix config for required ZFS datasets on zdata disks..." >&2
-  json_data=$({{nix_eval}} --json \
-    ".#nixosConfigurations.{{hostname}}.config.custom.system.zfs.storagePoolSchemas")
-  echo "${json_data}" | {{jq_cmd}} -r '
+  zdata_schemas=$(just _query_nix_config_json "{{hostname}}" "custom.system.zfs.storagePoolSchemas")
+  echo "${zdata_schemas}" | {{jq_cmd}} -r '
     .[] as $pool |
     def walk_datasets(parent_path):
       .[] |
@@ -526,6 +534,10 @@ _create_zdata_datasets hostname:
   set -euo pipefail
   echo "🗄️ Initiating creation of datasets on zdata data disks..."
   dataset_lines="$(just _query_nix_config_for_zdata_datasets "{{hostname}}")"
+  if [ -z "${dataset_lines}" ]; then
+    echo "{{BOLD}}{{GREEN}}✔ No zdata datasets defined for host '{{hostname}}'. Skipping creation.{{NORMAL}}"
+    exit 0
+  fi
   while IFS='|' read -r ds_path ds_opts; do
     if [ -z "${ds_path:-}" ]; then continue; fi
     echo "🎛️ Verifying dataset ${ds_path} exists, or creating it as required."
@@ -568,7 +580,12 @@ _format_data_disks_internal hostname:
   set -euo pipefail
   echo "💾 Initiating wipe and format of zdata data disks..."
   echo "🕵️ Querying flake configuration for explicitly defined zdata data disks..."
-  zdata_schemas=$(just _query_nix_config "{{hostname}}" "custom.system.zfs.storagePoolSchemas")
+  zdata_schemas=$(just _query_nix_config_json "{{hostname}}" "custom.system.zfs.storagePoolSchemas")
+  pool_count=$(echo "${zdata_schemas}" | {{jq_cmd}} -r 'length')
+  if [ "${pool_count}" -eq 0 ]; then
+    echo "{{BOLD}}{{GREEN}}✔ No zdata pools defined for host '{{hostname}}'. Skipping format.{{NORMAL}}"
+    exit 0
+  fi
   target_disks=$(echo "${zdata_schemas}" | {{jq_cmd}} -r '.[].disks[]' | tr '\n' ' ')
   echo "{{GREEN}}✔ Query complete: zdata data disk paths obtained successfully.{{NORMAL}}"
   just _confirm_data_disks_format "${target_disks}"
@@ -613,7 +630,8 @@ _get_zpool_encryption_flags hostname pool_name:
 _query_nix_config_for_zdata_pool_props hostname pool_name:
   #!/usr/bin/env bash
   set -euo pipefail
-  zdata_schemas=$(just _query_nix_config "{{hostname}}" "custom.system.zfs.storagePoolSchemas")
+  zdata_schemas=$(just _query_nix_config_json \
+    "{{hostname}}" "custom.system.zfs.storagePoolSchemas")
   echo "${zdata_schemas}" | {{jq_cmd}} -r '
     .[] | select(.poolName == "{{pool_name}}") |
     "-o ashift=\(.poolAshift) -o compatibility=\(.poolCompatibility) " +
@@ -628,8 +646,9 @@ _query_nix_config_for_zdata_pool_props hostname pool_name:
 _create_zdata_zpool hostname pool_name:
   #!/usr/bin/env bash
   set -euo pipefail
-  zdata_schemas=$(just _query_nix_config "{{hostname}}" "custom.system.zfs.storagePoolSchemas")
-  disks=$(echo "${zdata_schemas}" | {{jq_cmd}} -r '.[] | select(.poolName == "{{pool_name}}") | .disks | join(" ")')
+  zdata_schemas=$(just _query_nix_config_json "{{hostname}}" "custom.system.zfs.storagePoolSchemas")
+  disks=$(echo "${zdata_schemas}" | \
+    {{jq_cmd}} -r '.[] | select(.poolName == "{{pool_name}}") | .disks | join(" ")')
   pool_mode=$(just _get_zpool_mode "${disks}")
   pool_props=$(just _query_nix_config_for_zdata_pool_props "{{hostname}}" "{{pool_name}}")
   pool_enc_flags=$(just _get_zpool_encryption_flags "{{hostname}}" "{{pool_name}}")
