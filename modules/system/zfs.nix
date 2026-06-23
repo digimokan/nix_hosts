@@ -170,28 +170,6 @@ in {
     {
       boot.zfs.forceImportRoot = false;
       boot.zfs.extraPools = builtins.map (p: p.poolName) cfg.storagePoolSchemas;
-      fileSystems = let
-        flattenDatasets = parentName: datasets:
-          builtins.concatLists (builtins.map (ds:
-            let
-              fullName = if parentName == "" then ds.name else "${parentName}/${ds.name}";
-              current = if ds.mountPoint != null then [
-                { inherit fullName; inherit (ds) mountPoint; }
-              ] else [];
-            in current ++ (flattenDatasets fullName ds.children)
-          ) datasets);
-      in lib.mkMerge (builtins.map (pool:
-        let
-          allMounts = flattenDatasets pool.poolName pool.datasets;
-        in
-          builtins.listToAttrs (builtins.map (mnt:
-            lib.nameValuePair mnt.mountPoint {
-              device = mnt.fullName;
-              fsType = "zfs";
-              options = [ "nofail" ];
-            }
-          ) allMounts)
-      ) cfg.storagePoolSchemas);
     }
     (lib.mkIf (cfg.dailyAutoScrubHour != null) {
       services.zfs.autoScrub = {
