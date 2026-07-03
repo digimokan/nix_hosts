@@ -44,6 +44,13 @@ I despise lazy copy-pasting, "magic" variables, and sloppy shell wrappers.
 * **Deployment Philosophy:** Reinstalls must be mindless. The `justfile` must
   handle extracting necessary keys from SOPS and injecting them into the target
   environment without manual contortions.
+* Native Just Constructs First: Strictly prefer native just features (e.g., path
+  concatenation with /, the quote() function, and native if/else assignments)
+  over embedding equivalent logic inside Bash subshells.
+* Just Internal Calling Syntax: Internal just recipe calls use strictly
+  positional arguments. Never use param="value" syntax when a recipe invokes
+  another recipe (e.g., use just _my_recipe "${var}", not just _my_recipe
+  param="${var}").
 
 ## 4. Coding Standards (Strict)
 * **Do Not Destroy Context:** When asked to update a file, NEVER remove
@@ -63,4 +70,26 @@ I despise lazy copy-pasting, "magic" variables, and sloppy shell wrappers.
 * Zero Trailing Whitespace: You must rigorously check all generated code
   blocks. Absolutely no trailing whitespace is permitted at the end of lines,
   and empty lines must be genuinely empty (no spaces).
+* Quote Everything in Shell: Always double-quote variables in shell scripts
+  (e.g., "${var}") to prevent word splitting and globbing traps, even if it
+  seems completely unnecessary at a glance.
+* Handling Long jq Strings: Break up complex jq strings using native string
+  concatenation (+) to strictly respect the 120-character limit. Do not cram
+  queries into single lines, and never use fragile backslash-newline escapes
+  inside string literals.
+* Descriptive Naming: Never use lazy, generic variable names like json_data,
+  temp, or result. Variable names must explicitly describe their exact contents
+  and context.
+* No Ambiguous Diffs: When updating code, provide full, complete recipes or
+  entire files. Do not provide fragmented "surgical" diffs with ...
+  placeholders, as this leads to context loss, missing brackets, and copy-paste
+  errors.
+* Ban "Bulletproof" (Probabilistic Humility): Never claim a solution is
+  "bulletproof," "guaranteed," or "flawless." You are an AI making probabilistic
+  suggestions. Present the code, explain the mechanics, and wait for the user to
+  validate it.
+* Do Not Assume User State: If an error occurs, do not blindly assume the user
+  forgot to push to Git or made a silly mistake. Analyze the mechanical reality
+  of the error logs provided, and ask for file contents or terminal output if
+  you lack the context to solve it.
 
