@@ -35,7 +35,22 @@ in {
             recordsize = lib.mkOption { type = lib.types.str; default = cfg.datasetRecordsize; };
             exec = lib.mkOption { type = onOffType; default = cfg.datasetExec; };
             setuid = lib.mkOption { type = onOffType; default = cfg.datasetSetuid; };
+            owner = lib.mkOption { type = lib.types.str; default = cfg.datasetOwner; };
+            group = lib.mkOption { type = lib.types.str; default = cfg.datasetGroup; };
+            ugoPerms = lib.mkOption { type = lib.types.str; default = cfg.datasetUgoPerms; };
+            runAsOwnerSuidPerms = lib.mkOption { type = lib.types.bool; default = cfg.datasetRunAsOwnerSuidPerms; };
+            inheritGroupSgidPerms = lib.mkOption { type = lib.types.bool; default = cfg.datasetInheritGroupSgidPerms; };
+            stickyRestrictDeletePerms = lib.mkOption { type = lib.types.bool; default = cfg.datasetStickyRestrictDeletePerms; };
+            permissions = lib.mkOption { type = lib.types.str; internal = true; };
             children = lib.mkOption { type = lib.types.listOf datasetType; default = []; };
+          };
+          config = {
+            permissions = builtins.toString (
+              (if config.runAsOwnerSuidPerms then 4000 else 0) +
+              (if config.inheritGroupSgidPerms then 2000 else 0) +
+              (if config.stickyRestrictDeletePerms then 1000 else 0) +
+              (lib.toInt config.ugoPerms)
+            );
           };
         })
       ];
@@ -141,6 +156,36 @@ in {
       type = onOffType;
       default = "on";
       description = "Default setuid property (on/off).";
+    };
+    datasetOwner = lib.mkOption {
+      type = lib.types.str;
+      default = "root";
+      description = "Dataset mount dir owner.";
+    };
+    datasetGroup = lib.mkOption {
+      type = lib.types.str;
+      default = "root";
+      description = "Dataset mount dir group.";
+    };
+    datasetUgoPerms = lib.mkOption {
+      type = lib.types.str;
+      default = "755";
+      description = "Dataset mount dir user/group/other permissions.";
+    };
+    datasetRunAsOwnerSuidPerms = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Dataset mount dir Set-User-ID permissions (run executable file as owner of file).";
+    };
+    datasetInheritGroupSgidPerms = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Dataset mount dir Set-Group-ID permissions (files/dirs created have group of the dataset dir).";
+    };
+    datasetStickyRestrictDeletePerms = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Dataset mount dir Sticky-Bit permissions (delete only by owner/group/root, regardless of permissions).";
     };
 
     dailyAutoScrubHour = lib.mkOption {

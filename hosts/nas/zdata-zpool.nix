@@ -29,28 +29,43 @@
           recordsize = "1M";
           exec = "off";
           setuid = "off";
+          group = "content";
+          inheritGroupSgidPerms = true;
+          ugoPerms = "775";
         }
         {
           name = "Pictures";
           recordsize = "1M";
           exec = "off";
           setuid = "off";
+          group = "family_archives";
+          inheritGroupSgidPerms = true;
+          ugoPerms = "775";
         }
         {
           name = "Shows";
           recordsize = "1M";
           exec = "off";
           setuid = "off";
+          group = "content";
+          inheritGroupSgidPerms = true;
+          ugoPerms = "775";
         }
         {
           name = "HomeVideos";
           recordsize = "1M";
           exec = "off";
           setuid = "off";
+          group = "family_archives";
+          inheritGroupSgidPerms = true;
+          ugoPerms = "775";
         }
         {
           name = "Software";
           recordsize = "128K";
+          group = "retro";
+          inheritGroupSgidPerms = true;
+          ugoPerms = "775";
         }
       ];
     }

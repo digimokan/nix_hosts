@@ -14,16 +14,15 @@
 
 {
 
-  imports = [
-    ./admin.nix
-    ./groups.nix
-    ./testuser1.nix
-    ./root.nix
-  ];
-
   config = {
-    # impermanence: rebuild /etc/shadow from nix config on every tmpfs boot
-    users.mutableUsers = false;
+    users.groups = {
+      # Movies, Shows, Etc
+      content = { gid = 2000; };
+      # Family Pictures, Home videos, Etc
+      family_archives = { gid = 2001; };
+      # Archived Material: Games, Software, Etc
+      retro = { gid = 2002; };
+    };
   };
 
 }

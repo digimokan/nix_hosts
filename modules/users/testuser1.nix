@@ -34,6 +34,7 @@ in {
 
   config = lib.mkIf (cfg.hashedPasswordFile != null) {
     users.users.testuser1 = {
+      uid = 1002;
       isNormalUser = true;
       extraGroups = cfg.extraGroups;
       hashedPasswordFile = cfg.hashedPasswordFile;

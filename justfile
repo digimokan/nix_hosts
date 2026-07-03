@@ -521,7 +521,7 @@ _query_nix_config_for_zdata_datasets hostname:
         "-o exec=" + .exec + " " +
         "-o setuid=" + .setuid
       ) as $opts |
-      "\($path)|\($opts)",
+      "\($path)|\($opts)|\(.owner)|\(.group)|\(.permissions)",
       (if (.children | length) > 0 then (.children | walk_datasets($path)) else empty end);
     $pool.datasets | walk_datasets($pool.poolName)
   '
@@ -535,17 +535,25 @@ _create_zdata_datasets hostname:
   echo "🗄️ Initiating creation of datasets on zdata data disks..."
   dataset_lines="$(just _query_nix_config_for_zdata_datasets "{{hostname}}")"
   if [ -z "${dataset_lines}" ]; then
-    echo "{{BOLD}}{{GREEN}}✔ No zdata datasets defined for host '{{hostname}}'. Skipping creation.{{NORMAL}}"
+    echo "{{BOLD}}{{GREEN}}✅ No zdata datasets defined for host '{{hostname}}'. Skipping creation.{{NORMAL}}"
     exit 0
   fi
-  while IFS='|' read -r ds_path ds_opts; do
+  while IFS='|' read -r ds_path ds_opts ds_owner ds_group ds_perms; do
     if [ -z "${ds_path:-}" ]; then continue; fi
     echo "🎛️ Verifying dataset ${ds_path} exists, or creating it as required."
     if zfs list "${ds_path}" >/dev/null 2>&1; then
-      echo "{{GREEN}}Dataset ${ds_path} already exists.{{NORMAL}}"
+      set_opts=$(echo "${ds_opts}" | sed 's/-o //g')
+      zfs set ${set_opts} "${ds_path}"
+      echo "{{GREEN}}✔ Dataset ${ds_path} already exists. Updated dataset properties...{{NORMAL}}"
     else
       zfs create ${ds_opts} "${ds_path}"
-      echo "{{GREEN}}Created: ${ds_path}{{NORMAL}}"
+      echo "{{GREEN}}✔ Created: ${ds_path}{{NORMAL}}"
+    fi
+    live_mount=$(zfs get -H -o value mountpoint "${ds_path}")
+    if [ "${live_mount}" != "legacy" ] && [ "${live_mount}" != "none" ] && [ -d "${live_mount}" ]; then
+      chown "${ds_owner}:${ds_group}" "${live_mount}"
+      chmod "${ds_perms}" "${live_mount}"
+      echo "{{GREEN}}✔ Updated dataset mount-dir permissions on ${live_mount} (${ds_owner}:${ds_group} ${ds_perms}){{NORMAL}}"
     fi
   done <<< "${dataset_lines}"
   echo "{{BOLD}}{{GREEN}}✅ Creation/Verification of datasets on zdata data disks complete.{{NORMAL}}"

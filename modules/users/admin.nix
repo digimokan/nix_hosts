@@ -34,8 +34,14 @@ in {
 
   config = lib.mkIf (cfg.hashedPasswordFile != null) {
     users.users.admin = {
+      uid = 1001;
       isNormalUser = true;
-      extraGroups = [ "wheel" ] ++ cfg.extraGroups;
+      extraGroups = [
+        "wheel"
+        "content"
+        "family_archives"
+        "retro"
+      ] ++ cfg.extraGroups;
       hashedPasswordFile = cfg.hashedPasswordFile;
     };
   };
