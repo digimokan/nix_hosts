@@ -88,12 +88,21 @@ create-datasets hostname: _require_root
 edit-secret target_file:
   #!/usr/bin/env bash
   set -euo pipefail
-  just _runtime_assert condition='[ -f "{{target_file}}" ]' exit_msg="Target file not found."
+  just _runtime_assert '[ -f "{{target_file}}" ]' "File '{{target_file}}' not found."
   echo "📝 Opening {{target_file}} via SOPS..."
-  {{sops_cmd}} "{{target_file}}"
+  rc=0
+  {{sops_cmd}} "{{target_file}}" || rc="${?}"
+  if [ "${rc}" -eq 200 ]; then
+    echo "{{BOLD}}{{GREEN}}✅ Secrets file has not changed. Skipping rekey operations.{{NORMAL}}"
+    exit 0
+  elif [ "${rc}" -ne 0 ]; then
+    echo "Error: SOPS exited with code ${rc}" >&2
+    exit "${rc}"
+  fi
   echo "{{GREEN}}✔ Secret file editing complete.{{NORMAL}}"
+  echo "⥄ Rekeying all SOPS secrets..."
   just _rekey_all_sops_secrets_files
-  echo "{{BOLD}}{{GREEN}}✅ Secrets editing and rekeying complete. Commit any changes to Git.{{NORMAL}}"
+  echo "{{BOLD}}{{GREEN}}✅ Secrets editing and rekeying complete. Commit changes to Git.{{NORMAL}}"
 
 # ==========================================
 # PRIVATE RECIPES (Internal Logic)
