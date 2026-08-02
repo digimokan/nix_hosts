@@ -36,7 +36,10 @@ in {
     users.users.testuser1 = {
       uid = 1002;
       isNormalUser = true;
-      extraGroups = cfg.extraGroups;
+      extraGroups = [
+        "content"
+        "family_archives"
+      ] ++ cfg.extraGroups;
       hashedPasswordFile = cfg.hashedPasswordFile;
     };
   };
