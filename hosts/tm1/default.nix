@@ -50,7 +50,7 @@ in {
 
     custom.apps.tailscale.enable = true;
     custom.apps.tailscale.enableSshServer = true;
-    custom.apps.tailscale.authKeyPath = sec.user_facing_host_tailscale_auth_key.path;
+    custom.apps.tailscale.authKeyPath = sec.cop_zone_user_facing_tailscale_auth_key.path;
 
     custom.apps.git.enable = true;
     custom.apps.git.userName = "digimokan";
@@ -62,12 +62,12 @@ in {
 
     custom.apps.pipewire.enable = true;
 
-    custom.users.root.hashedPasswordFile = sec.flan_user_facing_host_root_password.path;
+    custom.users.root.hashedPasswordFile = sec.cop_zone_root_user_passhash.path;
 
-    custom.users.admin.hashedPasswordFile = sec.flan_user_facing_host_admin_password.path;
-    custom.users.admin.extraGroups = [ config.custom.system.networking.netMgrGroup ];
+    custom.users.digimokan.hashedPasswordFile = sec.cop_zone_digimokan_user_passhash.path;
+    custom.users.digimokan.extraGroups = [ config.custom.system.networking.netMgrGroup ];
 
-    custom.users.testuser1.hashedPasswordFile = sec.tm1_flan_user_facing_host_testuser1_password.path;
+    custom.users.testuser1.hashedPasswordFile = sec.cop_zone_testuser1_user_passhash.path;
     custom.users.testuser1.extraGroups = [ config.custom.system.networking.netMgrGroup ];
   };
 

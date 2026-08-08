@@ -5,10 +5,10 @@
 {
   custom.system.sops.hostSecrets = [
     {
-      sopsFilePath = ../../secrets/server_host_secrets.yaml;
+      sopsFilePath = ../../secrets/lsa_zone_secrets.yaml;
       secrets = {
-        server_host_root_password.neededForUsers = true;
-        server_host_tailscale_auth_key = {};
+        lsa_zone_root_user_passhash.neededForUsers = true;
+        lsa_zone_server_tailscale_auth_key = {};
       };
     }
   ];

@@ -15,7 +15,7 @@
 {
 
   imports = [
-    ./admin.nix
+    ./digimokan.nix
     ./groups.nix
     ./testuser1.nix
     ./root.nix

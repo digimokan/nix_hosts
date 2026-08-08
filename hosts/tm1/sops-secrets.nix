@@ -5,22 +5,12 @@
 {
   custom.system.sops.hostSecrets = [
     {
-      sopsFilePath = ../../secrets/user_facing_host_secrets.yaml;
+      sopsFilePath = ../../secrets/cop_zone_secrets.yaml;
       secrets = {
-        user_facing_host_tailscale_auth_key = { };
-      };
-    }
-    {
-      sopsFilePath = ../../secrets/flan_user_facing_host_secrets.yaml;
-      secrets = {
-        flan_user_facing_host_root_password = { neededForUsers = true; };
-        flan_user_facing_host_admin_password = { neededForUsers = true; };
-      };
-    }
-    {
-      sopsFilePath = ../../secrets/tm1_host_secrets.yaml;
-      secrets = {
-        tm1_flan_user_facing_host_testuser1_password = { neededForUsers = true; };
+        cop_zone_root_user_passhash = { neededForUsers = true; };
+        cop_zone_digimokan_user_passhash = { neededForUsers = true; };
+        cop_zone_testuser1_user_passhash = { neededForUsers = true; };
+        cop_zone_user_facing_tailscale_auth_key = {};
       };
     }
   ];

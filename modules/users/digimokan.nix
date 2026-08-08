@@ -14,11 +14,11 @@
 
 let
 
-  cfg = config.custom.users.admin;
+  cfg = config.custom.users.digimokan;
 
 in {
 
-  options.custom.users.admin = {
+  options.custom.users.digimokan = {
     hashedPasswordFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
@@ -33,7 +33,7 @@ in {
   };
 
   config = lib.mkIf (cfg.hashedPasswordFile != null) {
-    users.users.admin = {
+    users.users.digimokan = {
       uid = 1001;
       isNormalUser = true;
       extraGroups = [
