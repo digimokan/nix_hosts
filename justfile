@@ -104,6 +104,14 @@ edit-secret target_file:
   just _rekey_all_sops_secrets_files
   echo "{{BOLD}}{{GREEN}}✅ Secrets editing and rekeying complete. Commit changes to Git.{{NORMAL}}"
 
+[doc("Iterate through all SOPS YAML files and automatically rekey them.\n  Ex: just rekey-secrets")]
+rekey-secrets:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  echo "⥄ Rekeying all SOPS secrets..."
+  just _rekey_all_sops_secrets_files
+  echo "{{BOLD}}{{GREEN}}✅ Secrets rekeying complete. Commit changes to Git.{{NORMAL}}"
+
 # ==========================================
 # PRIVATE RECIPES (Internal Logic)
 # ==========================================

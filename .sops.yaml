@@ -28,8 +28,8 @@
 #          age-keygen -y /tmp/host_keypair.age
 #     4. Add the public key alias to the "keys" dictionary below.
 #     5. Add the alias to the appropriate key_groups in creation_rules below.
-#     6. CRITICAL: Force SOPS to re-encrypt all files with the new key matrix:
-#          for f in secrets/*.yaml; do sops updatekeys "$f"; done
+#     6. Add secrets as req, with `sops secrets/[hostname]_host_secrets.yaml`.
+#     7. Rekey all secrets files, with `just rekey-secrets`.
 
 # Local "keys" dictionary defines variables (aliases) for PUBLIC KEYS only.
 # Note: this variable is "local," and not used by SOPS.
