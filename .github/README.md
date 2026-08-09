@@ -23,6 +23,7 @@ NixOS configuration to set up various hosts.
     * [Add New Mirror To Storage Pool](#add-new-mirror-to-storage-pool)
     * [Replace Entire Storage Pool](#replace-entire-storage-pool)
 * [Source Code Layout](#source-code-layout)
+* [QA Checks](#qa-checks)
 * [Contributing](#contributing)
 
 ## Purpose
@@ -241,6 +242,10 @@ of disks as a [new mirror](#add-new-mirror-to-storage-pool).
 │ ├── justfile              # deploy NixOS to host, configure host, etc
 │ │
 ```
+
+## QA Checks
+
+* See [`qa-records`](./qa-records/) for checks performed for each tagged release.
 
 ## Contributing
 
