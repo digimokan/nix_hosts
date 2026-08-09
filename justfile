@@ -535,6 +535,7 @@ _query_nix_config_for_zdata_datasets hostname:
         (if .mountPoint != null then "-o mountpoint=" + .mountPoint + " " else "" end) +
         "-o compression=" + .compression + " " +
         "-o recordsize=" + .recordsize + " " +
+        "-o prefetch=" + .prefetch + " " +
         "-o exec=" + .exec + " " +
         "-o setuid=" + .setuid
       ) as $opts |
@@ -576,7 +577,7 @@ _create_and_update_zdata_datasets hostname:
   echo "{{BOLD}}{{GREEN}}✅ Creation/Verification of datasets on zdata data disks complete.{{NORMAL}}"
 
 [private]
-[doc("Create zdata datasets, with legacy mountpoints.")]
+[doc("Create zdata datasets, using native ZFS mountpoints.")]
 _update_datasets_internal hostname:
   #!/usr/bin/env bash
   set -euo pipefail
@@ -664,8 +665,8 @@ _query_nix_config_for_zdata_pool_props hostname pool_name:
     "-o ashift=\(.poolAshift) -o compatibility=\(.poolCompatibility) " +
     "-O acltype=\(.rootFsAclType) -O xattr=\(.rootFsXattr) " +
     "-O atime=\(.rootFsAtime) -O compression=\(.rootFsCompression) " +
-    "-O recordsize=\(.rootFsRecordsize) -O exec=\(.rootFsExec) " +
-    "-O setuid=\(.rootFsSetuid)"
+    "-O recordsize=\(.rootFsRecordsize) -O prefetch=\(.rootFsPrefetch) " +
+    "-O exec=\(.rootFsExec) -O setuid=\(.rootFsSetuid)"
   '
 
 [private]

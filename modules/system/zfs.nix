@@ -21,6 +21,7 @@ let
   atimeType = lib.types.enum [ "on" "off" "relatime" ];
   encMethodType = lib.types.enum [ "none" "passphrase" "keyfile" ];
   onOffType = lib.types.enum [ "on" "off" ];
+  prefetchType = lib.types.enum [ "all" "none" "metadata" ];
 
 in {
 
@@ -33,6 +34,7 @@ in {
             mountPoint = lib.mkOption { type = lib.types.nullOr lib.types.str; default = null; };
             compression = lib.mkOption { type = lib.types.str; default = cfg.datasetCompression; };
             recordsize = lib.mkOption { type = lib.types.str; default = cfg.datasetRecordsize; };
+            prefetch = lib.mkOption { type = prefetchType; default = cfg.datasetPrefetch; };
             exec = lib.mkOption { type = onOffType; default = cfg.datasetExec; };
             setuid = lib.mkOption { type = onOffType; default = cfg.datasetSetuid; };
             owner = lib.mkOption { type = lib.types.str; default = cfg.datasetOwner; };
@@ -70,6 +72,7 @@ in {
         rootFsEncryptionTempfilePath = lib.mkOption { type = lib.types.str; default = cfg.rootFsEncryptionTempfilePath; };
         rootFsCompression = lib.mkOption { type = lib.types.str; default = cfg.datasetCompression; };
         rootFsRecordsize = lib.mkOption { type = lib.types.str; default = cfg.datasetRecordsize; };
+        rootFsPrefetch = lib.mkOption { type = prefetchType; default = cfg.datasetPrefetch; };
         rootFsExec = lib.mkOption { type = onOffType; default = cfg.datasetExec; };
         rootFsSetuid = lib.mkOption { type = onOffType; default = cfg.datasetSetuid; };
         datasets = lib.mkOption { type = lib.types.listOf datasetType; default = []; };
@@ -146,6 +149,11 @@ in {
       type = lib.types.str;
       default = "128K";
       description = "Default recordsize. Inherited by children, but can be overridden.";
+    };
+    datasetPrefetch = lib.mkOption {
+      type = prefetchType;
+      default = "all";
+      description = "Dataset prefetch behavior (all, none, metadata).";
     };
     datasetExec = lib.mkOption {
       type = onOffType;

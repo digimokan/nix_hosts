@@ -65,6 +65,7 @@ let
           options = {
             compression = ds.compression;
             recordsize = ds.recordsize;
+            prefetch = ds.prefetch;
             exec = ds.exec;
             setuid = ds.setuid;
           };
