@@ -2,7 +2,7 @@
 
 ## Phase 1: Bare Metal Provisioning (`deploy`)
 - [ ] **Remote Deploy, Default Master Key:** `just deploy nas 192.168.1.50`
-  * Deploys over SSH, usezs default `~/.config/sops/age/keys.txt` master key on orchestration machine.
+  * Deploys over SSH, uses default `~/.config/sops/age/keys.txt` master key on orchestration machine.
 - [ ] **Local Deploy, Get Master Key:** `sudo just deploy tm1 "" "cat /tmp/test_key.txt"`
   * Deploys directly on Live ISO, uses empty string `""` to skip IP argument, SOPS key extraction with a custom command.
 
@@ -28,7 +28,7 @@
 - [ ] **Local/Remote Rebuild-Test:** `just rebuild-test nas`
   * Switches into rebuilt host, without emplacing generation (can reboot into old build).
 - [ ] **Local/Remote List-Generations:** `just list-generations nas`
-  * List all generations for target host.
+  * Lists all generations for target host.
 - [ ] **Local/Remote Flake Update:** `just update`
   * Updates flake inputs.
 
