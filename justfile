@@ -79,9 +79,9 @@ format-data-disks hostname: _require_root
   @just _format_data_disks_internal "{{hostname}}" || { just _cleanup_temp_files; exit 1; }
   @just _cleanup_temp_files
 
-[doc("Create all missing ZFS datasets on the host's zdata pool.\n  Ex: just create-datasets tm1")]
-create-datasets hostname: _require_root
-  @just _create_datasets_internal "{{hostname}}"  || { just _cleanup_temp_files; exit 1; }
+[doc("Create zdata pool missing ZFS datasets, and update properties on existing datasets.\n  Ex: just update-datasets tm1")]
+update-datasets hostname: _require_root
+  @just _update_datasets_internal "{{hostname}}"  || { just _cleanup_temp_files; exit 1; }
   @just _cleanup_temp_files
 
 [doc("Edit a SOPS file and automatically rekey all secrets.\n  Ex: just edit-secret secrets/admin.yaml")]
@@ -545,8 +545,8 @@ _query_nix_config_for_zdata_datasets hostname:
   echo "{{GREEN}}✔ Query complete: zdata dataset paths and properties obtained successfully.{{NORMAL}}" >&2
 
 [private]
-[doc("Query the Nix config and create required ZFS datasets on zdata disks.")]
-_create_zdata_datasets hostname:
+[doc("Query Nix config, create required zdata-disks datasets, and update props on existing datasets.")]
+_create_and_update_zdata_datasets hostname:
   #!/usr/bin/env bash
   set -euo pipefail
   echo "🗄️ Initiating creation of datasets on zdata data disks..."
@@ -577,10 +577,10 @@ _create_zdata_datasets hostname:
 
 [private]
 [doc("Create zdata datasets, with legacy mountpoints.")]
-_create_datasets_internal hostname:
+_update_datasets_internal hostname:
   #!/usr/bin/env bash
   set -euo pipefail
-  just _create_zdata_datasets "{{hostname}}"
+  just _create_and_update_zdata_datasets "{{hostname}}"
 
 [private]
 [doc("Verify disk topology visually and prompt for confirmation before formatting.")]
@@ -624,7 +624,7 @@ _format_data_disks_internal hostname:
     just _create_zdata_zpool "{{hostname}}" "${pool}"
   done
   echo "{{BOLD}}{{GREEN}}✅ Wipe and format of zdata data disks complete.{{NORMAL}}"
-  just _create_zdata_datasets "{{hostname}}"
+  just _create_and_update_zdata_datasets "{{hostname}}"
 
 [private]
 [doc("Determine the ZFS pool mode (e.g. 'mirror') based on disk count.")]
