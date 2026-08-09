@@ -95,7 +95,7 @@ See documentation in [`.sops.yaml`](../.sops.yaml).
 1. On the target host, clone this repo, change directory, and install dependencies:
 
    ```shell
-   $ git clone https://github.com/digimokan/nix_hosts.git
+   $ git clone https://github.com/digimokan/nix_hosts
    $ cd nix_hosts
    $ nix-shell -p just sops
    ```
