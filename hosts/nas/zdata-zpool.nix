@@ -15,6 +15,7 @@
   poolName = "zdata_nas";
   disks = [
     "/dev/disk/by-id/wwn-0x5000cca418c6f46f"
+    "/dev/disk/by-id/wwn-0x5000cca2faf22259"
   ];
 
   rootFsEncryptionMethod = "none";
