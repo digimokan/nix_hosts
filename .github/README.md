@@ -106,14 +106,16 @@ See documentation in [`.sops.yaml`](../.sops.yaml).
    `/home/nixos/.config/sops/age/keys.txt`:
 
    ```shell
-   $ just deploy nas
+   $ sudo just deploy nas
    ```
 
    Deploy, using SOPS master secret keyfile obtained from a command:
 
    ```shell
-   $ just deploy nas "cat /tmp/mysecret.txt"
+   $ sudo just deploy nas "cat /tmp/mysecret.txt"
    ```
+
+   _NOTE_: the Age secret key text must begin with `AGE-SECRET-KEY-`.
 
 ### Provision Target Host Data Disks
 
