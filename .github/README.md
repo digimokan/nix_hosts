@@ -87,7 +87,7 @@ See documentation in [`.sops.yaml`](../.sops.yaml).
    Deploy, using SOPS master secret keyfile obtained from a command:
 
    ```shell
-   $ just deploy nas "cat /tmp/mysecret.txt" 192.168.1.50
+   $ just deploy nas 192.168.1.50 "cat /tmp/mysecret.txt"
    ```
 
 ### Install NixOS To Target Host From Installer Image
@@ -112,7 +112,7 @@ See documentation in [`.sops.yaml`](../.sops.yaml).
    Deploy, using SOPS master secret keyfile obtained from a command:
 
    ```shell
-   $ sudo just deploy nas "cat /tmp/mysecret.txt"
+   $ sudo just deploy nas "" "cat /tmp/mysecret.txt"
    ```
 
    _NOTE_: the Age secret key text must begin with `AGE-SECRET-KEY-`.
