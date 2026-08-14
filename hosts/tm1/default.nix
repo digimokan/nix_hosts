@@ -30,8 +30,6 @@ in {
   config = {
     custom.system.nixCore.initialStateVersion = "25.11";
 
-    custom.infrastructure.hostType = "user-facing";
-
     custom.system.cpuMicrocode = "intel";
 
     custom.system.grub.enableMode = "efi";

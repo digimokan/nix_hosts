@@ -122,17 +122,16 @@ See documentation in [`.sops.yaml`](../.sops.yaml).
 Hosts that have a `data-disk-config.nix` file have dedicated data disk(s)
 containing a `zdata_<hostname>` zpool.
 
-User-facing hosts (hosts with `infrastructure.hostType=user-facing`) use SOPS
-to encrypt the data disk(s) with a keystring. The keystring is then stored on
-the `zroot` OS disk(s), and finally the `zroot` OS disks are protected with
-a passphrase that must be entered on boot. The `justfile` performs all these
-setup actions when `deploy` is executed.
+User-facing hosts use SOPS to encrypt the data disk(s) with a keystring. The
+keystring is then stored on the `zroot` OS disk(s), and finally the `zroot` OS
+disks are protected with a passphrase that must be entered on boot. The
+`justfile` performs all these setup actions when `deploy` is executed.
 
 On initial setup (with empty data disk(s)), provision the data disk(s) with
 the `zdata` zpool and datasets:
 
    ```shell
-   $ just format-data-disks nas "cat /tmp/mysecret.txt" 192.168.1.50
+   $ just format-data-disks nas
    ```
 
 ## Deployed Usage
@@ -150,7 +149,7 @@ the `zdata` zpool and datasets:
 2. On the deployed host, create the missing datasets:
 
   ```shell
-  $ just create-datasets nas "cat /tmp/mysecret.txt"
+  $ just create-datasets nas
   ```
 
 ### Replace Old Or Failed Disk In Storage Pool

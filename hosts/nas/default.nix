@@ -39,8 +39,6 @@ in {
   config = {
     custom.system.nixCore.initialStateVersion = "24.05";
 
-    custom.infrastructure.hostType = "server";
-
     custom.system.cpuMicrocode = "amd";
 
     custom.system.grub.enableMode = "efi";
