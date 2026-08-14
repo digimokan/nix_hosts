@@ -56,9 +56,8 @@ in {
     custom.apps.git.userName = "digimokan";
 
     custom.system.wayland.enableXWayland = true;
-    custom.apps.sddm.enable = true;
-    custom.apps.sddm.enableWayland = true;
-    custom.apps.kdePlasmaWayland.enable = true;
+    custom.apps.cosmic.enableDesktopEnv = true;
+    custom.apps.cosmic.enableDisplayMgr = true;
 
     custom.apps.pipewire.enable = true;
 

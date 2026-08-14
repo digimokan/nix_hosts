@@ -14,7 +14,7 @@
 
 {
   options.custom.infrastructure.displayManager = lib.mkOption {
-      type = lib.types.enum [ "none" "sddm" ];
+      type = lib.types.enum [ "none" "sddm" "cosmic-greeter" ];
       default = "none";
       description = "The display manager (login screen) provider to use.";
   };

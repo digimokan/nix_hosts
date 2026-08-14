@@ -14,6 +14,7 @@
 
 {
   imports = [
+    ./cosmic.nix
     ./git.nix
     ./just.nix
     ./kde-plasma-wayland.nix
