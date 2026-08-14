@@ -24,8 +24,8 @@ in {
     enableDisplayMgr = lib.mkEnableOption "Enable the native COSMIC Greeter (Display Manager).";
   };
 
-  config = lib.mkIf cfg.enable {
-    services.desktopManager.cosmic.enableDesktopEnv = true;
+  config = lib.mkIf cfg.enableDesktopEnv {
+    services.desktopManager.cosmic.enable = true;
 
     services.displayManager.cosmic-greeter.enable = cfg.enableDisplayMgr;
 
