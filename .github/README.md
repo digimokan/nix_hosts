@@ -81,13 +81,13 @@ See documentation in [`.sops.yaml`](../.sops.yaml).
    master secret keyfile at `/home/user2/.config/sops/age/keys.txt`:
 
    ```shell
-   $ just deploy nas 192.168.1.50
+   $ sudo just deploy nas 192.168.1.50
    ```
 
    Deploy, using SOPS master secret keyfile obtained from a command:
 
    ```shell
-   $ just deploy nas 192.168.1.50 "cat /tmp/mysecret.txt"
+   $ sudo just deploy nas 192.168.1.50 "cat /tmp/mysecret.txt"
    ```
 
 ### Install NixOS To Target Host From Installer Image
