@@ -14,7 +14,7 @@
 
   poolName = "zroot";
   disks = [
-    "/dev/disk/by-id/wwn-0xXXXXXXXXXXXXXXXX"
+    "/dev/disk/by-id/usb-USB_SanDisk_3.2Gen1_040146c9b17f85ade27490b1e2e2067a0ec16ebed365169889067fcb0c02b6b851ff00000000000000000000e630da08008e6d1883558107822ef147-0:0"
   ];
 
   rootFsEncryptionMethod = "passphrase";

@@ -13,7 +13,7 @@
 {
   poolName = "zdata_tm1";
   disks = [
-    "/dev/disk/by-id/wwn-0xXXXXXXXXXXXXXXXX"
+    "/dev/disk/by-id/ata-INTEL_SSDSC2BW240A4_BTDA328200CX2403GN"
   ];
 
   rootFsEncryptionMethod = "keyfile";
