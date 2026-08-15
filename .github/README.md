@@ -56,8 +56,8 @@ See documentation in [`.sops.yaml`](../.sops.yaml).
 4. Power up the target host and
    [boot from the installer image](https://nixos.org/manual/nixos/stable/#sec-installation-booting).
 
-   * Note: Per NixOS manual, try UEFI boot option first.
-   * Note: Per NixOS manual, in the boot menu, select the default boot option.
+   * Try the UEFI boot method first.
+   * Select the __LTS__ boot option, which supports ZFS.
 
 ### Install NixOS To Target Host Over SSH
 
