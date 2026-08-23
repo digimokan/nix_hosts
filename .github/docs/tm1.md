@@ -87,29 +87,13 @@ FRONT OF PC
 
 #### General Settings
 
-* TODO....
-* `Settings` -> `Platform Power`
-* `AC BACK`: "Always On"
+TODO....
 
 #### Boot Devices
 
 TODO....
 
-Once NixOS has been installed to the two mirrored drives:
-
-* `Boot` -> `Boot Option Priorities`: ensure the two `UEFI OS (SABRENT)`
-  entries are at the top of the list. Set all other enries to `Disabled`.
-
 ## Configuration
 
 TODO....
-
-* See [`nas/default.nix`](../../hosts/nas/default.nix) for info about the
-storage zpool expected to reside on the HL8s storage disks.
-* See [`nas/default.nix`](../../hosts/nas/default.nix) for info about the
-datasets expected to exist on the storage zpool.
-* See [ZFS Storage Pools](../README.md#zfs-storage-pools) for info about
-creating the storage zpool.
-* See [ZFS Datasets](../README.md#zfs-datasets) for info about creating
-datasets.
 

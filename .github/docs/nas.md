@@ -116,12 +116,8 @@ Once NixOS has been installed to the two mirrored drives:
 
 ## Configuration
 
-* See [`nas/default.nix`](../../hosts/nas/default.nix) for info about the
-storage zpool expected to reside on the HL8s storage disks.
-* See [`nas/default.nix`](../../hosts/nas/default.nix) for info about the
-datasets expected to exist on the storage zpool.
-* See [ZFS Storage Pools](../README.md#zfs-storage-pools) for info about
-creating the storage zpool.
-* See [ZFS Datasets](../README.md#zfs-datasets) for info about creating
-datasets.
+* See [`nas/zdata-zpool.nix`](../../hosts/nas/zdata-zpool.nix) for the storage
+  zpool (`zdata`) disk IDs, and for the list of `zdata` datasets.
+* See [Deployed Usage](../README.md#deployed-usage) for info about initializing
+  and managing the `zdata` zpool disks and datasets.
 
