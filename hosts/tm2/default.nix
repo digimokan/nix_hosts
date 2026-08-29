@@ -46,6 +46,8 @@ in {
     custom.system.linuxFirmware.installPolicy = "builtins-and-proprietary";
     custom.system.videoChipset = "intel";
 
+    custom.system.homeManager.enableForUsers = [ "testuser2" "digimokan" ];
+
     custom.apps.tailscale.enable = true;
     custom.apps.tailscale.enableSshServer = true;
     custom.apps.tailscale.authKeyPath = sec.cop_zone_user_facing_tailscale_auth_key.path;
@@ -54,8 +56,9 @@ in {
     custom.apps.git.userName = "digimokan";
 
     custom.system.wayland.enableXWayland = true;
-    custom.apps.cosmic.enableDesktopEnv = true;
+
     custom.apps.cosmic.enableDisplayMgr = true;
+    custom.apps.cosmic.enableDesktopEnv = true;
 
     custom.apps.pipewire.enable = true;
 

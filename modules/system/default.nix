@@ -17,6 +17,7 @@
     ./bluetooth-chipset.nix
     ./cpu-microcode.nix
     ./grub.nix
+    ./home-manager.nix
     ./impermanence.nix
     ./linux-firmware.nix
     ./networking.nix

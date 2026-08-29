@@ -19,30 +19,60 @@ let
 in {
 
   options.custom.apps.cosmic = {
-    enableDesktopEnv = lib.mkEnableOption "Enable the COSMIC Desktop Environment";
 
     enableDisplayMgr = lib.mkEnableOption "Enable the native COSMIC Greeter (Display Manager).";
+    enableDesktopEnv = lib.mkEnableOption "Enable the COSMIC Desktop Environment";
+
+    users = lib.mkOption {
+      description = "Per-user COSMIC configurations.";
+      default = {};
+      type = lib.types.attrsOf (lib.types.submodule {
+        options = {
+          panelPosition = lib.mkOption {
+            type = lib.types.nullOr (lib.types.enum [ "Top" "Bottom" ]);
+            default = "Bottom";
+            description = "The COSMIC panel position (anchor).";
+          };
+        };
+      });
+    };
+
   };
 
-  config = lib.mkIf cfg.enableDesktopEnv {
-    services.desktopManager.cosmic.enable = true;
+  config = lib.mkIf cfg.enableDesktopEnv (lib.mkMerge [
+    {
+      custom.infrastructure.displayManager = lib.mkIf cfg.enableDisplayMgr "cosmic-greeter";
+      services.displayManager.cosmic-greeter.enable = cfg.enableDisplayMgr;
 
-    services.displayManager.cosmic-greeter.enable = cfg.enableDisplayMgr;
+      services.desktopManager.cosmic.enable = true;
 
-    custom.infrastructure.displayManager =
-      lib.mkIf cfg.enableDisplayMgr "cosmic-greeter";
+      assertions = [
+        {
+          assertion = config.custom.system.wayland.enableXWayland;
+          message = (
+            "COSMIC relies heavily on Wayland and XWayland for legacy apps. "
+            + "Set `custom.system.wayland.enableXWayland = true` in your "
+            + "host's composition root."
+          );
+        }
+        {
+          assertion = lib.all (user: lib.elem user hmUsers) (builtins.attrNames cfg.users);
+          message = (
+            "A user configured in custom.apps.cosmic.users lacks Home Manager "
+            + "enablement in custom.system.homeManager.enableForUsers."
+          );
+        }
+      ];
+    }
 
-    assertions = [
-      {
-        assertion = config.custom.system.wayland.enableXWayland;
-        message = (
-          "COSMIC relies heavily on Wayland and XWayland for legacy apps. "
-          + "Set `custom.system.wayland.enableXWayland = true` in your "
-          + "host's composition root."
-        );
-      }
-    ];
-  };
+    {
+      home-manager.users = lib.mapAttrs (userName: userCfg: lib.mkMerge [
+        (lib.mkIf (userCfg.panelPosition != null) {
+          xdg.configFile."cosmic/com.system76.CosmicPanel.Panel/v1/anchor".text = userCfg.panelPosition;
+        })
+      ]) cfg.users;
+    }
+  ]);
 
 }
 
