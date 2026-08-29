@@ -81,5 +81,5 @@ FRONT OF PC
 #### Boot
 
 * `Setup Prompt Timeout`: 3
-* `FIXED BOOT ORDER Priorities` -> `Boot Option #1`: TODO.............
+* `FIXED BOOT ORDER Priorities` -> `Boot Option #1`: "Hard Disk:NixOS-boot"
 
