@@ -26,6 +26,59 @@
       children = [
         {
           name = "testuser2";
+          owner = "testuser2";
+          group = "users";
+          children = [
+            {
+              name = "Desktop";
+              owner = "testuser2";
+              group = "users";
+            }
+            {
+              name = "Documents";
+              owner = "testuser2";
+              group = "users";
+            }
+            {
+              name = "Downloads";
+              owner = "testuser2";
+              group = "users";
+            }
+            {
+              name = "Music";
+              owner = "testuser2";
+              group = "users";
+              recordsize = "1M";
+              exec = "off";
+              setuid = "off";
+            }
+            {
+              name = "Pictures";
+              owner = "testuser2";
+              group = "users";
+              recordsize = "1M";
+              exec = "off";
+              setuid = "off";
+            }
+            {
+              name = "Public";
+              owner = "testuser2";
+              group = "users";
+            }
+            {
+              name = "Templates";
+              owner = "testuser2";
+              group = "users";
+            }
+            {
+              name = "Videos";
+              owner = "testuser2";
+              group = "users";
+              recordsize = "1M";
+              exec = "off";
+              setuid = "off";
+            }
+          ];
         }
       ];
     }
