@@ -24,16 +24,16 @@ that functions as a test machine for a basic desktop user.
 * [1x Crucial 8GB DDR3L RAM](https://www.amazon.com/Crucial-Single-PC3-12800-Unbuffered-204-Pin/dp/B006YG8X9Y/)
    * Single RAM Stick
 * [1x SanDisk 16GB Ultra Fit USB 3.1 Flash Drive](https://www.amazon.com/dp/B077Y149DL)
-   * OS Boot Drive
+   * TODO.... (found that using this for `zroot` zpool is not tenable)
 * [1x Intel 530 Series 240GB 2.5 Inch Sata III SSD](https://www.amazon.com/Intel-240GB-Internal-Solid-SSDSC2BW240A401/dp/B018HKRHN2/)
-   * User Data Drive
+   * For `zdata` zpool
 * [1x LG 28MQ780-B 28 Inch SDQHD 2560x2880 DualUp Monitor](https://www.amazon.com/dp/B09XTD5C7H)
    * Connected over HDMI
 * [1x Cable Matters Ultra Mini 4 Port USB 3.0 Hub, x 2](https://www.amazon.com/dp/B00PHPWLPA)
    * For keyboard, mouse, webcam
 * [1x EMEET C980 Pro Webcam With Built-In Speakers And Mic](https://www.amazon.com/dp/B088BY9PJG)
    * Placed on monitor
-* [1x Redgraon GS560 Powered Speaker](https://www.amazon.com/dp/B08X6LYPHK)
+* [1x Redragon GS560 Powered Speaker](https://www.amazon.com/dp/B08X6LYPHK)
    * USB for power input, 3.5 mm for sound output
 * [1x Evoluent VMCRW Wireless Vertical Mouse](https://www.amazon.com/dp/B01BNZAY6A)
    * Connected over USB

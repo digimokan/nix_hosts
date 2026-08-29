@@ -39,6 +39,7 @@ keys:
   - &age_pubkey_host_nas age1fu4fdj4g09tqj4gzfn3trvzdfcgfjaeeplxnvydm8swq4ju0ggyquqzp8s
   - &age_pubkey_host_romr age1llydkpnekmd0c06rg49ffvq3xe3edk605h3psy3cx7xj0rdq9p4sy6lm7t
   - &age_pubkey_host_tm1 age1x4fdtv0m97wy7d0fs00xq0ehrnjfrxe98er5lz7kz5jhjd76ksusyp53wn
+  - &age_pubkey_host_tm2 age19srxwkl38zsm949hj2v9mdqmhqkuc8xlkqdw6ez6kp7ayttddq7strdvx9
 
 # Each rule in this "creation_rules" list tells SOPS which public key(s) to
 # use to encrypt a specific SOPS secrets file.
@@ -80,6 +81,7 @@ creation_rules:
       - age:
           - *age_pubkey_master
           - *age_pubkey_host_tm1
+          - *age_pubkey_host_tm2
 
   # Host Secrets
 
@@ -98,4 +100,9 @@ creation_rules:
       - age:
           - *age_pubkey_master
           - *age_pubkey_host_tm1
+  - path_regex: secrets/tm2_host_secrets\.yaml$
+    key_groups:
+      - age:
+          - *age_pubkey_master
+          - *age_pubkey_host_tm2
 
