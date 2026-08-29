@@ -18,6 +18,7 @@
     ./digimokan.nix
     ./groups.nix
     ./testuser1.nix
+    ./testuser2.nix
     ./root.nix
   ];
 
