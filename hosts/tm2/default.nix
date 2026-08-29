@@ -59,6 +59,8 @@ in {
 
     custom.apps.pipewire.enable = true;
 
+    custom.system.impermanence.persistDirs = [ "/root/nix_hosts" ];
+
     custom.users.root.hashedPasswordFile = sec.cop_zone_root_user_passhash.path;
 
     custom.users.digimokan.hashedPasswordFile = sec.cop_zone_digimokan_user_passhash.path;
