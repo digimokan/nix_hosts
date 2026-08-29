@@ -31,6 +31,7 @@ jq_cmd := if shell("command -v jq >/dev/null 2>&1 && echo yes || echo no") == "y
 host_keypair_tempfile_path := "/tmp/nix_hosts_host_keypair.age"
 host_keypair_native_dir := "/var/lib/sops-nix"
 host_keypair_native_path := host_keypair_native_dir / "host_keypair.age"
+host_zfs_zdata_enc_keys_dir := "/persist/zfs-keys"
 
 ssh_opts := "-o ControlMaster=auto -o ControlPath=/tmp/deploy_ssh_%h_%p_%r -o ControlPersist=10m"
 
@@ -441,15 +442,14 @@ _inject_zdata_keys_to_zroot_mnt hostname:
   encrypted_zdata_pools=$(just _query_encrypted_zdata_schemas "{{hostname}}")
   encrypted_pool_count=$(echo "${encrypted_zdata_pools}" | {{jq_cmd}} -r 'length')
   if [ "${encrypted_pool_count}" -eq 0 ]; then exit 0; fi
-  host_zdata_keys_dir="/mnt/persist/zfs-keys"
-  mkdir -p "${host_zdata_keys_dir}"
+  mkdir -p "/mnt{{host_zfs_zdata_enc_keys_dir}}"
   echo "${encrypted_zdata_pools}" | {{jq_cmd}} -c '.[]' | while read -r pool; do
     pool_name=$(echo "${pool}" | {{jq_cmd}} -r '.poolName')
     echo "🧩 Querying Nix config for target host pool ${pool_name} zdata encryption keystring..."
     pool_enc_secret_name=$(echo "${pool}" | {{jq_cmd}} -r '.rootFsEncryptionSopsSecretName')
     keystring_val=$(just _get_sops_secret "${pool_enc_secret_name}" "secrets/{{hostname}}_host_secrets.yaml")
     echo "{{GREEN}}✔ Query complete: encryption keystring for ${pool_name} obtained successfully.{{NORMAL}}"
-    host_zdata_keystring_path="${host_zdata_keys_dir}/${pool_name}.key"
+    host_zdata_keystring_path="/mnt{{host_zfs_zdata_enc_keys_dir}}/${pool_name}.key"
     echo "🔗 Emplacing zdata encryption keystring for pool '${pool_name}' in ${host_zdata_keystring_path}..."
     echo -n "${keystring_val}" > "${host_zdata_keystring_path}"
     chmod 400 "${host_zdata_keystring_path}"
@@ -683,6 +683,12 @@ _create_zdata_zpool hostname pool_name:
   echo "🛠️ Creating zpool {{pool_name}} on zdata disks..." >&2
   zpool create -f ${pool_props} ${pool_enc_flags} -m none "{{pool_name}}" ${pool_mode} ${disks}
   echo "{{GREEN}}✔ Pool {{pool_name}} created on data disk(s){{NORMAL}}" >&2
+  if [ -n "${pool_enc_flags}" ]; then
+    pool_key_path="{{host_zfs_zdata_enc_keys_dir}}/{{pool_name}}.key"
+    echo "📌 Setting zdata pool encryption key location to a path on passphrase-encrypted zroot pool..." >&2
+    zfs set keylocation="file://${pool_key_path}" "{{pool_name}}"
+    echo "{{GREEN}}✔ Zdata pool {{pool_name}} encryption key location set to ${pool_key_path}{{NORMAL}}" >&2
+  fi
 
 # ==========================================
 # DISKO & NIXOS INSTALLATION
