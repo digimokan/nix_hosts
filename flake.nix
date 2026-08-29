@@ -105,6 +105,7 @@
       nixosConfigurations = {
         nas = mkSystem "nas";
         tm1 = mkSystem "tm1";
+        tm2 = mkSystem "tm2";
       };
     };
 
