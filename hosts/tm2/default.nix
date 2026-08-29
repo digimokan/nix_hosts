@@ -59,6 +59,7 @@ in {
 
     custom.apps.cosmic.enableDisplayMgr = true;
     custom.apps.cosmic.enableDesktopEnv = true;
+    custom.apps.cosmic.users.testuser2 = {};
 
     custom.apps.pipewire.enable = true;
 
