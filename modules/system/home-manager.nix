@@ -46,9 +46,13 @@
     # true: use nixpkgs pinned by this repo's flake.nix nixpkgs
     # false: use nixpkgs pinned by upstream home-manager repo's flake.nix commit
     home-manager.useGlobalPkgs = true;
+
     # true: use nixos-rebuild switch, with pkgs at /etc/profiles/per-user/<username>
     # false: use home-manager switch, with pkgs at ~/.nix-profile
     home-manager.useUserPackages = true;
+
+    # ignore warning: on unstable, nix and HM inputs are both on same commit
+    home.enableNixpkgsReleaseCheck = false;
 
     home-manager.users = lib.genAttrs config.custom.system.homeManager.enableForUsers (userName: {
       home.stateVersion = config.system.stateVersion;
