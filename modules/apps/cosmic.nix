@@ -15,6 +15,7 @@
 let
 
   cfg = config.custom.apps.cosmic;
+  homeMgrUsers = config.custom.system.homeManager.enableForUsers;
 
 in {
 
@@ -56,7 +57,7 @@ in {
           );
         }
         {
-          assertion = lib.all (user: lib.elem user hmUsers) (builtins.attrNames cfg.users);
+          assertion = lib.all (user: lib.elem user homeMgrUsers) (builtins.attrNames cfg.users);
           message = (
             "A user configured in custom.apps.cosmic.users lacks Home Manager "
             + "enablement in custom.system.homeManager.enableForUsers."
