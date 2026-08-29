@@ -19,15 +19,29 @@ let
 in {
 
   options.custom.system.impermanence = {
+    # Changes to the following WILL survive reboot:
+    #   1. All zroot datasets created in zroot-zpool.nix (/nix, /var, /persist).
+    #   2. All zdata datasets (e.g., /data, /home).
+    #
+    # All other data:
+    #   1. Is written to the volatile tmpfs root filesystem (/) by OS daemons,
+    #      running applications, or users modifying unmapped standard Linux
+    #      directories (e.g., /etc, /root, /srv, /usr) during the live session.
+    #   2. Is permanently wiped from RAM on every reboot.
+    #
+    # To save specific paths from this wipe without creating dedicated ZFS
+    #   datasets, add them to `persistDirs` or `persistFiles`. This will
+    #   automatically bind-mount them safely into the `/persist` dataset.
+
     persistDirs = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [];
-      description = "List of directories to bind-mount to the /persist ZFS dataset.";
+      description = "List of directories to bind-mount to the zroot /persist ZFS dataset.";
     };
     persistFiles = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [];
-      description = "List of files to bind-mount to the /persist ZFS dataset.";
+      description = "List of files to bind-mount to the zroot /persist ZFS dataset.";
     };
     persistZrootDatasets = lib.mkOption {
       type = lib.types.listOf lib.types.str;
