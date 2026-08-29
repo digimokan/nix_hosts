@@ -59,7 +59,8 @@ in {
 
     custom.apps.cosmic.enableDisplayMgr = true;
     custom.apps.cosmic.enableDesktopEnv = true;
-    custom.apps.cosmic.users.testuser2 = {};
+    # custom.apps.cosmic.users.testuser2 = {};
+    custom.apps.cosmic.users.testuser2.panelPosition = "Top";
 
     custom.apps.pipewire.enable = true;
 
