@@ -44,6 +44,15 @@ in {
             inheritGroupSgidPerms = lib.mkOption { type = lib.types.bool; default = cfg.datasetInheritGroupSgidPerms; };
             stickyRestrictDeletePerms = lib.mkOption { type = lib.types.bool; default = cfg.datasetStickyRestrictDeletePerms; };
             permissions = lib.mkOption { type = lib.types.str; internal = true; };
+            mountsAfterZrootMount = lib.mkOption {
+              type = lib.types.listOf lib.types.str;
+              default = [];
+              description = ''
+                List of absolute paths (e.g., [ "/home/testuser2" ]) that this dataset relies on.
+                Explicitly used for non-zroot (e.g. zdata) datasets that are mounted over zroot datasets.
+                Instructs systemd to wait for these base paths to mount before attempting to mount this dataset.
+              '';
+            };
             children = lib.mkOption { type = lib.types.listOf datasetType; default = []; };
           };
           config = {
@@ -218,11 +227,27 @@ in {
     };
   };
 
-  config = lib.mkMerge [
+  config = let
+
+    extractMountsAfter = datasets: lib.flatten (
+      builtins.map (ds: ds.mountsAfterZrootMount ++ (extractMountsAfter ds.children)) datasets
+    );
+    allMountsAfterPaths = lib.unique (
+      lib.flatten (builtins.map (pool: extractMountsAfter pool.datasets) cfg.storagePoolSchemas)
+    );
+    pathToMountUnit = path:
+      let
+        cleanPath = lib.removeSuffix "/" (lib.removePrefix "/" path);
+      in "${builtins.replaceStrings ["/"] ["-"] cleanPath}.mount";
+    mountUnits = builtins.map pathToMountUnit allMountsAfterPaths;
+
+  in lib.mkMerge [
+
     (import ../../disko/layout-generator.nix { inherit lib; } cfg.zrootPoolSchema)
     {
       boot.zfs.forceImportRoot = false;
       boot.zfs.extraPools = builtins.map (p: p.poolName) cfg.storagePoolSchemas;
+      systemd.services.zfs-mount.after = mountUnits;
     }
     (lib.mkIf (cfg.dailyAutoScrubHour != null) {
       services.zfs.autoScrub = {
@@ -231,6 +256,7 @@ in {
         randomizedDelaySec = cfg.randomizedScrubDelayDuration;
       };
     })
+
   ];
 
 }

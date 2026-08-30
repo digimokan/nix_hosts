@@ -34,6 +34,20 @@
       name = "persist";
       mountPoint = "/persist";
     }
+    {
+      name = "home";
+      mountPoint = "/home";
+      owner = "root";
+      group = "root";
+      children = [
+        {
+          name = "testuser2";
+          mountPoint = "/home/testuser2";
+          owner = "testuser2";
+          group = "users";
+        }
+      ];
+    }
   ];
 
 }

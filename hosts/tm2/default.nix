@@ -65,6 +65,7 @@ in {
     custom.apps.pipewire.enable = true;
 
     custom.system.impermanence.persistDirs = [ "/root/nix_hosts" ];
+    custom.system.impermanence.persistZrootDatasets = [ "/home" "/home/testuser2" ];
 
     custom.users.root.hashedPasswordFile = sec.cop_zone_root_user_passhash.path;
 

@@ -11,6 +11,7 @@
 { config, lib, pkgs, options, ... }@allArgs:
 
 {
+
   poolName = "zdata_tm2";
   disks = [
     "/dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b4f06150c"
@@ -22,7 +23,8 @@
   datasets = [
     {
       name = "home";
-      mountPoint = "/home";
+      mountPoint = "none";
+      mountsAfterZrootMount = [ "/home/testuser2" ];
       children = [
         {
           name = "testuser2";
@@ -31,21 +33,25 @@
           children = [
             {
               name = "Desktop";
+              mountPoint = "/home/testuser2/Desktop";
               owner = "testuser2";
               group = "users";
             }
             {
               name = "Documents";
+              mountPoint = "/home/testuser2/Documents";
               owner = "testuser2";
               group = "users";
             }
             {
               name = "Downloads";
+              mountPoint = "/home/testuser2/Downloads";
               owner = "testuser2";
               group = "users";
             }
             {
               name = "Music";
+              mountPoint = "/home/testuser2/Music";
               owner = "testuser2";
               group = "users";
               recordsize = "1M";
@@ -54,6 +60,7 @@
             }
             {
               name = "Pictures";
+              mountPoint = "/home/testuser2/Pictures";
               owner = "testuser2";
               group = "users";
               recordsize = "1M";
@@ -62,16 +69,19 @@
             }
             {
               name = "Public";
+              mountPoint = "/home/testuser2/Public";
               owner = "testuser2";
               group = "users";
             }
             {
               name = "Templates";
+              mountPoint = "/home/testuser2/Templates";
               owner = "testuser2";
               group = "users";
             }
             {
               name = "Videos";
+              mountPoint = "/home/testuser2/Videos";
               owner = "testuser2";
               group = "users";
               recordsize = "1M";
