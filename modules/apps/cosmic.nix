@@ -30,7 +30,7 @@ in {
       type = lib.types.attrsOf (lib.types.submodule {
         options = {
           panelPosition = lib.mkOption {
-            type = lib.types.nullOr (lib.types.enum [ "Top" "Bottom" ]);
+            type = lib.types.nullOr (lib.types.enum [ "Top" "Bottom" "Left" "Right" ]);
             default = "Bottom";
             description = "The COSMIC panel position (anchor).";
           };
