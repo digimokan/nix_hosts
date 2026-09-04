@@ -52,7 +52,7 @@
     home-manager.useUserPackages = true;
 
     # make backup copy of existing files, instead of clobbering them
-    ome-manager.backupFileExtension = "hmbkup";
+    home-manager.backupFileExtension = "hmbkup";
 
     home-manager.users = lib.genAttrs config.custom.system.homeManager.enableForUsers (userName: {
       home.stateVersion = config.system.stateVersion;
