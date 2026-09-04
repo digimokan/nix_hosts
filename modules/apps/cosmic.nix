@@ -40,6 +40,12 @@ in {
             default = "Bottom";
             description = "The COSMIC panel position (anchor).";
           };
+
+          suspendOnAcPwrMinutes = lib.mkOption {
+            type = lib.types.nullOr lib.types.ints.unsigned;
+            default = null;
+            description = "Minutes of inactivity before suspending to RAM, on AC power. Use `null` for never.";
+          };
         };
       });
     };
@@ -81,6 +87,14 @@ in {
         (lib.mkIf (userCfg.panelPosition != null) {
           xdg.configFile."cosmic/com.system76.CosmicPanel.Panel/v1/anchor".text = userCfg.panelPosition;
         })
+
+        {
+          xdg.configFile."cosmic/com.system76.CosmicIdle/v1/suspend_on_ac_time".text =
+          if (userCfg.suspendOnAcPwrMinutes == null) then
+            "None"
+          else
+            "Some(${toString (userCfg.suspendOnAcPwrMinutes * 60 * 1000)})";
+        }
       ]) cfg.users;
     }
   ]);
