@@ -29,6 +29,12 @@ in {
       default = {};
       type = lib.types.attrsOf (lib.types.submodule {
         options = {
+          bypassInitialSetup = lib.mkOption {
+            type = lib.types.bool;
+            default = true;
+            description = "Bypass the COSMIC initial setup wizard.";
+          };
+
           panelPosition = lib.mkOption {
             type = lib.types.nullOr (lib.types.enum [ "Top" "Bottom" "Left" "Right" ]);
             default = "Bottom";
@@ -68,6 +74,10 @@ in {
 
     {
       home-manager.users = lib.mapAttrs (userName: userCfg: lib.mkMerge [
+        (lib.mkIf userCfg.bypassInitialSetup {
+          xdg.configFile."cosmic-initial-setup-done".text = "";
+        })
+
         (lib.mkIf (userCfg.panelPosition != null) {
           xdg.configFile."cosmic/com.system76.CosmicPanel.Panel/v1/anchor".text = userCfg.panelPosition;
         })

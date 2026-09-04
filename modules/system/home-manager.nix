@@ -51,6 +51,9 @@
     # false: use home-manager switch, with pkgs at ~/.nix-profile
     home-manager.useUserPackages = true;
 
+    # make backup copy of existing files, instead of clobbering them
+    ome-manager.backupFileExtension = "hmbkup";
+
     home-manager.users = lib.genAttrs config.custom.system.homeManager.enableForUsers (userName: {
       home.stateVersion = config.system.stateVersion;
       # ignore warning: on unstable, nix and HM inputs are both on same commit
