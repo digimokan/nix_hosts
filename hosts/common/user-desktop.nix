@@ -36,9 +36,10 @@ in {
     custom.apps.cosmic.users."${infra.primaryUser}".panelPosition = "Bottom";
 
     custom.system.impermanence.persistDirs = [ "/root/nix_hosts" ];
-    custom.system.impermanence.persistZrootDatasets =
-      [ "/home" ]
-      ++ (builtins.map (u: "/home/${u}") infra.allUserNames);
+    custom.system.impermanence.persistZrootDatasets = [
+      "/home"
+      "/home/${infra.primaryUser}"
+    ];
 
     custom.users = lib.mkMerge [
       {
