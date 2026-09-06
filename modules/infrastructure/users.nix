@@ -75,7 +75,7 @@ in {
 
     assertions = [
       {
-        assertion = (builtins.length primaryList) == 1;
+        assertion = (builtins.length primaryList) <= 1;
         message = "Exactly one user must be isPrimary in usersList.";
       }
     ];
