@@ -20,6 +20,7 @@ let
 in {
 
   imports = [
+    ./sops-secrets.nix
     ../common/all-hosts.nix
     ../common/user-desktop.nix
     ../common/user-desktop-reg.nix
