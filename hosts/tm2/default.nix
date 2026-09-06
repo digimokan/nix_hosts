@@ -44,6 +44,8 @@ in {
     custom.apps.git.enable = true;
     custom.apps.git.userName = "digimokan";
 
+    custom.apps.cosmic.userSettings.digimokan.panelPosition = "Top";
+
     custom.infrastructure.usersList = {
       "testuser2" = { role = "standard"; isPrimary = true; };
       "digimokan" = { role = "admin"; };

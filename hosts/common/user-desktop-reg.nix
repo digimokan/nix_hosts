@@ -12,7 +12,11 @@
  */
 { config, lib, pkgs, options, ... }@allArgs:
 
-{
+let
+
+  infra = config.custom.infrastructure;
+
+in {
 
   config = {
     custom.apps.tailscale.enableSshServer = true;
@@ -20,7 +24,7 @@
     custom.system.wayland.enableXWayland = true;
 
     custom.apps.cosmic.enableDisplayMgr = true;
-    custom.apps.cosmic.enableDesktopEnv = true;
+    custom.apps.cosmic.enableDesktopEnvForUsers = infra.allUserNames;
 
     custom.apps.pipewire.enable = true;
   };

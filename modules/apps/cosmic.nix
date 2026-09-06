@@ -20,12 +20,16 @@ let
 in {
 
   options.custom.apps.cosmic = {
-
     enableDisplayMgr = lib.mkEnableOption "Enable the native COSMIC Greeter (Display Manager).";
-    enableDesktopEnv = lib.mkEnableOption "Enable the COSMIC Desktop Environment";
 
-    users = lib.mkOption {
-      description = "Per-user COSMIC configurations.";
+    enableDesktopEnvForUsers = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [];
+      description = "List of users to enable COSMIC Desktop Environment for.";
+    };
+
+    userSettings = lib.mkOption {
+      description = "Per-user COSMIC configurations, for overriding defaults.";
       default = {};
       type = lib.types.attrsOf (lib.types.submodule {
         options = {
@@ -36,7 +40,7 @@ in {
           };
 
           panelPosition = lib.mkOption {
-            type = lib.types.nullOr (lib.types.enum [ "Top" "Bottom" "Left" "Right" ]);
+            type = lib.types.enum [ "Top" "Bottom" "Left" "Right" ];
             default = "Bottom";
             description = "The COSMIC panel position (anchor).";
           };
@@ -44,15 +48,21 @@ in {
           suspendOnAcPwrMinutes = lib.mkOption {
             type = lib.types.nullOr lib.types.ints.unsigned;
             default = null;
-            description = "Minutes of inactivity before suspending to RAM, on AC power. Use `null` for never.";
+            description = ''
+              Minutes of inactivity before suspending to RAM, on AC power.
+              Use `null` for never.
+            '';
           };
         };
       });
     };
-
   };
 
-  config = lib.mkIf cfg.enableDesktopEnv (lib.mkMerge [
+  config = lib.mkIf (builtins.length cfg.enableDesktopEnvForUsers > 0) (lib.mkMerge [
+    {
+      custom.apps.cosmic.userSettings = lib.genAttrs cfg.enableDesktopEnvForUsers (u: {});
+    }
+
     {
       custom.infrastructure.displayManager = lib.mkIf cfg.enableDisplayMgr "cosmic-greeter";
       services.displayManager.cosmic-greeter.enable = cfg.enableDisplayMgr;
@@ -69,9 +79,9 @@ in {
           );
         }
         {
-          assertion = lib.all (user: lib.elem user homeMgrUsers) (builtins.attrNames cfg.users);
+          assertion = lib.all (user: lib.elem user homeMgrUsers) cfg.enableDesktopEnvForUsers;
           message = (
-            "A user configured in custom.apps.cosmic.users lacks Home Manager "
+            "A user configured in custom.apps.cosmic.enableDesktopEnvForUsers lacks Home Manager "
             + "enablement in custom.system.homeManager.enableForUsers."
           );
         }
@@ -79,23 +89,26 @@ in {
     }
 
     {
-      home-manager.users = lib.mapAttrs (userName: userCfg: lib.mkMerge [
-        (lib.mkIf userCfg.bypassInitialSetup {
-          xdg.configFile."cosmic-initial-setup-done".text = "";
-        })
+      home-manager.users = lib.genAttrs cfg.enableDesktopEnvForUsers (userName:
+        let
+          userCfg = cfg.userSettings.${userName};
+        in lib.mkMerge [
+          (lib.mkIf userCfg.bypassInitialSetup {
+            xdg.configFile."cosmic-initial-setup-done".text = "";
+          })
 
-        (lib.mkIf (userCfg.panelPosition != null) {
-          xdg.configFile."cosmic/com.system76.CosmicPanel.Panel/v1/anchor".text = userCfg.panelPosition;
-        })
+          {
+            xdg.configFile."cosmic/com.system76.CosmicPanel.Panel/v1/anchor".text =
+              userCfg.panelPosition;
 
-        {
-          xdg.configFile."cosmic/com.system76.CosmicIdle/v1/suspend_on_ac_time".text =
-          if (userCfg.suspendOnAcPwrMinutes == null) then
-            "None"
-          else
-            "Some(${toString (userCfg.suspendOnAcPwrMinutes * 60 * 1000)})";
-        }
-      ]) cfg.users;
+            xdg.configFile."cosmic/com.system76.CosmicIdle/v1/suspend_on_ac_time".text =
+              if (userCfg.suspendOnAcPwrMinutes == null) then
+                "None"
+              else
+                "Some(${toString (userCfg.suspendOnAcPwrMinutes * 60 * 1000)})";
+          }
+        ]
+      );
     }
   ]);
 
