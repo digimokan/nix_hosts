@@ -10,49 +10,54 @@
  */
 { config, lib, pkgs, options, ... }@allArgs:
 
-{
+let
 
-  poolName = "zdata_tm2";
+  priUser = config.custom.infrastructure.primaryUser;
+  hostName = config.networking.hostName;
+
+in {
+
+  poolName = "zdata_${hostName}";
   disks = [
     "/dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b4f06150c"
   ];
 
   rootFsEncryptionMethod = "keyfile";
-  rootFsEncryptionSopsSecretName = "tm2_host_zfs_zdata_encryption_symkey";
+  rootFsEncryptionSopsSecretName = "${hostName}_host_zfs_zdata_encryption_symkey";
 
   datasets = [
     {
       name = "home";
       mountPoint = "none";
-      mountsAfterZrootMount = [ "/home/testuser2" ];
+      mountsAfterZrootMount = [ "/home/${priUser}" ];
       children = [
         {
-          name = "testuser2";
-          owner = "testuser2";
+          name = "${priUser}";
+          owner = "${priUser}";
           group = "users";
           children = [
             {
               name = "Desktop";
-              mountPoint = "/home/testuser2/Desktop";
-              owner = "testuser2";
+              mountPoint = "/home/${priUser}/Desktop";
+              owner = "${priUser}";
               group = "users";
             }
             {
               name = "Documents";
-              mountPoint = "/home/testuser2/Documents";
-              owner = "testuser2";
+              mountPoint = "/home/${priUser}/Documents";
+              owner = "${priUser}";
               group = "users";
             }
             {
               name = "Downloads";
-              mountPoint = "/home/testuser2/Downloads";
-              owner = "testuser2";
+              mountPoint = "/home/${priUser}/Downloads";
+              owner = "${priUser}";
               group = "users";
             }
             {
               name = "Music";
-              mountPoint = "/home/testuser2/Music";
-              owner = "testuser2";
+              mountPoint = "/home/${priUser}/Music";
+              owner = "${priUser}";
               group = "users";
               recordsize = "1M";
               exec = "off";
@@ -60,8 +65,8 @@
             }
             {
               name = "Pictures";
-              mountPoint = "/home/testuser2/Pictures";
-              owner = "testuser2";
+              mountPoint = "/home/${priUser}/Pictures";
+              owner = "${priUser}";
               group = "users";
               recordsize = "1M";
               exec = "off";
@@ -69,20 +74,20 @@
             }
             {
               name = "Public";
-              mountPoint = "/home/testuser2/Public";
-              owner = "testuser2";
+              mountPoint = "/home/${priUser}/Public";
+              owner = "${priUser}";
               group = "users";
             }
             {
               name = "Templates";
-              mountPoint = "/home/testuser2/Templates";
-              owner = "testuser2";
+              mountPoint = "/home/${priUser}/Templates";
+              owner = "${priUser}";
               group = "users";
             }
             {
               name = "Videos";
-              mountPoint = "/home/testuser2/Videos";
-              owner = "testuser2";
+              mountPoint = "/home/${priUser}/Videos";
+              owner = "${priUser}";
               group = "users";
               recordsize = "1M";
               exec = "off";

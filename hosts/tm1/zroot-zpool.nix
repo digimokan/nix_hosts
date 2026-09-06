@@ -10,7 +10,12 @@
  */
 { config, lib, pkgs, options, ... }@allArgs:
 
-{
+let
+
+  priUser = config.custom.infrastructure.primaryUser;
+  hostName = config.networking.hostName;
+
+in {
 
   poolName = "zroot";
   disks = [
@@ -18,7 +23,7 @@
   ];
 
   rootFsEncryptionMethod = "passphrase";
-  rootFsEncryptionSopsSecretName = "tm1_host_zfs_zroot_encryption_passphrase";
+  rootFsEncryptionSopsSecretName = "${hostName}_host_zfs_zroot_encryption_passphrase";
 
   datasets = [
     {
@@ -33,6 +38,20 @@
     {
       name = "persist";
       mountPoint = "/persist";
+    }
+    {
+      name = "home";
+      mountPoint = "/home";
+      owner = "root";
+      group = "root";
+      children = [
+        {
+          name = "${priUser}";
+          mountPoint = "/home/${priUser}";
+          owner = "${priUser}";
+          group = "users";
+        }
+      ];
     }
   ];
 
