@@ -33,8 +33,6 @@ in {
     custom.apps.tailscale.enable = true;
     custom.apps.tailscale.authKeyPath = sec."${zone}_zone_user_facing_tailscale_auth_key".path;
 
-    custom.apps.cosmic.users."${infra.primaryUser}".panelPosition = "Bottom";
-
     custom.system.impermanence.persistDirs = [ "/root/nix_hosts" ];
     custom.system.impermanence.persistZrootDatasets = [
       "/home"
