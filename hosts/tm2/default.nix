@@ -14,65 +14,39 @@
 
 let
 
-  sec = config.sops.secrets;
-  infra = config.custom.infrastructure;
-  tscale = config.custom.apps.tailscale;
   zrootPool = import ./zroot-zpool.nix allArgs;
   zdataPool = import ./zdata-zpool.nix allArgs;
 
 in {
 
   imports = [
-    ./sops-secrets.nix
-    ../all-hosts.nix
+    ../common/all-hosts.nix
+    ../common/user-desktop.nix
+    ../common/user-desktop-reg.nix
   ];
 
   config = {
     custom.system.nixCore.initialStateVersion = "25.11";
 
-    custom.system.cpuMicrocode = "intel";
-
-    custom.system.grub.enableMode = "efi";
-
-    custom.system.security.enableRealTimeKit = true;
-
-    custom.system.networking.primaryDnsServerIpAddr = infra.lan.routerIpAddr;
-    custom.system.networking.trustedIpLinkInterfaces = tscale.ipLinkInterfaces;
-    custom.system.networking.useNetworkManager = true;
+    custom.infrastructure.zoneName = "cop";
 
     custom.system.zfs.zrootPoolSchema = zrootPool;
     custom.system.zfs.storagePoolSchemas = [ zdataPool ];
 
+    custom.system.cpuMicrocode = "intel";
+
+    custom.system.grub.enableMode = "efi";
+
     custom.system.linuxFirmware.installPolicy = "builtins-and-proprietary";
     custom.system.videoChipset = "intel";
-
-    custom.system.homeManager.enableForUsers = [ "testuser2" "digimokan" ];
-
-    custom.apps.tailscale.enable = true;
-    custom.apps.tailscale.enableSshServer = true;
-    custom.apps.tailscale.authKeyPath = sec.cop_zone_user_facing_tailscale_auth_key.path;
 
     custom.apps.git.enable = true;
     custom.apps.git.userName = "digimokan";
 
-    custom.system.wayland.enableXWayland = true;
-
-    custom.apps.cosmic.enableDisplayMgr = true;
-    custom.apps.cosmic.enableDesktopEnv = true;
-    custom.apps.cosmic.users.testuser2.panelPosition = "Bottom";
-
-    custom.apps.pipewire.enable = true;
-
-    custom.system.impermanence.persistDirs = [ "/root/nix_hosts" ];
-    custom.system.impermanence.persistZrootDatasets = [ "/home" "/home/testuser2" ];
-
-    custom.users.root.hashedPasswordFile = sec.cop_zone_root_user_passhash.path;
-
-    custom.users.digimokan.hashedPasswordFile = sec.cop_zone_digimokan_user_passhash.path;
-    custom.users.digimokan.extraGroups = [ config.custom.system.networking.netMgrGroup ];
-
-    custom.users.testuser2.hashedPasswordFile = sec.cop_zone_testuser2_user_passhash.path;
-    custom.users.testuser2.extraGroups = [ config.custom.system.networking.netMgrGroup ];
+    custom.infrastructure.usersList = {
+      "testuser2" = { role = "standard"; isPrimary = true; };
+      "digimokan" = { role = "admin"; };
+    };
   };
 
 }

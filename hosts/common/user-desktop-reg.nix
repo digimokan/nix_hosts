@@ -13,11 +13,17 @@
 { config, lib, pkgs, options, ... }@allArgs:
 
 {
-  imports = [
-    ./display-manager.nix
-    ./editor.nix
-    ./lan.nix
-    ./users.nix
-  ];
+
+  config = {
+    custom.apps.tailscale.enableSshServer = true;
+
+    custom.system.wayland.enableXWayland = true;
+
+    custom.apps.cosmic.enableDisplayMgr = true;
+    custom.apps.cosmic.enableDesktopEnv = true;
+
+    custom.apps.pipewire.enable = true;
+  };
+
 }
 

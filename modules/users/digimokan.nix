@@ -37,7 +37,6 @@ in {
       uid = 1001;
       isNormalUser = true;
       extraGroups = [
-        "wheel"
         "content"
         "family_archives"
         "retro"

@@ -26,7 +26,7 @@ in {
 
   imports = [
     ./sops-secrets.nix
-    ../all-hosts.nix
+    ../common/all-hosts.nix
   ];
 
   options.custom.hosts.nas = {
