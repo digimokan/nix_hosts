@@ -45,6 +45,15 @@ in {
             description = "The COSMIC panel position (anchor).";
           };
 
+          screenOffAndLockTime = lib.mkOption {
+            type = lib.types.nullOr lib.types.ints.unsigned;
+            default = null;
+            description = ''
+              Minutes of inactivity before turning the screen off and locking it.
+              Use `null` for never.
+            '';
+          };
+
           suspendOnAcPwrMinutes = lib.mkOption {
             type = lib.types.nullOr lib.types.ints.unsigned;
             default = null;
@@ -100,6 +109,12 @@ in {
           {
             xdg.configFile."cosmic/com.system76.CosmicPanel.Panel/v1/anchor".text =
               userCfg.panelPosition;
+
+            xdg.configFile."cosmic/com.system76.CosmicIdle/v1/screen_off_time".text =
+              if (userCfg.screenOffAndLockTime == null) then
+                "None"
+              else
+                "Some(${toString (userCfg.screenOffAndLockTime * 60 * 1000)})";
 
             xdg.configFile."cosmic/com.system76.CosmicIdle/v1/suspend_on_ac_time".text =
               if (userCfg.suspendOnAcPwrMinutes == null) then
