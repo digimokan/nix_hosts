@@ -56,7 +56,7 @@ in {
 
           screenOffAndLockTime = lib.mkOption {
             type = lib.types.nullOr lib.types.ints.unsigned;
-            default = null;
+            default = 360;
             description = ''
               Minutes of inactivity before turning the screen off and locking it.
               Use `null` for never.
