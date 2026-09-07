@@ -38,7 +38,6 @@ in {
 
     custom.system.grub.enableMode = "efi";
 
-    custom.system.linuxFirmware.installPolicy = "builtins-and-proprietary";
     custom.system.videoChipset = "intel";
 
     custom.apps.git.enable = true;

@@ -24,6 +24,8 @@ in {
   config = {
     custom.system.security.enableRealTimeKit = true;
 
+    custom.system.linuxFirmware.installPolicy = "builtins-and-proprietary";
+
     custom.system.networking.primaryDnsServerIpAddr = infra.lan.routerIpAddr;
     custom.system.networking.trustedIpLinkInterfaces = tscale.ipLinkInterfaces;
     custom.system.networking.useNetworkManager = true;
