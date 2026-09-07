@@ -38,6 +38,15 @@ in {
       default = true;
       description = "Create PulseAudio compatibility layer. Most desktop apps expect PulseAudio.";
     };
+
+    exposeAllAudioSinks = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Forces WirePlumber to expose all hardware audio ports (HDMI and Analog)
+        simultaneously. Useful for headless setups or bypassing incomplete DE menus.
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -46,6 +55,17 @@ in {
       alsa.enable = cfg.enableAlsaCompat;
       alsa.support32Bit = cfg.enableAlsa32BitCompat;
       pulse.enable = cfg.enablePulseCompat;
+
+      wireplumber.extraConfig."51-force-all-outputs" = lib.mkIf cfg.exposeAllAudioSinks {
+        "monitor.alsa.rules" = [
+          {
+            matches = [ { "device.name" = "~alsa_card.*"; } ];
+            actions = {
+              update-props = { "device.profile" = "pro-audio"; };
+            };
+          }
+        ];
+      };
     };
 
     assertions = [
