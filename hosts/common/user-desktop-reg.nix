@@ -24,7 +24,6 @@ in {
     custom.system.wayland.enableXWayland = true;
 
     custom.apps.cosmic.enableDisplayMgr = true;
-    custom.apps.cosmic.autoLoginUser = infra.primaryUser;
     custom.apps.cosmic.enableDesktopEnvForUsers = infra.allUserNames;
 
     custom.apps.pipewire.enable = true;
