@@ -22,6 +22,15 @@ in {
   options.custom.apps.cosmic = {
     enableDisplayMgr = lib.mkEnableOption "Enable the native COSMIC Greeter (Display Manager).";
 
+    autoLoginUser = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = ''
+        Username to automatically log in via the COSMIC greeter.
+        Use only with an encrypted root dataset.
+      '';
+    };
+
     enableDesktopEnvForUsers = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [];
@@ -76,6 +85,11 @@ in {
       custom.infrastructure.displayManager = lib.mkIf cfg.enableDisplayMgr "cosmic-greeter";
       services.displayManager.cosmic-greeter.enable = cfg.enableDisplayMgr;
 
+      services.displayManager.autoLogin = lib.mkIf (cfg.autoLoginUser != null) {
+        enable = true;
+        user = cfg.autoLoginUser;
+      };
+
       services.desktopManager.cosmic.enable = true;
 
       assertions = [
@@ -87,6 +101,16 @@ in {
             + "host's composition root."
           );
         }
+
+        {
+          assertion = (cfg.autoLoginUser == null) ||
+            (config.custom.system.zfs.zrootPoolSchema.rootFsEncryptionMethod != "none");
+          message = (
+            "COSMIC auto-login is enabled for '${toString cfg.autoLoginUser}', "
+            + "but zroot is unencrypted. This is a severe security risk."
+          );
+        }
+
         {
           assertion = lib.all (user: lib.elem user homeMgrUsers) cfg.enableDesktopEnvForUsers;
           message = (
