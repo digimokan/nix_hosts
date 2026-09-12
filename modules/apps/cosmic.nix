@@ -159,31 +159,47 @@ in {
           userCfg = cfg.userSettings.${userName};
         in lib.mkMerge [
           (lib.mkIf userCfg.bypassInitialSetup {
-            xdg.configFile."cosmic-initial-setup-done".text = "";
+            xdg.configFile."cosmic-initial-setup-done" = {
+              text = "";
+              force = true;
+            };
           })
 
           {
-            xdg.configFile."cosmic/com.system76.CosmicPanel.Panel/v1/anchor".text =
-              userCfg.panelPosition;
+            xdg.configFile."cosmic/com.system76.CosmicPanel.Panel/v1/anchor" = {
+              text = userCfg.panelPosition;
+              force = true;
+            };
 
-            xdg.configFile."cosmic/com.system76.CosmicIdle/v1/screen_off_time".text =
-              if (userCfg.screenOffAndLockTime == null) then
-                "None"
-              else
-                "Some(${toString (userCfg.screenOffAndLockTime * 60 * 1000)})";
+            xdg.configFile."cosmic/com.system76.CosmicIdle/v1/screen_off_time" = {
+              text =
+                if (userCfg.screenOffAndLockTime == null) then
+                  "None"
+                else
+                  "Some(${toString (userCfg.screenOffAndLockTime * 60 * 1000)})";
+              force = true;
+            };
 
-            xdg.configFile."cosmic/com.system76.CosmicIdle/v1/suspend_on_ac_time".text =
-              if (userCfg.suspendOnAcPwrMinutes == null) then
-                "None"
-              else
-                "Some(${toString (userCfg.suspendOnAcPwrMinutes * 60 * 1000)})";
+            xdg.configFile."cosmic/com.system76.CosmicIdle/v1/suspend_on_ac_time" = {
+              text =
+                if (userCfg.suspendOnAcPwrMinutes == null) then
+                  "None"
+                else
+                  "Some(${toString (userCfg.suspendOnAcPwrMinutes * 60 * 1000)})";
+              force = true;
+            };
 
-            xdg.stateFile."cosmic/com.system76.CosmicSettingsDaemon/v1/default_sink_name".text = ''
-              "${userCfg.defaultSoundOutput}"
-            '';
+            xdg.stateFile."cosmic/com.system76.CosmicSettingsDaemon/v1/default_sink_name" = {
+              text = ''
+                "${userCfg.defaultSoundOutput}"
+              '';
+              force = true;
+            };
 
-            xdg.configFile."cosmic/com.system76.CosmicAudio/v1/amplification_sink".text =
-              if userCfg.allowSoundOutputVolAmp then "true" else "false";
+            xdg.configFile."cosmic/com.system76.CosmicAudio/v1/amplification_sink" = {
+              text = if userCfg.allowSoundOutputVolAmp then "true" else "false";
+              force = true;
+            };
           }
         ]
       );
