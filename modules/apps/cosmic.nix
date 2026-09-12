@@ -37,6 +37,18 @@ in {
       description = "List of users to enable COSMIC Desktop Environment for.";
     };
 
+    installCosmicPlayer = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Whether to keep the default cosmic-player installed.";
+    };
+
+    installCosmicTerm = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Whether to keep the default cosmic-term installed.";
+    };
+
     userSettings = lib.mkOption {
       description = "Per-user COSMIC configurations, for overriding defaults.";
       default = {};
@@ -91,6 +103,11 @@ in {
       };
 
       services.desktopManager.cosmic.enable = true;
+
+      environment.cosmic.excludePackages = with pkgs; lib.mkMerge [
+        (lib.mkIf (!cfg.installCosmicPlayer) [ cosmic-player ])
+        (lib.mkIf (!cfg.installCosmicTerm) [ cosmic-term ])
+      ];
 
       assertions = [
         {

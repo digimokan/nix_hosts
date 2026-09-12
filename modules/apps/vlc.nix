@@ -14,21 +14,16 @@
 
 let
 
-  infra = config.custom.infrastructure;
+  cfg = config.custom.apps.vlc;
 
 in {
 
-  config = {
-    custom.apps.tailscale.enableSshServer = true;
+  options.custom.apps.vlc = {
+    enable = lib.mkEnableOption "Enable VLC Media Player.";
+  };
 
-    custom.system.wayland.enableXWayland = true;
-
-    custom.apps.cosmic.enableDisplayMgr = true;
-    custom.apps.cosmic.enableDesktopEnvForUsers = infra.allUserNames;
-
-    custom.apps.pipewire.enable = true;
-
-    custom.apps.vlc.enable = true;
+  config = lib.mkIf cfg.enable {
+    environment.systemPackages = [ pkgs.vlc ];
   };
 
 }

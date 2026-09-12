@@ -23,6 +23,7 @@
     ./sanoid.nix
     ./sddm.nix
     ./tailscale.nix
+    ./vlc.nix
   ];
 }
 
