@@ -66,15 +66,6 @@ in {
             description = "The COSMIC panel position (anchor).";
           };
 
-          defaultSoundOutput = lib.mkOption {
-            type = lib.types.str;
-            default = "";
-            description = ''
-              Default sound output, selected on the Sound settings page,
-              with the Output Device and Device Profiles dropdown selections.
-            '';
-          };
-
           allowSoundOutputVolAmp = lib.mkOption {
             type = lib.types.bool;
             default = false;
@@ -186,13 +177,6 @@ in {
                   "None"
                 else
                   "Some(${toString (userCfg.suspendOnAcPwrMinutes * 60 * 1000)})";
-              force = true;
-            };
-
-            xdg.stateFile."cosmic/com.system76.CosmicSettingsDaemon/v1/default_sink_name" = {
-              text = ''
-                "${userCfg.defaultSoundOutput}"
-              '';
               force = true;
             };
 

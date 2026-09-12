@@ -44,9 +44,6 @@ in {
     custom.apps.git.enable = true;
     custom.apps.git.userName = "digimokan";
 
-    custom.apps.cosmic.userSettings.testuser2.defaultSoundOutput = hdmiSoundOutput;
-    custom.apps.cosmic.userSettings.digimokan.defaultSoundOutput = hdmiSoundOutput;
-
     custom.infrastructure.usersList = {
       "testuser2" = { role = "standard"; isPrimary = true; };
       "digimokan" = { role = "admin"; };
