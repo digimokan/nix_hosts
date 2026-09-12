@@ -37,6 +37,7 @@ in {
       type = lib.types.bool;
       default = true;
       description = "Create PulseAudio compatibility layer. Most desktop apps expect PulseAudio.";
+    };
 
     defaultSoundOutputAtBoot = lib.mkOption {
       type = lib.types.nullOr lib.types.str;

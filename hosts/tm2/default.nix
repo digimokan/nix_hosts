@@ -41,7 +41,7 @@ in {
 
     custom.system.videoChipset = "intel";
 
-    custom.apps.pipewire.defaultSoundOutput = "alsa_output.pci-0000_00_1f.3.pro-output-3";
+    custom.apps.pipewire.defaultSoundOutputAtBoot = "alsa_output.pci-0000_00_1f.3.pro-output-3";
 
     custom.apps.git.enable = true;
     custom.apps.git.userName = "digimokan";
