@@ -16,6 +16,7 @@ let
 
   zrootPool = import ./zroot-zpool.nix allArgs;
   zdataPool = import ./zdata-zpool.nix allArgs;
+  hdmiSoundOutput = "alsa_output.pci-0000_00_1f.3.pro-output-3";
 
 in {
 
@@ -43,7 +44,8 @@ in {
     custom.apps.git.enable = true;
     custom.apps.git.userName = "digimokan";
 
-    custom.apps.cosmic.userSettings.digimokan.panelPosition = "Top";
+    custom.apps.cosmic.userSettings.testuser2.defaultSoundOutput = hdmiSoundOutput;
+    custom.apps.cosmic.userSettings.digimokan.defaultSoundOutput = hdmiSoundOutput;
 
     custom.infrastructure.usersList = {
       "testuser2" = { role = "standard"; isPrimary = true; };

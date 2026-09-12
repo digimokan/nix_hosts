@@ -66,6 +66,21 @@ in {
             description = "The COSMIC panel position (anchor).";
           };
 
+          defaultSoundOutput = lib.mkOption {
+            type = lib.types.str;
+            default = "";
+            description = ''
+              Default sound output, selected on the Sound settings page,
+              with the Output Device and Device Profiles dropdown selections.
+            '';
+          };
+
+          allowSoundOutputVolAmp = lib.mkOption {
+            type = lib.types.bool;
+            default = false;
+            description = "Allow volume amplification (raising volume to 150%).";
+          };
+
           screenOffAndLockTime = lib.mkOption {
             type = lib.types.nullOr lib.types.ints.unsigned;
             default = null;
@@ -162,6 +177,13 @@ in {
                 "None"
               else
                 "Some(${toString (userCfg.suspendOnAcPwrMinutes * 60 * 1000)})";
+
+            xdg.stateFile."cosmic/com.system76.CosmicSettingsDaemon/v1/default_sink_name".text = ''
+              "${userCfg.defaultSoundOutput}"
+            '';
+
+            xdg.configFile."cosmic/com.system76.CosmicAudio/v1/amplification_sink".text =
+              if userCfg.allowSoundOutputVolAmp then "true" else "false";
           }
         ]
       );
