@@ -37,6 +37,15 @@ in {
       type = lib.types.bool;
       default = true;
       description = "Create PulseAudio compatibility layer. Most desktop apps expect PulseAudio.";
+
+    defaultSoundOutputAtBoot = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = ''
+        Set this Pipewire node as the default audio sink, at boot.
+        Use "wpctl -n" to find node name, and "wpctl -k" for nicknames.
+        e.g., alsa_output.pci-0000_00_1f.3.pro-output-3.
+      '';
     };
   };
 
@@ -46,6 +55,24 @@ in {
       alsa.enable = cfg.enableAlsaCompat;
       alsa.support32Bit = cfg.enableAlsa32BitCompat;
       pulse.enable = cfg.enablePulseCompat;
+
+      wireplumber.extraConfig."51-force-audio-profile" = lib.mkIf (cfg.defaultSoundOutputAtBoot != null) {
+        "wireplumber.settings" = {
+          "node.restore-default-targets" = false;
+          "device.restore-profile" = false;
+          "device.restore-routes" = false;
+        };
+
+        "monitor.alsa.rules" = [
+          {
+            matches = [ { "node.name" = cfg.defaultSoundOutputAtBoot; } ];
+            actions.update-props = {
+              "priority.session" = 1499;
+              "state.restore-props" = false;
+            };
+          }
+        ];
+      };
     };
 
     assertions = [
