@@ -16,57 +16,107 @@ let
 
   cfg = config.custom.apps.pipewire;
 
+  defaultOutput = cfg.defaultOutputAtBoot;
+  defaultOutputType = if ((defaultOutput != null) && (defaultOutput.type == "bluetooth"))
+                        then "bluez" else "alsa";
+
 in {
 
   options.custom.apps.pipewire = {
     enable = lib.mkEnableOption "Enable the PipeWire sound server";
 
-    enableAlsaCompat = lib.mkOption {
+    enableAlsaLayer = lib.mkOption {
       type = lib.types.bool;
       default = true;
-      description = "Route ALSA audio calls through PipeWire. Some older apps use ALSA.";
+      description = "Route ALSA audio calls through PipeWire.";
     };
 
-    enableAlsa32BitCompat = lib.mkOption {
+    enableAlsa32BitLayer = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "Enable 32-bit ALSA support. Most older 32-bit Wine/Steam games use this.";
+      description = "Route ALSA 32-bit audio calls through PipeWire.";
     };
 
-    enablePulseCompat = lib.mkOption {
+    enablePulseLayer = lib.mkOption {
       type = lib.types.bool;
       default = true;
-      description = "Create PulseAudio compatibility layer. Most desktop apps expect PulseAudio.";
+      description = "Route PulseAudio audio calls through PipeWire.";
     };
 
-    defaultSoundOutputAtBoot = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
+    defaultOutputAtBoot = lib.mkOption {
       default = null;
-      description = ''
-        Set this Pipewire node as the default audio sink, at boot.
-        Use "wpctl -n" to find node name, and "wpctl -k" for nicknames.
-        e.g., alsa_output.pci-0000_00_1f.3.pro-output-3.
-      '';
+      description = "Always set this sound output as the default, on boot.";
+      type = lib.types.nullOr (lib.types.submodule {
+        # Note: you can test out the pactl devices and nodes that you find:
+        #   1. pactl set-card-profile [device] [node]
+        #   2. speaker-test -t wav
+
+        options = {
+          type = lib.mkOption {
+            type = lib.types.enum [ "builtin_audio" "bluetooth" ];
+            description = ''
+              Default sound output hardware type.
+                builtin_audio: motherboard 3.5mm, USB, HDMI, etc.
+                bluetooth: motherboard bluetooth chip.
+            '';
+          };
+          device = lib.mkOption {
+            type = lib.types.str;
+            description = ''
+              Default sound output "device" (aka ALSA "card").
+              In "pactl list cards" output, find suffix of the card "Name" property.
+              e.g. "pci-0000_00_1f.3".
+            '';
+          };
+          node = lib.mkOption {
+            type = lib.types.str;
+            description = ''
+              Default sound output "node" (aka ALSA "device").
+              In "pactl list cards" output, find "Profiles" entries marked with
+              "available: yes" and look for for the starting "output:[node-name]" text.
+              e.g. "analog-stereo", "hdmi-stereo".
+            '';
+          };
+        };
+      });
     };
   };
 
   config = lib.mkIf cfg.enable {
     services.pipewire = {
       enable = true;
-      alsa.enable = cfg.enableAlsaCompat;
-      alsa.support32Bit = cfg.enableAlsa32BitCompat;
-      pulse.enable = cfg.enablePulseCompat;
+      alsa.enable = cfg.enableAlsaLayer;
+      alsa.support32Bit = cfg.enableAlsa32BitLayer;
+      pulse.enable = cfg.enablePulseLayer;
 
-      wireplumber.extraConfig."51-force-audio-profile" = lib.mkIf (cfg.defaultSoundOutputAtBoot != null) {
+      wireplumber.extraConfig."51-force-audio-profile" = lib.mkIf (defaultOutput != null) {
+        # Ref: https://github.com/PipeWire/wireplumber/blob/master/src/config/wireplumber.conf
         "wireplumber.settings" = {
           "node.restore-default-targets" = false;
           "device.restore-profile" = false;
           "device.restore-routes" = false;
         };
 
-        "monitor.alsa.rules" = [
+        # Ref: https://docs.pipewire.org/page_man_pipewire-props_7.html
+        "monitor.${defaultOutputType}.rules" = [
           {
-            matches = [ { "node.name" = cfg.defaultSoundOutputAtBoot; } ];
+            matches = [
+              { "device.name" = "${defaultOutputType}_card.${defaultOutput.device}"; }
+            ];
+            actions.update-props = {
+              "device.profile" = if defaultOutputType == "alsa" then
+                                   "output:${defaultOutput.node}"
+                                 else
+                                   defaultOutput.node;
+            };
+          }
+          {
+            matches = [
+              {
+                "node.name" = "${defaultOutputType}_output.${defaultOutput.device}."
+                              + "${defaultOutput.node}";
+              }
+            ];
             actions.update-props = {
               "priority.session" = 1499;
               "state.restore-props" = false;

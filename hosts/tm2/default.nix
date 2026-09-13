@@ -16,7 +16,6 @@ let
 
   zrootPool = import ./zroot-zpool.nix allArgs;
   zdataPool = import ./zdata-zpool.nix allArgs;
-  hdmiSoundOutput = "alsa_output.pci-0000_00_1f.3.pro-output-3";
 
 in {
 
@@ -41,7 +40,11 @@ in {
 
     custom.system.videoChipset = "intel";
 
-    custom.apps.pipewire.defaultSoundOutputAtBoot = "alsa_output.pci-0000_00_1f.3.pro-output-3";
+    custom.apps.pipewire.defaultOutputAtBoot = {
+      type = "builtin_audio";
+      device = "pci-0000_00_1f.3";
+      node = "hdmi-stereo";
+    };
 
     custom.apps.git.enable = true;
     custom.apps.git.userName = "digimokan";
