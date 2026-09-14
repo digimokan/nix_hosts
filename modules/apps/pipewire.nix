@@ -92,11 +92,15 @@ in {
       wireplumber.extraConfig."51-force-audio-profile" = lib.mkIf (defaultOutput != null) {
         # Ref: https://github.com/PipeWire/wireplumber/blob/master/src/config/wireplumber.conf
         "wireplumber.settings" = {
+          # Do not restore a "default-audio-device" set at runtime from saved user state.
           "node.restore-default-targets" = false;
+          # Do not restore the last active hardware configuration mode from saved user state.
           "device.restore-profile" = false;
+          # Do not restore internal hardware paths (routes) or their tied volume states.
           "device.restore-routes" = false;
         };
 
+        # These rules are evaluated on boot, and on any ALSA node change.
         # Ref: https://docs.pipewire.org/page_man_pipewire-props_7.html
         "monitor.${defaultOutputType}.rules" = [
           {
@@ -104,6 +108,8 @@ in {
               { "device.name" = "${defaultOutputType}_card.${defaultOutput.device}"; }
             ];
             actions.update-props = {
+              # Set the sound card's hardware mode. Specific software nodes (like HDMI)
+              # only exist in the PipeWire graph if this underlying mode is active.
               "device.profile" = if defaultOutputType == "alsa" then
                                    "output:${defaultOutput.node}"
                                  else
@@ -118,7 +124,9 @@ in {
               }
             ];
             actions.update-props = {
+              # Force this node to win the priority battle. Per PipeWire docs, max is 1500.
               "priority.session" = 1499;
+              # Ignore per-node saved state files so our hardcoded priority strictly applies.
               "state.restore-props" = false;
             };
           }
