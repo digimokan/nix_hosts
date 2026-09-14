@@ -60,6 +60,7 @@ in {
                 bluetooth: motherboard bluetooth chip.
             '';
           };
+
           device = lib.mkOption {
             type = lib.types.str;
             description = ''
@@ -68,6 +69,7 @@ in {
               e.g. "pci-0000_00_1f.3".
             '';
           };
+
           node = lib.mkOption {
             type = lib.types.str;
             description = ''
@@ -76,6 +78,11 @@ in {
               "available: yes" and look for for the starting "output:[node-name]" text.
               e.g. "analog-stereo", "hdmi-stereo".
             '';
+          };
+
+          volume = lib.mkOption {
+            type = lib.types.addCheck lib.types.float (x: x >= 0.0 && x <= 1.0);
+            description = "Default sound output volume to set at boot.";
           };
         };
       });
@@ -98,6 +105,8 @@ in {
           "device.restore-profile" = false;
           # Do not restore internal hardware paths (routes) or their tied volume states.
           "device.restore-routes" = false;
+          # Set the volume on the sink.
+          "device.routes.default-sink-volume" = defaultOutput.volume;
         };
 
         # These rules are evaluated on boot, and on any ALSA node change.
