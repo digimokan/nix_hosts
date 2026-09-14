@@ -81,7 +81,7 @@ in {
           };
 
           volume = lib.mkOption {
-            type = lib.types.addCheck lib.types.float (x: x >= 0.0 && x <= 1.0);
+            type = lib.types.ints.between 0 100;
             description = "Default sound output volume to set at boot.";
           };
         };
@@ -106,7 +106,11 @@ in {
           # Do not restore internal hardware paths (routes) or their tied volume states.
           "device.restore-routes" = false;
           # Set the volume on the sink.
-          "device.routes.default-sink-volume" = defaultOutput.volume;
+          # Convert user input linear-scale volume percent to PipeWire cubic-scale volume.
+          "device.routes.default-sink-volume" = let
+            v = defaultOutput.volume / 100.0;
+          in
+            v * v * v;
         };
 
         # These rules are evaluated on boot, and on any ALSA node change.

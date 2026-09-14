@@ -44,7 +44,7 @@ in {
       type = "builtin_audio";
       device = "pci-0000_00_1f.3";
       node = "hdmi-stereo";
-      volume = 0.70;
+      volume = 70;
     };
 
     custom.apps.git.enable = true;
