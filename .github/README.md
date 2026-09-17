@@ -35,7 +35,8 @@ NixOS configuration to set up various hosts.
 ## List Of Hosts
 
 * [`nas`](./docs/nas.md): main NAS on `GLAN`.
-* [`tm1`](./docs/tm1.md): test user machine on `GLAN`.
+* [`tm1`](./docs/tm1.md): test user machine on `GLAN` (inop).
+* [`tm2`](./docs/tm2.md): test user machine on `GLAN` (active).
 
 ## Manage Secrets With SOPS
 
