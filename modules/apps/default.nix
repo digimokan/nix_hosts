@@ -19,6 +19,7 @@
     ./just.nix
     ./kde-plasma-wayland.nix
     ./nfs-server.nix
+    ./obs.nix
     ./pipewire.nix
     ./sanoid.nix
     ./sddm.nix

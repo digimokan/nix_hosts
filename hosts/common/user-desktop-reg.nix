@@ -29,6 +29,8 @@ in {
     custom.apps.pipewire.enable = true;
 
     custom.apps.vlc.enable = true;
+
+    custom.apps.obs.enableForUsers = infra.allUserNames;
   };
 
 }
