@@ -40,11 +40,17 @@ in {
 
     custom.system.videoChipset = "intel";
 
-    custom.apps.pipewire.defaultOutputAtBoot = {
-      type = "builtin_audio";
+    custom.apps.pipewire.defaultOutput = {
       device = "pci-0000_00_1f.3";
+      deviceType = "alsa";
       node = "hdmi-stereo";
       volume = 70;
+    };
+    custom.apps.pipewire.defaultInput = {
+      device = "usb-4K_USB_Camera_4K_USB_Camera_01.00.00-02";
+      deviceType = "alsa";
+      node = "analog-stereo";
+      volume = 100;
     };
 
     custom.apps.git.enable = true;
