@@ -11,94 +11,28 @@
 
 ## Purpose
 
-`vs1` is a [45HomeLab HL8](https://store.45homelab.com/configure/hl8) that
-serves up files over NFS.
+`vs1` is an [ABMX Mini-Server](https://www.abmx.com/small-2u-short-depth-server)
+that hosts services, containers, and virtual machines.
 
 ## Hardware
 
 ### Hardware Parts List
 
-* [45HomeLab HL8](https://store.45homelab.com/configure/hl8)
-   * Fully Built and Burned In
-   * Ryzen 7 5700G CPU
-   * 64 GB RAM
-* [2x SanDisk SSD Plus 480GB 2.5 Inch Sata III SSD](https://www.amazon.com/dp/B01F9G46Q8)
-   * OS Boot Drives
-* [2x SABRENT 2.5 Inch SATA to USB 3.0 Drive Enclosure](https://www.amazon.com/dp/B00OJ3UJ2S)
-   * Enclosures for Boot Drives, connected via USB
-* [2x Western Digital WD Red Pro 22TB 3.5 Inch Internal Hard Drive](https://www.amazon.com/dp/B0B5W1CQ8W)
-   * Initial storage drives
-* [1x Cable Matters 3 Ft M-F USB Extension Cable](https://www.amazon.com/dp/B00C7S1B4W)
-   * Bringing out USB port to front of PC
+* [ABMX 214LPS3CH-F243 2U Mini-Server](https://www.abmx.com/small-2u-short-depth-server)
+   * 14 Inches Deep
+   * Supermicro X13SCH-F LGA-1700 Motherboard
+   * Intel 6369P Xeon 8-Core 3.3GHz CPUs
+   * 32 GB DDR5 ECC Unbuffered RAM (Upgradable to 128 GB)
+   * TPM 2.0 Trusted Platform Module (TCG 2.0)
+   * FSP Group 9PA500CN04 Power Supply
+* [2x SanDisk 500GB SSD Plus 2.5 Inch Sata III SSD](https://www.amazon.com/gp/product/B0F4Y2VR8S)
+   * OS Boot Drives (in 2 of the 8 2.5 Inch SSD Hotswap Bays)
+* [2x Samsung 2TB 870 EVO 2.5 Inch Sata III SSD](https://www.amazon.com/dp/B08QB93S6R)
+   * Data Drives (in 2 of the 8 2.5 Inch SSD Hotswap Bays)
 
 ### Hardware Connections
 
-```
-BACK OF PC
-┌──────────────────────────────────────────────────────────────────────────────┐
-│  ┌────────┐                        ╭───╮                                     │
-│  │  AC    │                        │PWR│                                     │
-│  │ADAPTER │                        ╰BTN╯                                     │
-│  │        │                                                                  │
-│  └────────┘                                                                  │
-│                                                                              │
-│                                                       ┌┐ LINE ┌┐ LINE ┌┐ MIC │
-│                                                       └┘ IN   └┘ OUT  └┘     │
-│                                                                              │
-│                                                             ┌┐ WIFI   ┌┐ WIFI│
-│                                                             └┘ ANT    └┘ ANT │
-│                                                                              │
-│                                                             ┌────┐ ┌──┐ ┌──┐ │
-│                                                             │    │ │U │ │U │ │
-│                                                             │ETH │ │S │ │S │ │
-│                                                             │    │ │B │ │B │ │
-│                                                             └────┘ └──┘ └──┘ │
-│                                                                     A1   C1  │
-│                                                                              │
-│                                                                     ┌┐ QFLASH│
-│                                                                     └┘ PLUS  │
-│                                                                              │
-│                                                                    ┌──┐ ┌──┐ │
-│                                                                    │U │ │U │ │
-│                                                                    │S │ │S │ │
-│                                                                    │B │ │B │ │
-│                                                                    └──┘ └──┘ │
-│                                                                     A2   A3  │
-│                                                                              │
-│                                                               ┌──┐ ┌──┐ ┌──┐ │
-│                                                               │U │ │U │ │U │ │
-│                                                               │S │ │S │ │S │ │
-│                                                               │B │ │B │ │B │ │
-│                                                               └──┘ └──┘ └──┘ │
-│                                                                A4   A5   A6  │
-│                                                                              │
-│                                                                  ┌──┐   ┌──┐ │
-│                                                                  │D │   │H │ │
-│                                                                  │S │   │D │ │
-│                                                                  │P │   │M │ │
-│                                                                  └──┘   └I─┘ │
-│                                                                  DP-1  HDMI-1│
-└──────────────────────────────────────────────────────────────────────────────┘
-```
-
-* Top Row
-   * `LINE IN (3.5 mm)`: N/A
-   * `LINE OUT (3.5 mm)`: N/A
-   * `MIC IN (3.5 mm)`: N/A
-* Second Row
-   * `ETH`: ethernet to LAN
-   * `A1 (USB-A 3.2)`: N/A
-   * `C1 (USB-C 3.2)`: N/A
-* Third Row
-   * `A2 (USB-A 3.2)`: USB Extension Cable
-   * `A3 (USB-A 3.2)`: PiKVM USB Link
-* Fourth Row
-   * `A4 (USB-A 3.2)`: OS Boot Drive 1
-   * `A5 (USB-A 3.2)`: OS Boot Drive 2
-   * `A6 (USB-A 3.2)`: N/A
-* Graphics Card
-   * `DP-1 (DisplayPort)`: N/A
-   * `HDMI-1`: PiKVM Vid Link
+TODO
 
 ### Hardware BIOS Configuration
 
@@ -115,14 +49,11 @@ BACK OF PC
 
 #### Boot Devices
 
-Once NixOS has been installed to the two mirrored drives:
-
-* `Boot` -> `Boot Option Priorities`: ensure the two `UEFI OS (SABRENT)`
-  entries are at the top of the list. Set all other enries to `Disabled`.
+TODO
 
 ## Configuration
 
-* See [`nas/zdata-zpool.nix`](../../hosts/nas/zdata-zpool.nix) for the storage
+* See [`vs1/zdata-zpool.nix`](../../hosts/vs1/zdata-zpool.nix) for the storage
   zpool (`zdata`) disk IDs, and for the list of `zdata` datasets.
 * See [Deployed Usage](../README.md#deployed-usage) for info about initializing
   and managing the `zdata` zpool disks and datasets.
