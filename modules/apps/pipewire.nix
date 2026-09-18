@@ -115,6 +115,7 @@ in {
 
         # These rules are evaluated on boot, and on any ALSA node change.
         # Ref: https://docs.pipewire.org/page_man_pipewire-props_7.html
+        # Ref: https://pipewire.pages.freedesktop.org/wireplumber/daemon/configuration/alsa.html
         "monitor.${defaultOutputType}.rules" = [
           {
             matches = [
