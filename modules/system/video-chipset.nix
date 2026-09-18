@@ -70,7 +70,10 @@ in {
       # Enable Mesa user-space drivers
       hardware.graphics.enable = true;
       # Enable Intel media driver for Broadwell+ VA-API video acceleration
-      hardware.graphics.extraPackages = [ pkgs.intel-media-driver ];
+      hardware.graphics.extraPackages = [
+        pkgs.intel-media-driver
+        pkgs.vpl-gpu-rt
+      ];
     })
   ];
 
