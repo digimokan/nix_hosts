@@ -21,7 +21,7 @@ that hosts services, containers, and virtual machines.
 * [ABMX 214LPS3CH-F243 2U Mini-Server](https://www.abmx.com/small-2u-short-depth-server)
    * 14 Inches Deep
    * Supermicro X13SCH-F LGA-1700 Motherboard
-   * Intel 6369P Xeon 8-Core 3.3GHz CPUs
+   * Intel 6369P Xeon 3.3GHz 8-Core, 16-Thread CPU
    * 32 GB DDR5 ECC Unbuffered RAM (Upgradable to 128 GB)
    * TPM 2.0 Trusted Platform Module (TCG 2.0)
    * FSP Group 9PA500CN04 Power Supply

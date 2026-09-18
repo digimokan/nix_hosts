@@ -20,7 +20,7 @@ serves up files over NFS.
 
 * [45HomeLab HL8](https://store.45homelab.com/configure/hl8)
    * Fully Built and Burned In
-   * Ryzen 7 5700G CPU
+   * Ryzen 7 5700G 3.8GHz 8-Core, 16-Thread CPU
    * 64 GB RAM
 * [2x SanDisk SSD Plus 480GB 2.5 Inch Sata III SSD](https://www.amazon.com/dp/B01F9G46Q8)
    * OS Boot Drives
