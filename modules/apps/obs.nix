@@ -404,7 +404,6 @@ in {
                   "private_settings": {}
                 }
               ],
-              "groups": [],
               "scene_order": [
                 {
                   "name": "Scene"
@@ -412,53 +411,8 @@ in {
               ],
               "current_scene": "Scene",
               "current_program_scene": "Scene",
-              "canvases": [],
               "current_transition": "Fade",
               "transition_duration": 300,
-              "transitions": [],
-              "quick_transitions": [
-                {
-                  "name": "Cut",
-                  "duration": 300,
-                  "hotkeys": [],
-                  "id": 1,
-                  "fade_to_black": false
-                },
-                {
-                  "name": "Fade",
-                  "duration": 300,
-                  "hotkeys": [],
-                  "id": 2,
-                  "fade_to_black": false
-                },
-                {
-                  "name": "Fade",
-                  "duration": 300,
-                  "hotkeys": [],
-                  "id": 3,
-                  "fade_to_black": true
-                }
-              ],
-              "saved_projectors": [],
-              "preview_locked": false,
-              "scaling_enabled": false,
-              "scaling_level": -22,
-              "scaling_off_x": 0.0,
-              "scaling_off_y": 0.0,
-              "modules": {
-                "scripts-tool": [],
-                "output-timer": {
-                  "streamTimerHours": 0,
-                  "streamTimerMinutes": 0,
-                  "streamTimerSeconds": 30,
-                  "recordTimerHours": 0,
-                  "recordTimerMinutes": 0,
-                  "recordTimerSeconds": 30,
-                  "autoStartStreamTimer": false,
-                  "autoStartRecordTimer": false,
-                  "pauseRecordTimer": true
-                }
-              },
               "resolution": {
                 "x": 1920,
                 "y": 1080
