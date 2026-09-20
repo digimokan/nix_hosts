@@ -204,12 +204,17 @@ in {
               "sources": [
                 {
                   "prev_ver": 536936450,
-                  "name": "Audio Input Capture (PulseAudio)",
-                  "uuid": "700459b7-600a-426f-b66c-360846484b74",
-                  "id": "pulse_input_capture",
-                  "versioned_id": "pulse_input_capture",
-                  "settings": {},
-                  "mixers": 255,
+                  "name": "Webcam",
+                  "uuid": "b7ece202-0565-4dc8-9afc-8277a9d09f7a",
+                  "id": "v4l2_input",
+                  "versioned_id": "v4l2_input",
+                  "settings": {
+                    "device_id": "/dev/video0",
+                    "input": 0,
+                    "pixelformat": 1196444237,
+                    "resolution": 8246337209400
+                  },
+                  "mixers": 0,
                   "sync": 0,
                   "flags": 0,
                   "volume": 1.0,
@@ -220,12 +225,7 @@ in {
                   "push-to-mute-delay": 0,
                   "push-to-talk": false,
                   "push-to-talk-delay": 0,
-                  "hotkeys": {
-                    "libobs.mute": [],
-                    "libobs.unmute": [],
-                    "libobs.push-to-mute": [],
-                    "libobs.push-to-talk": []
-                  },
+                  "hotkeys": {},
                   "deinterlace_mode": 0,
                   "deinterlace_field_order": 0,
                   "monitoring_type": 0,
@@ -233,14 +233,12 @@ in {
                 },
                 {
                   "prev_ver": 536936450,
-                  "name": "Webcam",
-                  "uuid": "b7ece202-0565-4dc8-9afc-8277a9d09f7a",
-                  "id": "v4l2_input",
-                  "versioned_id": "v4l2_input",
+                  "name": "Screen Capture",
+                  "uuid": "7367fffe-977b-4d19-bf45-533a056582b4",
+                  "id": "pipewire-screen-capture-source",
+                  "versioned_id": "pipewire-screen-capture-source",
                   "settings": {
-                    "device_id": "/dev/video0",
-                    "input": 0,
-                    "pixelformat": 1196444237
+                    "RestoreToken": "17b1656b-06f0-4b11-808e-27314d8531b3"
                   },
                   "mixers": 0,
                   "sync": 0,
@@ -266,13 +264,13 @@ in {
                   "id": "scene",
                   "versioned_id": "scene",
                   "settings": {
-                    "id_counter": 2,
+                    "id_counter": 3,
                     "custom_size": false,
                     "items": [
                       {
-                        "name": "Audio Input Capture (PulseAudio)",
-                        "source_uuid": "700459b7-600a-426f-b66c-360846484b74",
-                        "visible": true,
+                        "name": "Webcam",
+                        "source_uuid": "b7ece202-0565-4dc8-9afc-8277a9d09f7a",
+                        "visible": false,
                         "locked": false,
                         "rot": 0.0,
                         "scale_ref": {
@@ -287,7 +285,7 @@ in {
                         "crop_top": 0,
                         "crop_right": 0,
                         "crop_bottom": 0,
-                        "id": 1,
+                        "id": 2,
                         "group_item_backup": false,
                         "pos": {
                           "x": 0.0,
@@ -325,8 +323,8 @@ in {
                         "private_settings": {}
                       },
                       {
-                        "name": "Webcam",
-                        "source_uuid": "b7ece202-0565-4dc8-9afc-8277a9d09f7a",
+                        "name": "Screen Capture",
+                        "source_uuid": "7367fffe-977b-4d19-bf45-533a056582b4",
                         "visible": true,
                         "locked": false,
                         "rot": 0.0,
@@ -342,7 +340,7 @@ in {
                         "crop_top": 0,
                         "crop_right": 0,
                         "crop_bottom": 0,
-                        "id": 2,
+                        "id": 3,
                         "group_item_backup": false,
                         "pos": {
                           "x": 0.0,
@@ -353,12 +351,12 @@ in {
                           "y": -1.0
                         },
                         "scale": {
-                          "x": 0.5,
-                          "y": 0.5
+                          "x": 1.0,
+                          "y": 1.0
                         },
                         "scale_rel": {
-                          "x": 0.5,
-                          "y": 0.5
+                          "x": 1.0,
+                          "y": 1.0
                         },
                         "bounds": {
                           "x": 0.0,
@@ -394,10 +392,10 @@ in {
                   "push-to-talk-delay": 0,
                   "hotkeys": {
                     "OBSBasic.SelectScene": [],
-                    "libobs.show_scene_item.1": [],
-                    "libobs.hide_scene_item.1": [],
                     "libobs.show_scene_item.2": [],
-                    "libobs.hide_scene_item.2": []
+                    "libobs.hide_scene_item.2": [],
+                    "libobs.show_scene_item.3": [],
+                    "libobs.hide_scene_item.3": []
                   },
                   "deinterlace_mode": 0,
                   "deinterlace_field_order": 0,
@@ -444,7 +442,7 @@ in {
               "saved_projectors": [],
               "preview_locked": false,
               "scaling_enabled": false,
-              "scaling_level": -17,
+              "scaling_level": -22,
               "scaling_off_x": 0.0,
               "scaling_off_y": 0.0,
               "modules": {
@@ -460,6 +458,10 @@ in {
                   "autoStartRecordTimer": false,
                   "pauseRecordTimer": true
                 }
+              },
+              "resolution": {
+                "x": 1920,
+                "y": 1080
               },
               "version": 2
             }
