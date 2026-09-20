@@ -147,28 +147,7 @@ in {
                 "versioned_id": "pulse_output_capture",
                 "settings": {
                   "device_id": "default"
-                },
-                "mixers": 255,
-                "sync": 0,
-                "flags": 0,
-                "volume": 1.0,
-                "balance": 0.5,
-                "enabled": true,
-                "muted": false,
-                "push-to-mute": false,
-                "push-to-mute-delay": 0,
-                "push-to-talk": false,
-                "push-to-talk-delay": 0,
-                "hotkeys": {
-                  "libobs.mute": [],
-                  "libobs.unmute": [],
-                  "libobs.push-to-mute": [],
-                  "libobs.push-to-talk": []
-                },
-                "deinterlace_mode": 0,
-                "deinterlace_field_order": 0,
-                "monitoring_type": 0,
-                "private_settings": {}
+                }
               },
               "AuxAudioDevice1": {
                 "prev_ver": 536936450,
@@ -178,28 +157,7 @@ in {
                 "versioned_id": "pulse_input_capture",
                 "settings": {
                   "device_id": "default"
-                },
-                "mixers": 255,
-                "sync": 0,
-                "flags": 0,
-                "volume": 1.0,
-                "balance": 0.5,
-                "enabled": true,
-                "muted": false,
-                "push-to-mute": false,
-                "push-to-mute-delay": 0,
-                "push-to-talk": false,
-                "push-to-talk-delay": 0,
-                "hotkeys": {
-                  "libobs.mute": [],
-                  "libobs.unmute": [],
-                  "libobs.push-to-mute": [],
-                  "libobs.push-to-talk": []
-                },
-                "deinterlace_mode": 0,
-                "deinterlace_field_order": 0,
-                "monitoring_type": 0,
-                "private_settings": {}
+                }
               },
               "sources": [
                 {
@@ -213,23 +171,7 @@ in {
                     "input": 0,
                     "pixelformat": 1196444237,
                     "resolution": 8246337209400
-                  },
-                  "mixers": 0,
-                  "sync": 0,
-                  "flags": 0,
-                  "volume": 1.0,
-                  "balance": 0.5,
-                  "enabled": true,
-                  "muted": false,
-                  "push-to-mute": false,
-                  "push-to-mute-delay": 0,
-                  "push-to-talk": false,
-                  "push-to-talk-delay": 0,
-                  "hotkeys": {},
-                  "deinterlace_mode": 0,
-                  "deinterlace_field_order": 0,
-                  "monitoring_type": 0,
-                  "private_settings": {}
+                  }
                 },
                 {
                   "prev_ver": 536936450,
@@ -239,23 +181,7 @@ in {
                   "versioned_id": "pipewire-screen-capture-source",
                   "settings": {
                     "RestoreToken": "17b1656b-06f0-4b11-808e-27314d8531b3"
-                  },
-                  "mixers": 0,
-                  "sync": 0,
-                  "flags": 0,
-                  "volume": 1.0,
-                  "balance": 0.5,
-                  "enabled": true,
-                  "muted": false,
-                  "push-to-mute": false,
-                  "push-to-mute-delay": 0,
-                  "push-to-talk": false,
-                  "push-to-talk-delay": 0,
-                  "hotkeys": {},
-                  "deinterlace_mode": 0,
-                  "deinterlace_field_order": 0,
-                  "monitoring_type": 0,
-                  "private_settings": {}
+                  }
                 },
                 {
                   "prev_ver": 536936450,
@@ -378,30 +304,7 @@ in {
                         "private_settings": {}
                       }
                     ]
-                  },
-                  "mixers": 0,
-                  "sync": 0,
-                  "flags": 0,
-                  "volume": 1.0,
-                  "balance": 0.5,
-                  "enabled": true,
-                  "muted": false,
-                  "push-to-mute": false,
-                  "push-to-mute-delay": 0,
-                  "push-to-talk": false,
-                  "push-to-talk-delay": 0,
-                  "hotkeys": {
-                    "OBSBasic.SelectScene": [],
-                    "libobs.show_scene_item.2": [],
-                    "libobs.hide_scene_item.2": [],
-                    "libobs.show_scene_item.3": [],
-                    "libobs.hide_scene_item.3": []
-                  },
-                  "deinterlace_mode": 0,
-                  "deinterlace_field_order": 0,
-                  "monitoring_type": 0,
-                  "canvas_uuid": "6c69626f-6273-4c00-9d88-c5136d61696e",
-                  "private_settings": {}
+                  }
                 }
               ],
               "scene_order": [
