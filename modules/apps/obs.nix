@@ -140,32 +140,26 @@ in {
             {
               "name": "Untitled",
               "DesktopAudioDevice1": {
-                "prev_ver": 536936450,
                 "name": "Desktop Audio",
                 "uuid": "8e92e09d-466f-4eaf-993b-bfec884bd039",
                 "id": "pulse_output_capture",
-                "versioned_id": "pulse_output_capture",
                 "settings": {
                   "device_id": "default"
                 }
               },
               "AuxAudioDevice1": {
-                "prev_ver": 536936450,
                 "name": "Mic/Aux",
                 "uuid": "8deadf6e-78a2-4d90-8b76-36b1d3e9a8b4",
                 "id": "pulse_input_capture",
-                "versioned_id": "pulse_input_capture",
                 "settings": {
                   "device_id": "default"
                 }
               },
               "sources": [
                 {
-                  "prev_ver": 536936450,
                   "name": "Webcam",
                   "uuid": "b7ece202-0565-4dc8-9afc-8277a9d09f7a",
                   "id": "v4l2_input",
-                  "versioned_id": "v4l2_input",
                   "settings": {
                     "device_id": "/dev/video0",
                     "input": 0,
@@ -174,21 +168,17 @@ in {
                   }
                 },
                 {
-                  "prev_ver": 536936450,
                   "name": "Screen Capture",
                   "uuid": "7367fffe-977b-4d19-bf45-533a056582b4",
                   "id": "pipewire-screen-capture-source",
-                  "versioned_id": "pipewire-screen-capture-source",
                   "settings": {
                     "RestoreToken": "17b1656b-06f0-4b11-808e-27314d8531b3"
                   }
                 },
                 {
-                  "prev_ver": 536936450,
                   "name": "Scene",
                   "uuid": "bfb37e1f-9042-44db-9fa9-2311b8c50d83",
                   "id": "scene",
-                  "versioned_id": "scene",
                   "settings": {
                     "id_counter": 3,
                     "custom_size": false,
@@ -197,111 +187,13 @@ in {
                         "name": "Webcam",
                         "source_uuid": "b7ece202-0565-4dc8-9afc-8277a9d09f7a",
                         "visible": false,
-                        "locked": false,
-                        "rot": 0.0,
-                        "scale_ref": {
-                          "x": 1920.0,
-                          "y": 1080.0
-                        },
-                        "align": 5,
-                        "bounds_type": 0,
-                        "bounds_align": 0,
-                        "bounds_crop": false,
-                        "crop_left": 0,
-                        "crop_top": 0,
-                        "crop_right": 0,
-                        "crop_bottom": 0,
-                        "id": 2,
-                        "group_item_backup": false,
-                        "pos": {
-                          "x": 0.0,
-                          "y": 0.0
-                        },
-                        "pos_rel": {
-                          "x": -1.7777777910232544,
-                          "y": -1.0
-                        },
-                        "scale": {
-                          "x": 1.0,
-                          "y": 1.0
-                        },
-                        "scale_rel": {
-                          "x": 1.0,
-                          "y": 1.0
-                        },
-                        "bounds": {
-                          "x": 0.0,
-                          "y": 0.0
-                        },
-                        "bounds_rel": {
-                          "x": 0.0,
-                          "y": 0.0
-                        },
-                        "scale_filter": "disable",
-                        "blend_method": "default",
-                        "blend_type": "normal",
-                        "show_transition": {
-                          "duration": 300
-                        },
-                        "hide_transition": {
-                          "duration": 300
-                        },
-                        "private_settings": {}
+                        "id": 2
                       },
                       {
                         "name": "Screen Capture",
                         "source_uuid": "7367fffe-977b-4d19-bf45-533a056582b4",
                         "visible": true,
-                        "locked": false,
-                        "rot": 0.0,
-                        "scale_ref": {
-                          "x": 1920.0,
-                          "y": 1080.0
-                        },
-                        "align": 5,
-                        "bounds_type": 0,
-                        "bounds_align": 0,
-                        "bounds_crop": false,
-                        "crop_left": 0,
-                        "crop_top": 0,
-                        "crop_right": 0,
-                        "crop_bottom": 0,
-                        "id": 3,
-                        "group_item_backup": false,
-                        "pos": {
-                          "x": 0.0,
-                          "y": 0.0
-                        },
-                        "pos_rel": {
-                          "x": -1.7777777910232544,
-                          "y": -1.0
-                        },
-                        "scale": {
-                          "x": 1.0,
-                          "y": 1.0
-                        },
-                        "scale_rel": {
-                          "x": 1.0,
-                          "y": 1.0
-                        },
-                        "bounds": {
-                          "x": 0.0,
-                          "y": 0.0
-                        },
-                        "bounds_rel": {
-                          "x": 0.0,
-                          "y": 0.0
-                        },
-                        "scale_filter": "disable",
-                        "blend_method": "default",
-                        "blend_type": "normal",
-                        "show_transition": {
-                          "duration": 300
-                        },
-                        "hide_transition": {
-                          "duration": 300
-                        },
-                        "private_settings": {}
+                        "id": 3
                       }
                     ]
                   }
