@@ -139,26 +139,6 @@ in {
           text = ''
             {
               "name": "Untitled",
-              "DesktopAudioDevice1": {
-                "prev_ver": 536936450,
-                "name": "Desktop Audio",
-                "uuid": "8e92e09d-466f-4eaf-993b-bfec884bd039",
-                "id": "pulse_output_capture",
-                "versioned_id": "pulse_output_capture",
-                "settings": {
-                  "device_id": "default"
-                }
-              },
-              "AuxAudioDevice1": {
-                "prev_ver": 536936450,
-                "name": "Mic/Aux",
-                "uuid": "8deadf6e-78a2-4d90-8b76-36b1d3e9a8b4",
-                "id": "pulse_input_capture",
-                "versioned_id": "pulse_input_capture",
-                "settings": {
-                  "device_id": "default"
-                }
-              },
               "sources": [
                 {
                   "prev_ver": 536936450,
