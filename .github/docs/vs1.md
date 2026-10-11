@@ -25,6 +25,12 @@ that hosts services, containers, and virtual machines.
    * 32 GB DDR5 ECC Unbuffered RAM (Upgradable to 128 GB)
    * TPM 2.0 Trusted Platform Module (TCG 2.0)
    * FSP Group 9PA500CN04 Power Supply
+   * Coolers/Fans
+       * CPU M-Cooler (`FAN1`): 1x [Noctua NH-L9i-17xx](https://www.amazon.com/Noctua-NH-L9i-17xx-Premium-Low-Profile-LGA1700/dp/B09HCLB7M3)
+       * Hot Swap Bay (`BAY1`): 2x Runda RS4010S12M 1.5" fans
+       * Front Intake (`FAN3`): 1x ("Designed by Blue Gears in USA") 3" fan
+       * Aft Exhaust1 (`FAN2`): 2x Sunon Maglev MF40201-VX-10000-G99 1.5" fans
+       * Aft Exhaust2 (`FAN5`): 2x Sunon Maglev MF40201-VX-10000-G99 1.5" fans
 * [2x SanDisk 500GB SSD Plus 2.5 Inch Sata III SSD](https://www.amazon.com/gp/product/B0F4Y2VR8S)
    * OS Boot Drives (in 2 of the 8 2.5 Inch SSD Hotswap Bays)
 * [2x Samsung 2TB 870 EVO 2.5 Inch Sata III SSD](https://www.amazon.com/dp/B08QB93S6R)
