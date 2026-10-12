@@ -178,7 +178,6 @@ in {
                 {
                   "name": "Scene",
                   "uuid": "bfb37e1f-9042-44db-9fa9-2311b8c50d83",
-                  "id": "scene",
                   "settings": {
                     "id_counter": 2,
                     "custom_size": false,
@@ -187,13 +186,11 @@ in {
                         "name": "Webcam",
                         "source_uuid": "b7ece202-0565-4dc8-9afc-8277a9d09f7a",
                         "visible": false,
-                        "id": 1
                       },
                       {
                         "name": "Screen Capture",
                         "source_uuid": "7367fffe-977b-4d19-bf45-533a056582b4",
                         "visible": true,
-                        "id": 2
                       }
                     ]
                   }
