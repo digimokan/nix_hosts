@@ -179,6 +179,7 @@ in {
                   "name": "Scene",
                   "uuid": "bfb37e1f-9042-44db-9fa9-2311b8c50d83",
                   "settings": {
+                    "id_counter": 2,
                     "custom_size": false,
                     "items": [
                       {
