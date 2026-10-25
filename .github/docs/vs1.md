@@ -6,7 +6,8 @@
 * [Hardware](#hardware)
    * [Hardware Parts List](#hardware-parts-list)
    * [Hardware Connections](#hardware-connections)
-   * [Hardware BIOS Configuration](#hardware-bios-configuration)
+   * [Hardware BIOS Settings](#hardware-bios-settings)
+   * [Hardware BMC Settings](#hardware-bmc-settings)
 * [Configuration](#configuration)
 
 ## Purpose
@@ -40,7 +41,7 @@ that hosts services, containers, and virtual machines.
 
 TODO
 
-### Hardware BIOS Configuration
+### Hardware BIOS Settings
 
 #### Advanced
 
@@ -56,6 +57,14 @@ TODO
 #### Boot Devices
 
 TODO
+
+### Hardware BMC Settings
+
+#### System
+
+##### Component Info
+
+* `Cooling` -> `Fan Mode`: "Full Speed"
 
 ## Configuration
 
