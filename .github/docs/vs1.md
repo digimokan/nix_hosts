@@ -31,9 +31,9 @@ that hosts services, containers, and virtual machines.
        * Front Intake (`FAN3`): 1x [NF-A8 PWM 12V](https://www.amazon.com/dp/B00NEMG62M)
        * Aft Exhaust1 (`FAN2`): 1x [Noctua NF-A4x20 PWM 12V](https://www.amazon.com/dp/B071W93333)
        * Aft Exhaust2 (`FAN5`): 1x [Noctua NF-A4x20 PWM 12V](https://www.amazon.com/dp/B071W93333)
-* [2x SanDisk 500GB SSD Plus 2.5 Inch Sata III SSD](https://www.amazon.com/gp/product/B0F4Y2VR8S)
+* [2x Crucial 500GB MX500 2.5 Inch Sata SSD](https://www.amazon.com/dp/B0786QNS9B)
    * OS Boot Drives (in 2 of the 8 2.5 Inch SSD Hotswap Bays)
-* [2x Samsung 2TB 870 EVO 2.5 Inch Sata III SSD](https://www.amazon.com/dp/B08QB93S6R)
+* [2x Intel 2TB D3-S4510 2.5 Inch Sata SSD](https://www.amazon.com/gp/product/B0H5KSZWTQ)
    * Data Drives (in 2 of the 8 2.5 Inch SSD Hotswap Bays)
 
 ### Hardware Connections
