@@ -28,7 +28,7 @@ that hosts services, containers, and virtual machines.
     * FSP Group 9PA500CN04 Power Supply
     * Coolers/Fans
        * CPU M-Cooler (`FAN1`): 1x [Noctua NH-L9i-17xx](https://www.amazon.com/Noctua-NH-L9i-17xx-Premium-Low-Profile-LGA1700/dp/B09HCLB7M3)
-       * Front Intake (`FAN3`): 1x [NF-A8 PWM 12V](https://www.amazon.com/dp/B00NEMG62M)
+       * Front Intake (`FAN3`): 1x [Noctua NF-A8 PWM 12V](https://www.amazon.com/dp/B00NEMG62M)
        * Aft Exhaust1 (`FAN2`): 1x [Noctua NF-A4x20 PWM 12V](https://www.amazon.com/dp/B071W93333)
        * Aft Exhaust2 (`FAN5`): 1x [Noctua NF-A4x20 PWM 12V](https://www.amazon.com/dp/B071W93333)
        * Hot Swap Bay (`FANA`): 2x [Noctua NF-A4x10 PWM 12V](https://www.amazon.com/dp/B07DXRNYNX)
