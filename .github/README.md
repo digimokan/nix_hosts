@@ -34,6 +34,8 @@ NixOS configuration to set up various hosts.
 
 ## List Of Hosts
 
+* [`rtg1`](./docs/rtg.md): high availability edge router on `GLAN`.
+* [`rtg2`](./docs/rtg.md): high availability edge router on `GLAN`.
 * [`nas`](./docs/nas.md): main NAS on `GLAN`.
 * [`tm1`](./docs/tm1.md): test user machine on `GLAN` (inop).
 * [`tm2`](./docs/tm2.md): test user machine on `GLAN`.
