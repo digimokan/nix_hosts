@@ -98,6 +98,12 @@ in {
             description = "Device ID for the microphone or aux-input audio capture.";
           };
 
+          defaultVideoCapture = lib.mkOption {
+            type = lib.types.enum [ "webcam" "screen_capture" ];
+            default = "screen_capture";
+            description = "Default video capture source visible on launch.";
+          };
+
           hotkeyRecStart = lib.mkOption {
             type = lib.types.str;
             default = "OBS_KEY_F7";
@@ -166,6 +172,10 @@ in {
         videoCanvasDimensions = lib.strings.splitString "x" userCfg.videoCanvasSize;
         videoCanvasPixelWidth = builtins.elemAt videoCanvasDimensions 0;
         videoCanvasPixelHeight = builtins.elemAt videoCanvasDimensions 1;
+
+        # Determine default video capture visibility booleans based on user choice
+        showWebcamCapture = if userCfg.defaultVideoCapture == "webcam" then "true" else "false";
+        showScreenCapture = if userCfg.defaultVideoCapture == "screen_capture" then "true" else "false";
       in {
         xdg.configFile."obs-studio/basic/profiles/Untitled/basic.ini" = {
           force = true;
@@ -239,13 +249,13 @@ in {
                       {
                         "name": "Webcam",
                         "source_uuid": "b7ece202-0565-4dc8-9afc-8277a9d09f7a",
-                        "visible": false,
+                        "visible": ${showWebcamCapture},
                         "id": 1
                       },
                       {
                         "name": "Screen Capture",
                         "source_uuid": "7367fffe-977b-4d19-bf45-533a056582b4",
-                        "visible": true,
+                        "visible": ${showScreenCapture},
                         "id": 2
                       }
                     ]
