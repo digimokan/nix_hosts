@@ -162,7 +162,9 @@ in {
                   "id": "v4l2_input",
                   "settings": {
                     "device_id": "/dev/video0",
-                    "input": 0
+                    "input": 0,
+                    "pixelformat": 1196444237,
+                    "resolution": 8246337209400
                   }
                 },
                 {
