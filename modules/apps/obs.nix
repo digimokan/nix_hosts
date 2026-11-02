@@ -176,9 +176,9 @@ in {
                   }
                 },
                 {
-                  "name": "Scene",
+                  "name": "MainScene",
                   "uuid": "bfb37e1f-9042-44db-9fa9-2311b8c50d83",
-                  "id": "scene",
+                  "id": "main_scene",
                   "settings": {
                     "id_counter": 2,
                     "custom_size": false,
@@ -201,11 +201,11 @@ in {
               ],
               "scene_order": [
                 {
-                  "name": "Scene"
+                  "name": "MainScene"
                 }
               ],
-              "current_scene": "Scene",
-              "current_program_scene": "Scene",
+              "current_scene": "MainScene",
+              "current_program_scene": "MainScene",
               "current_transition": "Fade",
               "transition_duration": 300,
               "resolution": {
