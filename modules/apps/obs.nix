@@ -208,10 +208,7 @@ in {
                 {
                   "name": "Screen Capture",
                   "uuid": "7367fffe-977b-4d19-bf45-533a056582b4",
-                  "id": "pipewire-screen-capture-source",
-                  "settings": {
-                    "RestoreToken": "17b1656b-06f0-4b11-808e-27314d8531b3"
-                  }
+                  "id": "pipewire-screen-capture-source"
                 },
                 {
                   "name": "MainScene",
