@@ -178,7 +178,7 @@ in {
                 {
                   "name": "MainScene",
                   "uuid": "bfb37e1f-9042-44db-9fa9-2311b8c50d83",
-                  "id": "main_scene",
+                  "id": "scene",
                   "settings": {
                     "id_counter": 2,
                     "custom_size": false,
