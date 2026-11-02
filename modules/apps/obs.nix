@@ -62,6 +62,12 @@ in {
             '';
           };
 
+          videoCanvasSize = lib.mkOption {
+            type = lib.types.str;
+            default = "1920x1080";
+            description = "Video window canvas size, in pixels (WIDTHxHEIGHT).";
+          };
+
           webcamResolution = lib.mkOption {
             type = lib.types.str;
             default = "1920x1080";
@@ -137,6 +143,11 @@ in {
             w = lib.strings.toInt (builtins.elemAt parts 0);
             h = lib.strings.toInt (builtins.elemAt parts 1);
           in (w * 4294967296) + h;
+
+        # Extract video canvas dimensions for the global resolution block
+        videoCanvasDimensions = lib.strings.splitString "x" userCfg.videoCanvasSize;
+        videoCanvasPixelWidth = builtins.elemAt videoCanvasDimensions 0;
+        videoCanvasPixelHeight = builtins.elemAt videoCanvasDimensions 1;
       in {
         xdg.configFile."obs-studio/basic/profiles/Untitled/basic.ini" = {
           force = true;
@@ -234,8 +245,8 @@ in {
               "current_scene": "MainScene",
               "current_program_scene": "MainScene",
               "resolution": {
-                "x": 1920,
-                "y": 1080
+                "x": ${videoCanvasPixelWidth},
+                "y": ${videoCanvasPixelHeight}
               },
               "version": 2
             }
