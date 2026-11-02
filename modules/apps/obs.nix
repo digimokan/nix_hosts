@@ -181,6 +181,7 @@ in {
                   "id": "scene",
                   "settings": {
                     "id_counter": 2,
+                    "custom_size": false,
                     "items": [
                       {
                         "name": "Webcam",
