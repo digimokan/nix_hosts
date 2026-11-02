@@ -206,7 +206,7 @@ in {
             {
               "name": "Untitled",
               "DesktopAudioDevice1": {
-                "name": "Desktop Audio",
+                "name": "Desktop Audio Capture",
                 "uuid": "8e92e09d-466f-4eaf-993b-bfec884bd039",
                 "id": "pulse_output_capture",
                 "settings": {
@@ -214,7 +214,7 @@ in {
                 }
               },
               "AuxAudioDevice1": {
-                "name": "Mic/Aux",
+                "name": "Mic/Aux Audio Capture",
                 "uuid": "8deadf6e-78a2-4d90-8b76-36b1d3e9a8b4",
                 "id": "pulse_input_capture",
                 "settings": {
@@ -223,7 +223,7 @@ in {
               },
               "sources": [
                 {
-                  "name": "Webcam",
+                  "name": "Webcam Video Capture",
                   "uuid": "b7ece202-0565-4dc8-9afc-8277a9d09f7a",
                   "id": "v4l2_input",
                   "settings": {
@@ -234,7 +234,7 @@ in {
                   }
                 },
                 {
-                  "name": "Screen Capture",
+                  "name": "Screen Video Capture",
                   "uuid": "7367fffe-977b-4d19-bf45-533a056582b4",
                   "id": "pipewire-screen-capture-source"
                 },
@@ -247,13 +247,13 @@ in {
                     "custom_size": false,
                     "items": [
                       {
-                        "name": "Webcam",
+                        "name": "Webcam Video Capture",
                         "source_uuid": "b7ece202-0565-4dc8-9afc-8277a9d09f7a",
                         "visible": ${showWebcamCapture},
                         "id": 1
                       },
                       {
-                        "name": "Screen Capture",
+                        "name": "Screen Video Capture",
                         "source_uuid": "7367fffe-977b-4d19-bf45-533a056582b4",
                         "visible": ${showScreenCapture},
                         "id": 2
