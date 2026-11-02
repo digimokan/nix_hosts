@@ -71,7 +71,7 @@ in {
           webcamDeviceId = lib.mkOption {
             type = lib.types.str;
             default = "default";
-            description = "Device ID for the webcam (e.g., /dev/video0 or default).";
+            description = "Device ID for the webcam (e.g. /dev/video0) video capture.";
           };
 
           webcamResolution = lib.mkOption {
@@ -86,10 +86,16 @@ in {
             description = "Webcam hardware pixel format (FourCC representation).";
           };
 
+          desktopAudioDeviceId = lib.mkOption {
+            type = lib.types.str;
+            default = "default";
+            description = "Device ID for the desktop audio capture.";
+          };
+
           micDeviceId = lib.mkOption {
             type = lib.types.str;
             default = "default";
-            description = "Device ID for the microphone or aux input.";
+            description = "Device ID for the microphone or aux-input audio capture.";
           };
 
           hotkeyRecStart = lib.mkOption {
@@ -194,7 +200,7 @@ in {
                 "uuid": "8e92e09d-466f-4eaf-993b-bfec884bd039",
                 "id": "pulse_output_capture",
                 "settings": {
-                  "device_id": "default"
+                  "device_id": "${userCfg.desktopAudioDeviceId}"
                 }
               },
               "AuxAudioDevice1": {
