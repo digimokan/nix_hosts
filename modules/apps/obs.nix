@@ -71,37 +71,55 @@ in {
           webcamDeviceId = lib.mkOption {
             type = lib.types.str;
             default = "/dev/video0";
-            description = "Device ID for the webcam (e.g. /dev/v4l/by-id/...).";
+            description = ''
+              Device ID for the webcam (e.g. /dev/v4l/by-id/...).
+              This is the "Device" selection in Webcam Video Capture properties.
+            '';
           };
 
           webcamInputIndex = lib.mkOption {
             type = lib.types.int;
             default = 0;
-            description = "V4L2 input index. Always 0 for webcams; used for multi-port cards.";
+            description = ''
+              V4L2 input index. Always 0 for webcams; used for multi-port cards.
+              This is the "Input" selection in Webcam Video Capture properties.
+            '';
           };
 
           webcamResolution = lib.mkOption {
             type = lib.types.str;
             default = "1920x1080";
-            description = "Webcam hardware resolution WIDTHxHEIGHT).";
+            description = ''
+              Webcam hardware resolution WIDTHxHEIGHT).
+              This is the "Resolution" selection in Webcam Video Capture properties.
+            '';
           };
 
           webcamPixelFormat = lib.mkOption {
             type = lib.types.enum [ "MJPEG" "YUYV" "H264" "NV12" ];
             default = "MJPEG";
-            description = "Webcam hardware pixel format (FourCC representation).";
+            description = ''
+              Webcam hardware pixel format (FourCC representation).
+              This is the "Video Format" selection in Webcam Video Capture properties.
+            '';
           };
 
           desktopAudioDeviceId = lib.mkOption {
             type = lib.types.str;
             default = "default";
-            description = "Device ID for the desktop audio capture.";
+            description = ''
+              Device ID for the desktop audio capture.
+              This is the "Device" selection in Desktop Audio Capture properties.
+            '';
           };
 
           micDeviceId = lib.mkOption {
             type = lib.types.str;
             default = "default";
-            description = "Device ID for the microphone or aux-input audio capture.";
+            description = ''
+              Device ID for the microphone or aux-input audio capture.
+              This is the "Device" selection in Mic/Aux Audio Capture properties.
+            '';
           };
 
           defaultVideoCapture = lib.mkOption {
