@@ -62,6 +62,18 @@ in {
             '';
           };
 
+          webcamResolution = lib.mkOption {
+            type = lib.types.str;
+            default = "1920x1080";
+            description = "Webcam hardware resolution WIDTHxHEIGHT).";
+          };
+
+          webcamPixelFormat = lib.mkOption {
+            type = lib.types.enum [ "MJPEG" "YUYV" "H264" "NV12" ];
+            default = "MJPEG";
+            description = "Webcam hardware pixel format (FourCC representation).";
+          };
+
           hotkeyRecStart = lib.mkOption {
             type = lib.types.str;
             default = "OBS_KEY_F7";
@@ -110,6 +122,21 @@ in {
         userCfg = cfg.userSettings.${userName};
         # Helper to generate the exact JSON string required by OBS INI files
         mkHotkey = key: builtins.toJSON { bindings = [ { inherit key; } ]; };
+
+        pixelFormatMap = {
+          "MJPEG" = 1196444237;
+          "YUYV" = 1448695129;
+          "H264" = 875967048;
+          "NV12" = 842094158;
+        };
+
+        # Helper to parse "WIDTHxHEIGHT" string into V4L2 required integer
+        parseRes = resStr:
+          let
+            parts = lib.strings.splitString "x" resStr;
+            w = lib.strings.toInt (builtins.elemAt parts 0);
+            h = lib.strings.toInt (builtins.elemAt parts 1);
+          in (w * 4294967296) + h;
       in {
         xdg.configFile."obs-studio/basic/profiles/Untitled/basic.ini" = {
           force = true;
@@ -163,8 +190,8 @@ in {
                   "settings": {
                     "device_id": "/dev/video0",
                     "input": 0,
-                    "pixelformat": 1196444237,
-                    "resolution": 8246337209400
+                    "pixelformat": ${toString pixelFormatMap.${userCfg.webcamPixelFormat}},
+                    "resolution": ${toString (parseRes userCfg.webcamResolution)}
                   }
                 },
                 {
