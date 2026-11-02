@@ -56,6 +56,8 @@ in {
     custom.apps.git.enable = true;
     custom.apps.git.userName = "digimokan";
 
+    custom.apps.obs.webcamDeviceId = "/dev/v4l/by-id/usb-4K_USB_Camera_4K_USB_Camera_01.00.00-video-index0";
+
     custom.infrastructure.usersList = {
       "testuser2" = { role = "standard"; isPrimary = true; };
       "digimokan" = { role = "admin"; };

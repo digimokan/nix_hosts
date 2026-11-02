@@ -70,8 +70,14 @@ in {
 
           webcamDeviceId = lib.mkOption {
             type = lib.types.str;
-            default = "default";
-            description = "Device ID for the webcam (e.g. /dev/video0) video capture.";
+            default = "/dev/video0";
+            description = "Device ID for the webcam (e.g. /dev/v4l/by-id/...).";
+          };
+
+          webcamInputIndex = lib.mkOption {
+            type = lib.types.int;
+            default = 0;
+            description = "V4L2 input index. Always 0 for webcams; used for multi-port cards.";
           };
 
           webcamResolution = lib.mkOption {
@@ -228,7 +234,7 @@ in {
                   "id": "v4l2_input",
                   "settings": {
                     "device_id": "${userCfg.webcamDeviceId}",
-                    "input": 0,
+                    "input": ${toString userCfg.webcamInputIndex},
                     "pixelformat": ${toString pixelFormatMap.${userCfg.webcamPixelFormat}},
                     "resolution": ${toString (parseRes userCfg.webcamResolution)}
                   }
