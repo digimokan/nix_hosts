@@ -68,6 +68,12 @@ in {
             description = "Video window canvas size, in pixels (WIDTHxHEIGHT).";
           };
 
+          webcamDeviceId = lib.mkOption {
+            type = lib.types.str;
+            default = "default";
+            description = "Device ID for the webcam (e.g., /dev/video0 or default).";
+          };
+
           webcamResolution = lib.mkOption {
             type = lib.types.str;
             default = "1920x1080";
@@ -78,6 +84,12 @@ in {
             type = lib.types.enum [ "MJPEG" "YUYV" "H264" "NV12" ];
             default = "MJPEG";
             description = "Webcam hardware pixel format (FourCC representation).";
+          };
+
+          micDeviceId = lib.mkOption {
+            type = lib.types.str;
+            default = "default";
+            description = "Device ID for the microphone or aux input.";
           };
 
           hotkeyRecStart = lib.mkOption {
@@ -190,7 +202,7 @@ in {
                 "uuid": "8deadf6e-78a2-4d90-8b76-36b1d3e9a8b4",
                 "id": "pulse_input_capture",
                 "settings": {
-                  "device_id": "default"
+                  "device_id": "${userCfg.micDeviceId}"
                 }
               },
               "sources": [
@@ -199,7 +211,7 @@ in {
                   "uuid": "b7ece202-0565-4dc8-9afc-8277a9d09f7a",
                   "id": "v4l2_input",
                   "settings": {
-                    "device_id": "/dev/video0",
+                    "device_id": "${userCfg.webcamDeviceId}",
                     "input": 0,
                     "pixelformat": ${toString pixelFormatMap.${userCfg.webcamPixelFormat}},
                     "resolution": ${toString (parseRes userCfg.webcamResolution)}
