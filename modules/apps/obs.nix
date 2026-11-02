@@ -206,8 +206,6 @@ in {
               ],
               "current_scene": "MainScene",
               "current_program_scene": "MainScene",
-              "current_transition": "Fade",
-              "transition_duration": 300,
               "resolution": {
                 "x": 1920,
                 "y": 1080
