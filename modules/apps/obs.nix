@@ -90,7 +90,7 @@ in {
             type = lib.types.str;
             default = "1920x1080";
             description = ''
-              Webcam hardware resolution WIDTHxHEIGHT).
+              Webcam hardware resolution (WIDTHxHEIGHT).
               This is the "Resolution" selection in Webcam Video Capture properties.
             '';
           };
