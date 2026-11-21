@@ -15,7 +15,6 @@
 let
 
   sec = config.sops.secrets;
-  infra = config.custom.infrastructure;
   tscale = config.custom.apps.tailscale;
   nasCfg = config.custom.hosts.nas;
   zrootPool = import ./zroot-zpool.nix allArgs;
@@ -44,7 +43,6 @@ in {
     custom.system.grub.enableMode = "efi";
     custom.system.grub.efiModeRemovableDisks = true;
 
-    custom.system.networking.primaryDnsServerIpAddr = infra.lan.routerIpAddr;
     custom.system.networking.trustedIpLinkInterfaces = tscale.ipLinkInterfaces;
 
     custom.system.zfs.zrootPoolSchema = zrootPool;

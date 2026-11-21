@@ -16,7 +16,6 @@
   imports = [
     ./display-manager.nix
     ./editor.nix
-    ./lan.nix
     ./users.nix
   ];
 }
