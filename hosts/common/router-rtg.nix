@@ -43,7 +43,7 @@ in {
         mac = "90:5A:08:76:DD:B6";
         blockWanAccess = true;
       };
-      studyPrinter = {
+      frontRoomPrinter = {
         subnet = trustedSubnet;
         lastIpOctetAssignment = 51;
         mac = "94:DD:F8:48:09:B0";
@@ -55,7 +55,7 @@ in {
         mac = "B0:4E:26:D1:00:4A";
         blockWanAccess = true;
       };
-      laundryRoomSwitch = {
+      utilityRoomSwitch = {
         subnet = trustedSubnet;
         lastIpOctetAssignment = 53;
         mac = "D8:0D:17:41:AA:37";
