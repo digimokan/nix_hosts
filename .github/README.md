@@ -8,7 +8,7 @@ NixOS configuration to set up various hosts.
 ## Table Of Contents
 
 * [Purpose](#purpose)
-* [List Of Hosts](#list-of-hosts)
+* [LANs And Hosts](#lans-and-hosts)
 * [Quick Start](#quick-start)
     * [Manage Secrets With SOPS](#manage-secrets-with-sops)
 * [Deploy NixOS To A Host](#deploy-nixos-to-a-host)
@@ -32,14 +32,33 @@ NixOS configuration to set up various hosts.
 * Hosts may be on separate LANs.
 * Hosts are all configured with ZFS-on-root (single-disk, or mirror).
 
-## List Of Hosts
+## LANs And Hosts
 
-* [`rtg1`](./docs/rtg.md): high availability edge router on `GLAN`.
-* [`rtg2`](./docs/rtg.md): high availability edge router on `GLAN`.
-* [`nas`](./docs/nas.md): main NAS on `GLAN`.
-* [`tm1`](./docs/tm1.md): test user machine on `GLAN` (inop).
-* [`tm2`](./docs/tm2.md): test user machine on `GLAN`.
-* [`vs1`](./docs/vs1.md): services and hypervisor server on `GLAN`.
+### [GLAN](./docs/glan.md)
+
+#### Server Rack
+
+* [`rtg1`](./docs/rtg.md): high-reliability router.
+* [`rtg2`](./docs/rtg.md): high-reliability router.
+* [`nas`](./docs/nas.md): main NAS.
+* [`tm2`](./docs/tm2.md): test user machine.
+* [`vs1`](./docs/vs1.md): services and hypervisor server.
+
+#### Standalone
+
+* [`tm1`](./docs/tm1.md): test user machine (inop).
+
+#### VLAN Switches
+
+* [`swsv`](./docs/swsv.md): main server rack.
+* [`swut`](./docs/swut.md): utility room.
+* [`swwk`](./docs/swwk.md): work area.
+* [`swlv`](./docs/swlv.md): living room.
+* [`swbd`](./docs/swbd.md): bedroom.
+
+### [FLAN](./docs/flan.md)
+
+* [`rtf`](./docs/rtf.md): router.
 
 ## Manage Secrets With SOPS
 

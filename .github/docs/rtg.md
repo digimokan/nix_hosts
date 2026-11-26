@@ -10,7 +10,7 @@
 ## Purpose
 
 `rtg1` and `rtg2` are [Protectli FW2B](https://www.amazon.com/dp/B07G7GW2FB)
-edge routers that operate in a high availability setup.
+edge routers that operate in a high-reliability setup.
 
 ## Hardware
 
