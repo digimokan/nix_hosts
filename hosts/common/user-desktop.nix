@@ -28,6 +28,7 @@ in {
 
     custom.system.networking.trustedIpLinkInterfaces = tscale.ipLinkInterfaces;
     custom.system.networking.useNetworkManager = true;
+    custom.system.networking.enableDhcpcdForInterfaces = "none";
 
     custom.system.homeManager.enableForUsers = infra.allUserNames;
 

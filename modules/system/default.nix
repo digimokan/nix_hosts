@@ -19,13 +19,16 @@
     ./grub.nix
     ./home-manager.nix
     ./impermanence.nix
+    ./kea-dhcp-server.nix
     ./linux-firmware.nix
     ./networking.nix
+    ./nftables.nix
     ./nix-core.nix
     ./security.nix
     ./sops.nix
     ./timezone.nix
     ./tmp-tmpfs.nix
+    ./unbound-dns-resolver.nix
     ./video-chipset.nix
     ./wayland.nix
     ./wifi-chipset.nix

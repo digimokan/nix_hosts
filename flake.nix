@@ -104,6 +104,9 @@
     in {
       nixosConfigurations = {
         nas = mkSystem "nas";
+        rtf = mkSystem "rtf";
+        rtg1 = mkSystem "rtg1";
+        rtg2 = mkSystem "rtg2";
         tm1 = mkSystem "tm1";
         tm2 = mkSystem "tm2";
       };

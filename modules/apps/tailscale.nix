@@ -25,6 +25,19 @@ in {
 
     enableShieldsUp = lib.mkEnableOption "Block incoming LAN connections (--shields-up).";
 
+    acceptDns = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Whether Tailscale should accept DNS configuration (MagicDNS and
+        global nameservers) from the tailnet and manage /etc/resolv.conf.
+        Set to false on routers running a local DNS resolver (Unbound) so
+        tailscaled does not overwrite /etc/resolv.conf with 100.100.100.100.
+        When false, other tailnet hosts can still resolve this host by its
+        MagicDNS name, but this host cannot resolve other tailnet hostnames.
+      '';
+    };
+
     authKeyPath = lib.mkOption {
       type = lib.types.str;
       description = "Auth key to authenticate and join the tailnet.";
@@ -36,33 +49,54 @@ in {
       description = "The virtual network interfaces created by Tailscale.";
     };
 
+    udpPort = lib.mkOption {
+      type = lib.types.port;
+      readOnly = true;
+      description = ''
+        Read-only export of the UDP port Tailscale listens on for direct
+        WireGuard peer-to-peer tunnels (tracks NixOS's services.tailscale.port,
+        default 41641).
+      '';
+    };
+
     defaultTailnetCidr = lib.mkOption {
       type = lib.types.str;
-      default = "100.64.0.0/10";
-      description = "The default carrier-grade NAT CIDR IP address block used by Tailscale.";
+      readOnly = true;
+      description = ''
+        Read-only export of the default carrier-grade NAT CIDR IP address block
+        used by Tailscale (100.64.0.0/10).
+      '';
     };
   };
 
-  config = lib.mkIf cfg.enable {
-    services.tailscale = {
-      enable = true;
-      authKeyFile = cfg.authKeyPath;
-      extraUpFlags =
-        (lib.optional cfg.enableSshServer "--ssh") ++
-        (lib.optional cfg.enableShieldsUp "--shields-up");
-    };
+  config = lib.mkMerge [
+    {
+      custom.apps.tailscale.udpPort = config.services.tailscale.port;
+      custom.apps.tailscale.defaultTailnetCidr = "100.64.0.0/10";
+    }
 
-    assertions = [
-      {
-        assertion = !(cfg.enableSshServer && cfg.enableShieldsUp);
-        message = (
-          "The options custom.apps.tailscale.enableSshServer and "
-          + "custom.apps.tailscale.enableShieldsUp are mutually exclusive "
-          + "and cannot be enabled at the same time."
-        );
-      }
-    ];
-  };
+    (lib.mkIf cfg.enable {
+      services.tailscale = {
+        enable = true;
+        authKeyFile = cfg.authKeyPath;
+        extraUpFlags =
+          (lib.optional cfg.enableSshServer "--ssh")
+          ++ (lib.optional cfg.enableShieldsUp "--shields-up")
+          ++ [ "--accept-dns=${lib.boolToString cfg.acceptDns}" ];
+      };
+
+      assertions = [
+        {
+          assertion = !(cfg.enableSshServer && cfg.enableShieldsUp);
+          message = (
+            "The options custom.apps.tailscale.enableSshServer and "
+            + "custom.apps.tailscale.enableShieldsUp are mutually exclusive "
+            + "and cannot be enabled at the same time."
+          );
+        }
+      ];
+    })
+  ];
 
 }
 

@@ -9,7 +9,7 @@
     options: merged tree of all option _declarations_ across the system
     config: final, merged config tree of entire system, shared among modules
   allArgs: all other args passed into this function (normally ignored with ...)
- */
+*/
 { config, lib, pkgs, options, ... }@allArgs:
 
 let

@@ -37,6 +37,9 @@ keys:
   - &age_pubkey_master age1cnryfel34a36zkaayv9a0enmaetwrp3jk2nt807af8y6v6nefejs9jp9vk
   - &age_pubkey_host_grig age1jymzkqqtju7qs7ssrhmzckhnvv3322tjv8hs0ngl7q5a9pc0eens9a5hqz
   - &age_pubkey_host_nas age1fu4fdj4g09tqj4gzfn3trvzdfcgfjaeeplxnvydm8swq4ju0ggyquqzp8s
+  - &age_pubkey_host_rtf age1l4vymqrgky9dqt98n60u8700qcm2ytyxj9x0pn8ksjfc2sc6mf6q4urrh8
+  - &age_pubkey_host_rtg1 age16kuwyjpjddr6tznnw9gcn5kk72udh337xp9h4aq3uvfl0zarsgnq0nzlns
+  - &age_pubkey_host_rtg2 age10pez3dqhqwanra2kh3pj2hhap6d9hqjasg4hamhlwdxwspflhatq3q5t2x
   - &age_pubkey_host_romr age1llydkpnekmd0c06rg49ffvq3xe3edk605h3psy3cx7xj0rdq9p4sy6lm7t
   - &age_pubkey_host_tm1 age1x4fdtv0m97wy7d0fs00xq0ehrnjfrxe98er5lz7kz5jhjd76ksusyp53wn
   - &age_pubkey_host_tm2 age19srxwkl38zsm949hj2v9mdqmhqkuc8xlkqdw6ez6kp7ayttddq7strdvx9
@@ -71,6 +74,8 @@ creation_rules:
       - age:
           - *age_pubkey_master
           - *age_pubkey_host_nas
+          - *age_pubkey_host_rtg1
+          - *age_pubkey_host_rtg2
   - path_regex: secrets/farp_zone_secrets\.yaml$
     key_groups:
       - age:
@@ -80,6 +85,7 @@ creation_rules:
     key_groups:
       - age:
           - *age_pubkey_master
+          - *age_pubkey_host_rtf
           - *age_pubkey_host_tm1
           - *age_pubkey_host_tm2
 
